@@ -1,0 +1,25 @@
+{
+  "schema": "adip.loadtest.v1",
+  "rounds": 4,
+  "n_calls": 200,
+  "pipeline_p50_ms": 80.08,
+  "pipeline_p95_ms": 135.26,
+  "kpi_target_ms": 150,
+  "kpi_pass": true,
+  "stage_p50_ms": {
+    "privacy": 0.05,
+    "fairness": 0.0,
+    "decision": 79.96,
+    "policy": 0.0,
+    "explanation": 0.02
+  },
+  "audit_rows": 200,
+  "route_mix": {
+    "AUTO": 84,
+    "REVIEW": 112,
+    "ESCALATE": 4
+  },
+  "replay_checked": 20,
+  "replay_verified": 20,
+  "replay_rate": 1.0
+}

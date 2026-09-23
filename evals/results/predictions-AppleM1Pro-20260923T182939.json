@@ -1,0 +1,909 @@
+{
+  "schema": "adip.predictions.v1",
+  "report": "eval-AppleM1Pro-20260923T182939.json",
+  "dataset": "datasets/golden-set/golden-v1.0.json",
+  "dataset_version": "v1.0",
+  "payload_version": 2,
+  "records": [
+    {
+      "ticket_id": "TICKET-0001",
+      "language": "en",
+      "y_department": "billing",
+      "p_department": "billing",
+      "department_conf": 0.951,
+      "department_dist": {
+        "billing": 0.951,
+        "technical": 0.0233,
+        "sales": 0.0143,
+        "account": 0.0115
+      },
+      "y_urgency": 1,
+      "p_urgency": 1,
+      "urgency_conf": 0.2802,
+      "y_refund": true,
+      "refund_p": 0.8522
+    },
+    {
+      "ticket_id": "TICKET-0002",
+      "language": "en",
+      "y_department": "technical",
+      "p_department": "technical",
+      "department_conf": 0.8036,
+      "department_dist": {
+        "billing": 0.0505,
+        "technical": 0.8036,
+        "sales": 0.0833,
+        "account": 0.0625
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.5059,
+      "y_refund": false,
+      "refund_p": 0.0
+    },
+    {
+      "ticket_id": "TICKET-0003",
+      "language": "en",
+      "y_department": "sales",
+      "p_department": "sales",
+      "department_conf": 0.5257,
+      "department_dist": {
+        "billing": 0.14,
+        "technical": 0.2051,
+        "sales": 0.5257,
+        "account": 0.1292
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.4365,
+      "y_refund": false,
+      "refund_p": 0.0475
+    },
+    {
+      "ticket_id": "TICKET-0004",
+      "language": "en",
+      "y_department": "account",
+      "p_department": "technical",
+      "department_conf": 0.605,
+      "department_dist": {
+        "billing": 0.0749,
+        "technical": 0.605,
+        "sales": 0.0727,
+        "account": 0.2474
+      },
+      "y_urgency": 2,
+      "p_urgency": 2,
+      "urgency_conf": 0.8009,
+      "y_refund": false,
+      "refund_p": 0.266
+    },
+    {
+      "ticket_id": "TICKET-0005",
+      "language": "en",
+      "y_department": "billing",
+      "p_department": "billing",
+      "department_conf": 0.8837,
+      "department_dist": {
+        "billing": 0.8837,
+        "technical": 0.0494,
+        "sales": 0.0432,
+        "account": 0.0238
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.3261,
+      "y_refund": false,
+      "refund_p": 0.5105
+    },
+    {
+      "ticket_id": "TICKET-0006",
+      "language": "en",
+      "y_department": "billing",
+      "p_department": "billing",
+      "department_conf": 0.92,
+      "department_dist": {
+        "billing": 0.92,
+        "technical": 0.0244,
+        "sales": 0.0388,
+        "account": 0.0168
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.4598,
+      "y_refund": true,
+      "refund_p": 0.7926
+    },
+    {
+      "ticket_id": "TICKET-0007",
+      "language": "en",
+      "y_department": "technical",
+      "p_department": "technical",
+      "department_conf": 0.927,
+      "department_dist": {
+        "billing": 0.0219,
+        "technical": 0.927,
+        "sales": 0.0282,
+        "account": 0.0229
+      },
+      "y_urgency": 1,
+      "p_urgency": 2,
+      "urgency_conf": 0.5748,
+      "y_refund": false,
+      "refund_p": 0.0113
+    },
+    {
+      "ticket_id": "TICKET-0008",
+      "language": "es",
+      "y_department": "sales",
+      "p_department": "billing",
+      "department_conf": 0.8109,
+      "department_dist": {
+        "billing": 0.8109,
+        "technical": 0.0509,
+        "sales": 0.0974,
+        "account": 0.0409
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.2787,
+      "y_refund": false,
+      "refund_p": 0.0319
+    },
+    {
+      "ticket_id": "TICKET-0009",
+      "language": "en",
+      "y_department": "account",
+      "p_department": "account",
+      "department_conf": 0.6355,
+      "department_dist": {
+        "billing": 0.0328,
+        "technical": 0.287,
+        "sales": 0.0447,
+        "account": 0.6355
+      },
+      "y_urgency": 2,
+      "p_urgency": 2,
+      "urgency_conf": 0.8561,
+      "y_refund": true,
+      "refund_p": 0.8566
+    },
+    {
+      "ticket_id": "TICKET-0010",
+      "language": "en",
+      "y_department": "billing",
+      "p_department": "billing",
+      "department_conf": 0.9788,
+      "department_dist": {
+        "billing": 0.9788,
+        "technical": 0.0062,
+        "sales": 0.0107,
+        "account": 0.0043
+      },
+      "y_urgency": 1,
+      "p_urgency": 1,
+      "urgency_conf": 0.4839,
+      "y_refund": true,
+      "refund_p": 0.743
+    },
+    {
+      "ticket_id": "TICKET-0011",
+      "language": "es",
+      "y_department": "technical",
+      "p_department": "technical",
+      "department_conf": 0.7516,
+      "department_dist": {
+        "billing": 0.0944,
+        "technical": 0.7516,
+        "sales": 0.0888,
+        "account": 0.0652
+      },
+      "y_urgency": 0,
+      "p_urgency": 0,
+      "urgency_conf": 0.8547,
+      "y_refund": false,
+      "refund_p": 0.0708
+    },
+    {
+      "ticket_id": "TICKET-0012",
+      "language": "en",
+      "y_department": "sales",
+      "p_department": "sales",
+      "department_conf": 0.548,
+      "department_dist": {
+        "billing": 0.237,
+        "technical": 0.1202,
+        "sales": 0.548,
+        "account": 0.0949
+      },
+      "y_urgency": 1,
+      "p_urgency": 1,
+      "urgency_conf": 0.4201,
+      "y_refund": false,
+      "refund_p": 0.0003
+    },
+    {
+      "ticket_id": "TICKET-0013",
+      "language": "en",
+      "y_department": "account",
+      "p_department": "account",
+      "department_conf": 0.5477,
+      "department_dist": {
+        "billing": 0.0729,
+        "technical": 0.3173,
+        "sales": 0.0621,
+        "account": 0.5477
+      },
+      "y_urgency": 1,
+      "p_urgency": 1,
+      "urgency_conf": 0.5946,
+      "y_refund": false,
+      "refund_p": 0.0523
+    },
+    {
+      "ticket_id": "TICKET-0014",
+      "language": "en",
+      "y_department": "billing",
+      "p_department": "billing",
+      "department_conf": 0.9084,
+      "department_dist": {
+        "billing": 0.9084,
+        "technical": 0.042,
+        "sales": 0.032,
+        "account": 0.0176
+      },
+      "y_urgency": 2,
+      "p_urgency": 2,
+      "urgency_conf": 0.7605,
+      "y_refund": true,
+      "refund_p": 0.9104
+    },
+    {
+      "ticket_id": "TICKET-0015",
+      "language": "de",
+      "y_department": "account",
+      "p_department": "technical",
+      "department_conf": 0.4887,
+      "department_dist": {
+        "billing": 0.2266,
+        "technical": 0.4887,
+        "sales": 0.1349,
+        "account": 0.1497
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.4244,
+      "y_refund": false,
+      "refund_p": 0.0
+    },
+    {
+      "ticket_id": "TICKET-0016",
+      "language": "en",
+      "y_department": "technical",
+      "p_department": "technical",
+      "department_conf": 0.9228,
+      "department_dist": {
+        "billing": 0.0302,
+        "technical": 0.9228,
+        "sales": 0.0289,
+        "account": 0.0181
+      },
+      "y_urgency": 2,
+      "p_urgency": 1,
+      "urgency_conf": 0.1586,
+      "y_refund": false,
+      "refund_p": 0.0002
+    },
+    {
+      "ticket_id": "TICKET-0017",
+      "language": "en",
+      "y_department": "technical",
+      "p_department": "technical",
+      "department_conf": 0.8877,
+      "department_dist": {
+        "billing": 0.0331,
+        "technical": 0.8877,
+        "sales": 0.0505,
+        "account": 0.0288
+      },
+      "y_urgency": 2,
+      "p_urgency": 2,
+      "urgency_conf": 0.7703,
+      "y_refund": false,
+      "refund_p": 0.251
+    },
+    {
+      "ticket_id": "TICKET-0018",
+      "language": "zh",
+      "y_department": "account",
+      "p_department": "billing",
+      "department_conf": 0.4543,
+      "department_dist": {
+        "billing": 0.4543,
+        "technical": 0.2984,
+        "sales": 0.132,
+        "account": 0.1153
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.3961,
+      "y_refund": false,
+      "refund_p": 0.0376
+    },
+    {
+      "ticket_id": "TICKET-0019",
+      "language": "en",
+      "y_department": "billing",
+      "p_department": "billing",
+      "department_conf": 0.947,
+      "department_dist": {
+        "billing": 0.947,
+        "technical": 0.0299,
+        "sales": 0.0143,
+        "account": 0.0088
+      },
+      "y_urgency": 1,
+      "p_urgency": 2,
+      "urgency_conf": 0.5807,
+      "y_refund": true,
+      "refund_p": 0.946
+    },
+    {
+      "ticket_id": "TICKET-0020",
+      "language": "en",
+      "y_department": "billing",
+      "p_department": "billing",
+      "department_conf": 0.9453,
+      "department_dist": {
+        "billing": 0.9453,
+        "technical": 0.0246,
+        "sales": 0.0191,
+        "account": 0.011
+      },
+      "y_urgency": 1,
+      "p_urgency": 1,
+      "urgency_conf": 0.2531,
+      "y_refund": true,
+      "refund_p": 0.822
+    },
+    {
+      "ticket_id": "TICKET-0021",
+      "language": "en",
+      "y_department": "technical",
+      "p_department": "technical",
+      "department_conf": 0.6368,
+      "department_dist": {
+        "billing": 0.2481,
+        "technical": 0.6368,
+        "sales": 0.0816,
+        "account": 0.0335
+      },
+      "y_urgency": 2,
+      "p_urgency": 2,
+      "urgency_conf": 0.9049,
+      "y_refund": true,
+      "refund_p": 0.8863
+    },
+    {
+      "ticket_id": "TICKET-0022",
+      "language": "en",
+      "y_department": "sales",
+      "p_department": "technical",
+      "department_conf": 0.3753,
+      "department_dist": {
+        "billing": 0.1833,
+        "technical": 0.3753,
+        "sales": 0.2554,
+        "account": 0.186
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.4534,
+      "y_refund": false,
+      "refund_p": 0.0
+    },
+    {
+      "ticket_id": "TICKET-0023",
+      "language": "en",
+      "y_department": "account",
+      "p_department": "technical",
+      "department_conf": 0.8962,
+      "department_dist": {
+        "billing": 0.018,
+        "technical": 0.8962,
+        "sales": 0.0209,
+        "account": 0.0649
+      },
+      "y_urgency": 2,
+      "p_urgency": 2,
+      "urgency_conf": 0.8397,
+      "y_refund": false,
+      "refund_p": 0.0175
+    },
+    {
+      "ticket_id": "TICKET-0024",
+      "language": "en",
+      "y_department": "billing",
+      "p_department": "billing",
+      "department_conf": 0.4727,
+      "department_dist": {
+        "billing": 0.4727,
+        "technical": 0.1399,
+        "sales": 0.2625,
+        "account": 0.1249
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.39,
+      "y_refund": false,
+      "refund_p": 0.0786
+    },
+    {
+      "ticket_id": "TICKET-0025",
+      "language": "en",
+      "y_department": "technical",
+      "p_department": "technical",
+      "department_conf": 0.632,
+      "department_dist": {
+        "billing": 0.097,
+        "technical": 0.632,
+        "sales": 0.1641,
+        "account": 0.1069
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.6671,
+      "y_refund": false,
+      "refund_p": 0.0
+    },
+    {
+      "ticket_id": "TICKET-0026",
+      "language": "en",
+      "y_department": "account",
+      "p_department": "account",
+      "department_conf": 0.5834,
+      "department_dist": {
+        "billing": 0.039,
+        "technical": 0.328,
+        "sales": 0.0497,
+        "account": 0.5834
+      },
+      "y_urgency": 2,
+      "p_urgency": 1,
+      "urgency_conf": 0.4663,
+      "y_refund": false,
+      "refund_p": 0.0355
+    },
+    {
+      "ticket_id": "TICKET-0027",
+      "language": "en",
+      "y_department": "billing",
+      "p_department": "billing",
+      "department_conf": 0.7551,
+      "department_dist": {
+        "billing": 0.7551,
+        "technical": 0.0776,
+        "sales": 0.1295,
+        "account": 0.0378
+      },
+      "y_urgency": 1,
+      "p_urgency": 1,
+      "urgency_conf": 0.6089,
+      "y_refund": true,
+      "refund_p": 0.2487
+    },
+    {
+      "ticket_id": "TICKET-0028",
+      "language": "en",
+      "y_department": "sales",
+      "p_department": "technical",
+      "department_conf": 0.3504,
+      "department_dist": {
+        "billing": 0.1717,
+        "technical": 0.3504,
+        "sales": 0.336,
+        "account": 0.1419
+      },
+      "y_urgency": 1,
+      "p_urgency": 1,
+      "urgency_conf": 0.4307,
+      "y_refund": false,
+      "refund_p": 0.0
+    },
+    {
+      "ticket_id": "TICKET-0029",
+      "language": "fr",
+      "y_department": "account",
+      "p_department": "billing",
+      "department_conf": 0.3877,
+      "department_dist": {
+        "billing": 0.3877,
+        "technical": 0.2021,
+        "sales": 0.2214,
+        "account": 0.1888
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.4688,
+      "y_refund": false,
+      "refund_p": 0.0
+    },
+    {
+      "ticket_id": "TICKET-0030",
+      "language": "en",
+      "y_department": "technical",
+      "p_department": "technical",
+      "department_conf": 0.7495,
+      "department_dist": {
+        "billing": 0.066,
+        "technical": 0.7495,
+        "sales": 0.1017,
+        "account": 0.0828
+      },
+      "y_urgency": 1,
+      "p_urgency": 0,
+      "urgency_conf": 0.7197,
+      "y_refund": false,
+      "refund_p": 0.07
+    },
+    {
+      "ticket_id": "TICKET-0031",
+      "language": "en",
+      "y_department": "billing",
+      "p_department": "billing",
+      "department_conf": 0.8634,
+      "department_dist": {
+        "billing": 0.8634,
+        "technical": 0.0501,
+        "sales": 0.0626,
+        "account": 0.0239
+      },
+      "y_urgency": 2,
+      "p_urgency": 2,
+      "urgency_conf": 0.9015,
+      "y_refund": true,
+      "refund_p": 0.9624
+    },
+    {
+      "ticket_id": "TICKET-0032",
+      "language": "de",
+      "y_department": "technical",
+      "p_department": "billing",
+      "department_conf": 0.4342,
+      "department_dist": {
+        "billing": 0.4342,
+        "technical": 0.3089,
+        "sales": 0.1704,
+        "account": 0.0864
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.402,
+      "y_refund": false,
+      "refund_p": 0.0772
+    },
+    {
+      "ticket_id": "TICKET-0033",
+      "language": "en",
+      "y_department": "sales",
+      "p_department": "sales",
+      "department_conf": 0.488,
+      "department_dist": {
+        "billing": 0.3081,
+        "technical": 0.1095,
+        "sales": 0.488,
+        "account": 0.0944
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.3322,
+      "y_refund": false,
+      "refund_p": 0.0165
+    },
+    {
+      "ticket_id": "TICKET-0034",
+      "language": "en",
+      "y_department": "account",
+      "p_department": "account",
+      "department_conf": 0.5429,
+      "department_dist": {
+        "billing": 0.0942,
+        "technical": 0.2352,
+        "sales": 0.1276,
+        "account": 0.5429
+      },
+      "y_urgency": 1,
+      "p_urgency": 1,
+      "urgency_conf": 0.5018,
+      "y_refund": false,
+      "refund_p": 0.0925
+    },
+    {
+      "ticket_id": "TICKET-0035",
+      "language": "en",
+      "y_department": "billing",
+      "p_department": "billing",
+      "department_conf": 0.9667,
+      "department_dist": {
+        "billing": 0.9667,
+        "technical": 0.0112,
+        "sales": 0.0128,
+        "account": 0.0093
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.1724,
+      "y_refund": true,
+      "refund_p": 0.9476
+    },
+    {
+      "ticket_id": "TICKET-0036",
+      "language": "en",
+      "y_department": "technical",
+      "p_department": "technical",
+      "department_conf": 0.8538,
+      "department_dist": {
+        "billing": 0.0332,
+        "technical": 0.8538,
+        "sales": 0.0665,
+        "account": 0.0464
+      },
+      "y_urgency": 1,
+      "p_urgency": 0,
+      "urgency_conf": 0.6936,
+      "y_refund": false,
+      "refund_p": 0.0424
+    },
+    {
+      "ticket_id": "TICKET-0037",
+      "language": "en",
+      "y_department": "account",
+      "p_department": "account",
+      "department_conf": 0.6158,
+      "department_dist": {
+        "billing": 0.0708,
+        "technical": 0.2193,
+        "sales": 0.0941,
+        "account": 0.6158
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.3947,
+      "y_refund": false,
+      "refund_p": 0.0
+    },
+    {
+      "ticket_id": "TICKET-0038",
+      "language": "en",
+      "y_department": "billing",
+      "p_department": "sales",
+      "department_conf": 0.5177,
+      "department_dist": {
+        "billing": 0.2891,
+        "technical": 0.1029,
+        "sales": 0.5177,
+        "account": 0.0903
+      },
+      "y_urgency": 1,
+      "p_urgency": 1,
+      "urgency_conf": 0.5838,
+      "y_refund": false,
+      "refund_p": 0.2308
+    },
+    {
+      "ticket_id": "TICKET-0039",
+      "language": "en",
+      "y_department": "technical",
+      "p_department": "technical",
+      "department_conf": 0.8776,
+      "department_dist": {
+        "billing": 0.0401,
+        "technical": 0.8776,
+        "sales": 0.0478,
+        "account": 0.0346
+      },
+      "y_urgency": 2,
+      "p_urgency": 2,
+      "urgency_conf": 0.7554,
+      "y_refund": false,
+      "refund_p": 0.0002
+    },
+    {
+      "ticket_id": "TICKET-0040",
+      "language": "en",
+      "y_department": "sales",
+      "p_department": "technical",
+      "department_conf": 0.4211,
+      "department_dist": {
+        "billing": 0.1277,
+        "technical": 0.4211,
+        "sales": 0.3044,
+        "account": 0.1468
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.4153,
+      "y_refund": false,
+      "refund_p": 0.0
+    },
+    {
+      "ticket_id": "TICKET-0041",
+      "language": "en",
+      "y_department": "account",
+      "p_department": "account",
+      "department_conf": 0.6655,
+      "department_dist": {
+        "billing": 0.0691,
+        "technical": 0.2176,
+        "sales": 0.0478,
+        "account": 0.6655
+      },
+      "y_urgency": 2,
+      "p_urgency": 1,
+      "urgency_conf": 0.3379,
+      "y_refund": false,
+      "refund_p": 0.1882
+    },
+    {
+      "ticket_id": "TICKET-0042",
+      "language": "en",
+      "y_department": "technical",
+      "p_department": "billing",
+      "department_conf": 0.9649,
+      "department_dist": {
+        "billing": 0.9649,
+        "technical": 0.0262,
+        "sales": 0.0056,
+        "account": 0.0033
+      },
+      "y_urgency": 1,
+      "p_urgency": 1,
+      "urgency_conf": 0.388,
+      "y_refund": false,
+      "refund_p": 0.1865
+    },
+    {
+      "ticket_id": "TICKET-0043",
+      "language": "en",
+      "y_department": "technical",
+      "p_department": "technical",
+      "department_conf": 0.4981,
+      "department_dist": {
+        "billing": 0.1746,
+        "technical": 0.4981,
+        "sales": 0.1723,
+        "account": 0.155
+      },
+      "y_urgency": 0,
+      "p_urgency": 2,
+      "urgency_conf": 0.666,
+      "y_refund": false,
+      "refund_p": 0.0003
+    },
+    {
+      "ticket_id": "TICKET-0044",
+      "language": "en",
+      "y_department": "billing",
+      "p_department": "billing",
+      "department_conf": 0.9673,
+      "department_dist": {
+        "billing": 0.9673,
+        "technical": 0.0121,
+        "sales": 0.0126,
+        "account": 0.0081
+      },
+      "y_urgency": 1,
+      "p_urgency": 1,
+      "urgency_conf": 0.3765,
+      "y_refund": true,
+      "refund_p": 0.8973
+    },
+    {
+      "ticket_id": "TICKET-0045",
+      "language": "en",
+      "y_department": "account",
+      "p_department": "billing",
+      "department_conf": 0.9412,
+      "department_dist": {
+        "billing": 0.9412,
+        "technical": 0.0421,
+        "sales": 0.0067,
+        "account": 0.01
+      },
+      "y_urgency": 2,
+      "p_urgency": 2,
+      "urgency_conf": 0.8762,
+      "y_refund": true,
+      "refund_p": 0.9777
+    },
+    {
+      "ticket_id": "TICKET-0046",
+      "language": "en",
+      "y_department": "billing",
+      "p_department": "billing",
+      "department_conf": 0.9407,
+      "department_dist": {
+        "billing": 0.9407,
+        "technical": 0.0199,
+        "sales": 0.024,
+        "account": 0.0153
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.4449,
+      "y_refund": true,
+      "refund_p": 0.7782
+    },
+    {
+      "ticket_id": "TICKET-0047",
+      "language": "en",
+      "y_department": "technical",
+      "p_department": "technical",
+      "department_conf": 0.892,
+      "department_dist": {
+        "billing": 0.0283,
+        "technical": 0.892,
+        "sales": 0.0413,
+        "account": 0.0384
+      },
+      "y_urgency": 1,
+      "p_urgency": 1,
+      "urgency_conf": 0.2966,
+      "y_refund": false,
+      "refund_p": 0.0031
+    },
+    {
+      "ticket_id": "TICKET-0048",
+      "language": "en",
+      "y_department": "sales",
+      "p_department": "sales",
+      "department_conf": 0.3252,
+      "department_dist": {
+        "billing": 0.2648,
+        "technical": 0.2622,
+        "sales": 0.3252,
+        "account": 0.1479
+      },
+      "y_urgency": 0,
+      "p_urgency": 1,
+      "urgency_conf": 0.3259,
+      "y_refund": false,
+      "refund_p": 0.0007
+    },
+    {
+      "ticket_id": "TICKET-0049",
+      "language": "en",
+      "y_department": "technical",
+      "p_department": "technical",
+      "department_conf": 0.6886,
+      "department_dist": {
+        "billing": 0.021,
+        "technical": 0.6886,
+        "sales": 0.0357,
+        "account": 0.2548
+      },
+      "y_urgency": 1,
+      "p_urgency": 1,
+      "urgency_conf": 0.3757,
+      "y_refund": false,
+      "refund_p": 0.037
+    },
+    {
+      "ticket_id": "TICKET-0050",
+      "language": "en",
+      "y_department": "billing",
+      "p_department": "billing",
+      "department_conf": 0.9199,
+      "department_dist": {
+        "billing": 0.9199,
+        "technical": 0.0268,
+        "sales": 0.033,
+        "account": 0.0202
+      },
+      "y_urgency": 1,
+      "p_urgency": 1,
+      "urgency_conf": 0.5453,
+      "y_refund": true,
+      "refund_p": 0.6082
+    }
+  ]
+}

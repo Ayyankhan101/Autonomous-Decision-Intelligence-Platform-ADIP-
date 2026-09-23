@@ -1,4 +1,7 @@
 __pycache__/
+
+# serving runtime artifacts
+serving/audit.db*
 *.pyc
 .venv-bench/
 .DS_Store

@@ -1,0 +1,106 @@
+{
+  "schema": "adip.eval.v1",
+  "timestamp_utc": "2026-09-23T18:29:39.174569+00:00",
+  "dataset": "datasets/golden-set/golden-v1.0.json",
+  "n_records": 50,
+  "checkpoint": "aac6fef/laya-mlx",
+  "dtype": "float16",
+  "batch_size": 16,
+  "passes": 2,
+  "payload_version": 2,
+  "question_set_sha256": "b580734fdd0c",
+  "dataset_version": "v1.0",
+  "environment": {
+    "chip": "AppleM1Pro",
+    "python": "3.13.13",
+    "os": "macOS-26.6.2-arm64-arm-64bit-Mach-O"
+  },
+  "department": {
+    "macro_f1": 0.7117,
+    "per_class": {
+      "billing": {
+        "precision": 0.7,
+        "recall": 0.9333,
+        "f1": 0.8,
+        "support": 15
+      },
+      "technical": {
+        "precision": 0.6842,
+        "recall": 0.8667,
+        "f1": 0.7647,
+        "support": 15
+      },
+      "sales": {
+        "precision": 0.8,
+        "recall": 0.5,
+        "f1": 0.6154,
+        "support": 8
+      },
+      "account": {
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1": 0.6667,
+        "support": 12
+      }
+    },
+    "accuracy": 0.74,
+    "brier_multiclass": 0.3853,
+    "ece": 0.2024,
+    "confusion": {
+      "billing": {
+        "billing": 14,
+        "technical": 0,
+        "sales": 1,
+        "account": 0
+      },
+      "technical": {
+        "billing": 2,
+        "technical": 13,
+        "sales": 0,
+        "account": 0
+      },
+      "sales": {
+        "billing": 1,
+        "technical": 3,
+        "sales": 4,
+        "account": 0
+      },
+      "account": {
+        "billing": 3,
+        "technical": 3,
+        "sales": 0,
+        "account": 6
+      }
+    }
+  },
+  "urgency": {
+    "accuracy": 0.48,
+    "ece_on_predicted_level_mass": 0.1626
+  },
+  "refund": {
+    "accuracy": 0.96,
+    "ece": 0.0725,
+    "ece_semantics": "confidence = max(P(true), 1-P(true)) vs decision correctness",
+    "p_true_mean_by_label": {
+      "refund_true": 0.8153,
+      "refund_false": 0.0673
+    },
+    "brier_p_true": 0.6271
+  },
+  "determinism_passes_identical": true,
+  "latency_ms": {
+    "n": 100,
+    "p50": 80.29,
+    "mean": 88.55,
+    "max": 198.74
+  },
+  "gates": {
+    "macro_f1_ge_0.85": false,
+    "department_ece_lt_0.05": false,
+    "refund_ece_lt_0.05": false,
+    "refund_ece_semantics_fixed": true,
+    "deterministic": true,
+    "latency_p95_lt_60ms": false
+  },
+  "gates_passed": false
+}

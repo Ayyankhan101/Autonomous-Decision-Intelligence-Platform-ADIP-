@@ -186,7 +186,7 @@ flowchart TD
 ~56 decisions/s per node on M3 Max-class (17.75 ms/call, short context); measured 48–60/s on M1 Pro with `batch_size=16`; capacity scales linearly with nodes.
 
 - **Runtime:** Python 3.11+, `uv`, `laya-mlx` with pinned checkpoint revisions + weight checksums
-- **Serving:** FastAPI; one uvicorn worker per agent; nginx across Mac nodes for scale-out
+- **Serving:** FastAPI; one uvicorn worker per agent; nginx across Mac nodes for scale-out — **Phase 0 pipeline is built and measured** (`serving/`): end-to-end **P50 80.1 ms / P95 135.3 ms** on the full golden set, inside the ≤ 150 ms target; replayable SQLite WAL audit verified bit-for-bit; Prometheus `/metrics` live
 - **Privacy:** Microsoft Presidio redaction before the encoder; k-anonymity on exports
 - **Storage:** SQLite (WAL) → PostgreSQL; Prometheus `/metrics` + Grafana
 - **CI:** GitHub Actions `macos-14` arm64 (unit tier); nightly fidelity/calibration/latency benchmarks on real hardware
@@ -195,8 +195,8 @@ flowchart TD
 
 | Phase | Weeks | Deliverable |
 |---|---|---|
-| **0 — MVP** | 1–4 | Ticket-triage demo: privacy → laya → policy → explanation → audit, P50 ≤ 150 ms, replayable audit log, honest eval report |
-| **1 — Hardening** | 5–10 | Counterfactual engine, fairness CI gates, Postgres, multilingual Router with logged routing evidence |
+| **0 — MVP** | 1–4 | Ticket-triage demo: privacy → laya → policy → explanation → audit, P50 ≤ 150 ms, replayable audit log, honest eval report — **✅ Phase 0 pipeline built & measured: P50 80.1 / P95 135.3 ms** |
+| **1 — Hardening** | 5–10 | Counterfactual engine, fairness CI gates, Postgres, multilingual Router with logged routing evidence — **✅ calibration lever landed early: refund ECE 0.0725 → 0.0393 out-of-fold (gate PASS)** |
 | **2 — Extension** | 11–16 | Second question set from the Multi-purpose list (bug/issue triage, PR routing, or incident response — eval-gated), RLCD fine-tuning exploration, packaging, load tests |
 | **3 — Stretch** | post-sem | Multi-node fleet. Explicitly not promised: SOC 2, FedRAMP, marketplace, 10k req/s clusters |
 
@@ -205,8 +205,9 @@ flowchart TD
 - [`explaination-of-the-project.md`](explaination-of-the-project.md) — full technical blueprint (architecture, schemas, eval strategy, cost model)
 - [`professtional-writing-end-sem-project.md`](professtional-writing-end-sem-project.md) — mirror of the blueprint for the end-sem deliverable
 - [`benchmarks/`](benchmarks/README.md) — latency harness + stored timing samples (M1 Pro measured)
-- [`evals/`](evals/README.md) — eval runner: macro-F1, ECE, Brier, confusion matrix vs the frozen golden set
-- [`datasets/golden-set/`](datasets/golden-set/README.md) — triage eval dataset: schema, labeling guidelines, exemplars, validator
+- [`evals/`](evals/README.md) — eval runner: macro-F1, ECE, Brier, confusion matrix vs the frozen golden set; calibration (`calibrate.py`) + stored per-record predictions
+- [`datasets/golden-set/`](datasets/golden-set/README.md) — triage eval dataset: schema, labeling guidelines, exemplars, validator, AI-3 QC worksheet
+- [`serving/`](serving/README.md) — Phase 0 pipeline: DecisionService, FastAPI `/decide` + `/audit/{id}/replay` + `/metrics`, load-test tool
 
 ## Attribution & licensing
 

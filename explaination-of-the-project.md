@@ -560,10 +560,10 @@ Multi-node fleet behind nginx; nightly fleet benchmarks; hosted-support offering
 | Metric | v1 claim (Jev) | v2 target (laya-mlx) | Measured (M1 Pro, 2026-09-23) |
 |---|---|---|---|
 | Decision-only latency | 70–500 ms | ≤ 45 ms P50 for a 3-question call (17.75 ms measured @ 1 short question, M3 Max) | 61.6 ms P50 batched; 72.2 ms unbatched (M1 Pro, payload v2) |
-| Pipeline latency | < 500 ms | P50 ≤ 150 ms, P95 ≤ 400 ms (standard) | — (pipeline not yet built) |
+| Pipeline latency | < 500 ms | P50 ≤ 150 ms, P95 ≤ 400 ms (standard) | **P50 80.1 / P95 135.3 ms — PASS** (Phase 0 pipeline built, `serving/`; decision stage 79.96 ms of it, all other stages < 0.1 ms; audit replay 20/20 bit-for-bit) |
 | Throughput | 10,000+/s per cluster | 56–110 decisions/s per node; linear with nodes | ~49 decisions/s per node (b=16, v2) |
 | Uptime | 99.99% | 99.9% single node (99.99% = Phase 3 multi-node) | — |
-| Calibration error | < 5% | ECE < 0.05, reported per question kind and dtype | dept 0.202 / refund 0.689 (gates FAIL — base checkpoint uncalibrated; calibration tuning is the Phase-1 lever) |
+| Calibration error | < 5% | ECE < 0.05, reported per question kind and dtype | dept 0.202 / refund 0.0725 raw (0.689 was a one-sided ECE metric artifact — fixed in the runner). **Refund gate flipped with temperature scaling: 0.0725 → 0.0393 out-of-fold, PASS** (`evals/results/calibration-refund-20260923.json`; T=0.45, overfits n=50 — refit on held-out before external claims) |
 | Accuracy | "> 90%" (unmeasured) | macro-F1 ≥ 0.85 on frozen golden set (measured in CI) | 0.712 macro-F1 / 0.74 acc on frozen v1.0 (target not met, recorded) |
 | Fairness | "disparate impact > 0.8" | kept, plus equal-opportunity diff < 0.05 and counterfactual flip rate | — |
 | Hallucinations | "zero" | constrained typed outputs; no free-text surface exists | by construction |
@@ -622,7 +622,7 @@ Multi-node fleet behind nginx; nightly fleet benchmarks; hosted-support offering
 6. CI: GitHub Actions `macos-14` arm64, unit tier only.
 
 ### Weeks 2–4
-Follow the Phase 0 table (Section 11). Demo target: a ticket triaged end-to-end in < 150 ms P50 on a MacBook, with a replayable audit row and an honest eval report.
+Follow the Phase 0 table (Section 11). Demo target: a ticket triaged end-to-end in < 150 ms P50 on a MacBook, with a replayable audit row and an honest eval report. *(measured 2026-09-23: P50 80.1 / P95 135.3 ms — target met, `serving/`)*
 
 ---
 

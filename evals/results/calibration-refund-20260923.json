@@ -1,0 +1,22 @@
+{
+  "schema": "adip.calibration.v1",
+  "source": "predictions-AppleM1Pro-20260923T183030.json",
+  "n_records": 50,
+  "refund_accuracy": 0.96,
+  "ece_raw_oof": 0.0725,
+  "ece_calibrated_oof": 0.0393,
+  "brier_raw_oof": 0.031,
+  "brier_calibrated_oof": 0.0283,
+  "fold_temperatures": [
+    0.5,
+    0.5,
+    0.15,
+    0.5,
+    0.5
+  ],
+  "T_global_fit": 0.45,
+  "recipe": "p_cal = sigmoid(logit(p) / 0.45)",
+  "gate_pass_after_calibration": true,
+  "honesty_note": "Out-of-fold CV metrics; each record's calibrated p uses a T fit without it. T_global is the production recipe but overfits this n=50 by construction - refit on a held-out calibration set before trusting the gate verdict for external claims."
+}
+saved: evals/results/calibration-predictions-AppleM1Pro-20260923T183030.json
