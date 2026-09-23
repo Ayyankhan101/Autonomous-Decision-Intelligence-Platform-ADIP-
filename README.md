@@ -18,65 +18,76 @@ noul   → P(true) for a proposition               (does the customer want money
 
 Wrapped in a six-stage pipeline:
 
-```text
-                       request (text state)
-                              │
-                              ▼
-                ┌──────────────────────────────┐
-                │  1 · PRIVACY SCAN            │ Presidio PII redaction
-                │     30–50 ms                 │ [PERSON] / [EMAIL] placeholders
-                └──────────────┬───────────────┘
-                               ▼
-                ┌──────────────────────────────┐
-                │  2 · FAIRNESS SCREEN         │ rules + parity checks
-                │     10–20 ms                 │ flag → never auto-decide
-                └──────────────┬───────────────┘
-                               ▼
-                ┌──────────────────────────────┐
-                │  3 · TYPED DECISION          │ ONE batched laya.predict call
-                │     18–45 ms                 │ choice + score + noul together
-                └──────────────┬───────────────┘
-                               ▼
-                ┌──────────────────────────────┐
-                │  4 · POLICY ROUTER  <1 ms    │ versioned thresholds
-                └──────────────┬───────────────┘
-                     p ≥ 0.90  │  mid-band        high entropy /
-                  ┌────────────┼─────────┐  fairness flag
-                  ▼            ▼         ▼
-               AUTO_DECIDE   REVIEW   ESCALATE
-                  └────────────┼─────────┘
-                               ▼
-                ┌──────────────────────────────┐
-                │  5 · EXPLANATION             │ templates + probability
-                │     5–10 ms                  │ distributions (no LLM prose)
-                └──────────────┬───────────────┘
-                               ▼
-                ┌──────────────────────────────┐
-                │  6 · AUDIT LOG               │ async · immutable · replayable
-                └──────────────────────────────┘
+```mermaid
+flowchart TD
+    REQ(["request: text state"]) --> S1
 
-            every stage's latency budget: blueprint §3 / §10
+    S1["1 · PRIVACY SCAN\n30–50 ms"]:::stage
+    S2["2 · FAIRNESS SCREEN\n10–20 ms"]:::stage
+    S3["3 · TYPED DECISION\n18–45 ms"]:::stage
+    S4["4 · POLICY ROUTER\n≤1 ms"]:::stage
+    S5["5 · EXPLANATION\n5–10 ms"]:::stage
+    S6["6 · AUDIT LOG\nasync · immutable · replayable"]:::stage
+
+    S1 -- "Presidio PII redaction\nPERSON / EMAIL placeholders" --> S2
+    S2 -- "rules + parity checks\nflag → never auto-decide" --> S3
+    S3 -- "ONE batched laya.predict call\nchoice + score + noul together" --> S4
+    S4 -- "p ≥ 0.90 and margin ≥ 0.20" --> AUTO
+    S4 -- "mid-band probability" --> REVIEW
+    S4 -- "high entropy / fairness flag" --> ESCALATE
+
+    AUTO(["AUTO_DECIDE"]):::decision
+    REVIEW(["REVIEW"]):::decision
+    ESCALATE(["ESCALATE"]):::decision
+
+    AUTO --> S5
+    REVIEW --> S5
+    ESCALATE --> S5
+    S5 -- "templates + probability distributions\n(no LLM prose)" --> S6
+
+    classDef stage fill:#e8eef7,stroke:#3b6ea5,color:#111
+    classDef decision fill:#f7e8d8,stroke:#b06a2c,color:#111
 ```
 
 End-to-end target: **≤ 150 ms P50** (standard mode), **≤ 400 ms P95**; strict mode adds bounded counterfactual probes (blueprint §10).
 
 ## Architecture at a glance
 
-```text
-┌────────────────────────────────────────────────────────────────┐
-│  PRESENTATION    FastAPI REST API · dashboard · reports        │
-├────────────────────────────────────────────────────────────────┤
-│  PIPELINE        privacy → fairness → laya → policy →          │
-│                  explanation → audit      (the 6 stages above) │
-├────────────────────────────────────────────────────────────────┤
-│  INTELLIGENCE    laya-mlx Agent · MLX FP16 · ~0.9 GiB          │
-│                  bidirectional encoder → decision heads →      │
-│                  probabilities   (choice · score · noul)       │
-├────────────────────────────────────────────────────────────────┤
-│  DATA            SQLite→Postgres audit log · Prometheus metrics│
-└────────────────────────────────────────────────────────────────┘
-     all of it on one Apple Silicon Mac — nothing leaves the box
+```mermaid
+flowchart TB
+    subgraph PRESENTATION["PRESENTATION"]
+        API["FastAPI REST API"]
+        DASH["dashboard"]
+        REPORTS["reports"]
+    end
+
+    subgraph PIPELINE["PIPELINE — the 6 stages"]
+        direction LR
+        P1["privacy"] --> P2["fairness"] --> P3["laya"] --> P4["policy"] --> P5["explanation"] --> P6["audit"]
+    end
+
+    subgraph INTELLIGENCE["INTELLIGENCE"]
+        direction TB
+        AGENT["laya-mlx Agent · MLX FP16 · ~0.9 GiB"]
+        MECH["bidirectional encoder → decision heads → probabilities"]
+        KINDS["choice · score · noul"]
+        AGENT --> MECH --> KINDS
+    end
+
+    subgraph DATA["DATA"]
+        DB["SQLite → Postgres audit log"]
+        METRICS["Prometheus metrics"]
+    end
+
+    API --> PIPELINE
+    DASH --> API
+    REPORTS --> API
+    PIPELINE --> AGENT
+    P6 --> DB
+    P6 --> METRICS
 ```
+
+> All of it on one Apple Silicon Mac — nothing leaves the box.
 
 ## Why laya-mlx (and not a cloud LLM API)
 
@@ -111,24 +122,30 @@ M3 Max, 40-core GPU, 128 GiB, MLX 0.32.2, FP16, end-to-end (prompt → tokenizat
 
 ## Platform (planned)
 
-```text
-                 ┌────────────────┐
-   clients ────▶ │     nginx      │  TLS · load balancing
-                 └───────┬────────┘
-           ┌─────────────┼─────────────┐
-           ▼             ▼             ▼
-     ┌───────────┐ ┌───────────┐ ┌───────────┐
-     │ Mac node 1│ │ Mac node 2│ │ Mac node N│  bare-metal macOS
-     │ FastAPI   │ │ FastAPI   │ │ FastAPI   │  launchd keepalive
-     │ laya FP16 │ │ laya FP16 │ │ laya FP16 │  ~56 decisions/s each
-     └─────┬─────┘ └─────┬─────┘ └─────┬─────┘  (17.75 ms/call)
-           └─────────────┼─────────────┘
-                         ▼
-          ┌──────────────────────────────┐
-          │  Postgres audit log          │  immutable · replayable
-          │  Prometheus / Grafana        │  ECE + drift monitors
-          └──────────────────────────────┘
+```mermaid
+flowchart TD
+    CLIENTS(["clients"]) --> NGINX
+
+    NGINX["nginx · TLS · load balancing"]:::infra
+
+    NGINX --> N1 & N2 & N3
+
+    subgraph NODES["Mac nodes — bare-metal macOS · launchd keepalive"]
+        N1["Mac node 1\nFastAPI + laya FP16"]:::node
+        N2["Mac node 2\nFastAPI + laya FP16"]:::node
+        N3["Mac node N\nFastAPI + laya FP16"]:::node
+    end
+
+    N1 & N2 & N3 --> STORE
+
+    STORE["Postgres audit log · immutable · replayable\nPrometheus / Grafana · ECE + drift monitors"]:::store
+
+    classDef infra fill:#e8eef7,stroke:#3b6ea5,color:#111
+    classDef node fill:#e8f4e8,stroke:#3a7d44,color:#111
+    classDef store fill:#f7e8d8,stroke:#b06a2c,color:#111
 ```
+
+~56 decisions/s per node (17.75 ms/call, short context); capacity scales linearly with nodes.
 
 - **Runtime:** Python 3.11+, `uv`, `laya-mlx` with pinned checkpoint revisions + weight checksums
 - **Serving:** FastAPI; one uvicorn worker per agent; nginx across Mac nodes for scale-out
