@@ -112,6 +112,18 @@ M3 Max, 40-core GPU, 128 GiB, MLX 0.32.2, FP16, end-to-end (prompt → tokenizat
 
 > ⚠️ **Discrepancy note:** the laya-mlx README headline (13.42 / 7.39 ms) does **not** match the repo's own `BENCHMARKS.md` run (17.75 / 10.91 ms). This project quotes `BENCHMARKS.md` and re-measures on its own hardware before citing anything externally. The batch throughput fixture cycles repeated question templates — it is not per-request serving latency.
 
+### Measured on our hardware
+
+Apple M1 Pro, 16 GB, macOS 26.6, Python 3.13, FP16 — full method, determinism checks, and raw timing samples in [`benchmarks/README.md`](benchmarks/README.md) and `benchmarks/results/`:
+
+| Call (3 questions, FP16) | P50 | P95 |
+|---|---:|---:|
+| short state, batch_size=1 | 62.3 ms | 63.5 ms |
+| short state, batch_size=16 | **50.2 ms** | 50.9 ms |
+| ~512-token state, batch_size=1 | 388.2 ms | 403.7 ms |
+
+Takeaway: M1 Pro-class nodes deliver ~50 ms triage decisions with `batch_size=16` (~48–60 decisions/s per node) — inside the ≤ 150 ms pipeline target. Peak RSS 934.6 MiB matches the published model footprint; all runs 100% deterministic.
+
 ## Honest limitations (full list: blueprint §8)
 
 1. **Apple Silicon only** — MLX needs Metal; no Linux/Windows/cloud nodes, no Docker GPU passthrough on macOS. Inference runs bare-metal on macOS under `launchd`.
@@ -145,7 +157,7 @@ flowchart TD
     classDef store fill:#f7e8d8,stroke:#b06a2c,color:#111
 ```
 
-~56 decisions/s per node (17.75 ms/call, short context); capacity scales linearly with nodes.
+~56 decisions/s per node on M3 Max-class (17.75 ms/call, short context); measured 48–60/s on M1 Pro with `batch_size=16`; capacity scales linearly with nodes.
 
 - **Runtime:** Python 3.11+, `uv`, `laya-mlx` with pinned checkpoint revisions + weight checksums
 - **Serving:** FastAPI; one uvicorn worker per agent; nginx across Mac nodes for scale-out
