@@ -62,6 +62,11 @@ QUESTIONS = {
     },
 }
 
+# Bump when the QUESTIONS payload changes; stamped into every report so
+# provenance is machine-readable (v1 = the pre-review 3-option department
+# payload; v2 = 4-option payload synced with the benchmark harness + golden set).
+PAYLOAD_VERSION = 2
+
 
 # ---------------------------------------------------------------------------
 # metrics math (validated by --selftest)
@@ -282,6 +287,11 @@ def run_eval(path: Path, repeats: int, batch_size: int, strict: bool) -> int:
         "dtype": "float16",
         "batch_size": batch_size,
         "passes": repeats,
+        "payload_version": PAYLOAD_VERSION,
+        "question_set_sha256": hashlib.sha256(
+            json.dumps(QUESTIONS, sort_keys=True).encode()
+        ).hexdigest()[:12],
+        "dataset_version": dataset.get("version") if isinstance(dataset, dict) else None,
         "environment": {"chip": chip_name(), "python": platform.python_version(),
                         "os": platform.platform()},
         "department": {

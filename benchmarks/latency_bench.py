@@ -80,6 +80,11 @@ QUESTIONS = {
 
 N_QUESTIONS = len(QUESTIONS)  # questions per predict() call
 
+# Bump when the QUESTIONS payload changes; stamped into every result JSON so
+# provenance is machine-readable (v1 = the pre-review 3-option department
+# payload; v2 = 4-option payload synced with the eval runner + golden set).
+PAYLOAD_VERSION = 2
+
 
 # --------------------------------------------------------------------------
 # stats helpers (pure python, covered by --selftest)
@@ -208,6 +213,10 @@ def bench(batch_size: int, repeats: int, warmup: int, full_context: bool,
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "checkpoint": CHECKPOINT,
         "dtype": dtype,
+        "payload_version": PAYLOAD_VERSION,
+        "question_set_sha256": hashlib.sha256(
+            json.dumps(QUESTIONS, sort_keys=True).encode()
+        ).hexdigest()[:12],
         "config": {
             "batch_size": batch_size,
             "repeats": repeats,

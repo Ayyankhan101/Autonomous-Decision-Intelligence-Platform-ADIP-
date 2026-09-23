@@ -35,7 +35,7 @@ major version.
 | `schema.json` | JSON Schema contract; every record validates against it |
 | `guidelines.md` | Labeling rubric, decision trees, QC, and hard-case catalogue |
 | `exemplars.json` | 5 fully-worked examples (one per label area + one hard case) |
-| `golden-template.json` | Working file, now filled with all 50 (frozen copy: `golden-v1.0-rc1.json`) |
+| `golden-template.json` | Working file, now filled with all 50 (frozen copy: `golden-v1.0.json`) |
 | `validate.py` | Schema + rubric cross-checks; run before freezing |
 
 ## Composition targets for v1 (50 tickets)
@@ -54,11 +54,12 @@ major version.
 2. Run `python3 datasets/golden-set/validate.py --file datasets/golden-set/golden-template.json`.
 3. Second labeler QC pass on all `confident: false` + 20% random sample;
    disagreements reconciled per guidelines §5 and marked `disagreement: true`.
-4. Copy to `golden-v1.0-rc1.json`, update the changelog below, commit. **Frozen.**
+4. Copy to `golden-v1.0.json`, update the changelog below, commit. **Frozen.**
 
 ## Changelog
 
 | Version | Date | Records | Change |
 |---|---|---|---|
 | (unreleased) | — | 5 exemplars in template | structure + guidelines drafted |
-| v1.0-rc1 | 2026-09-23 | 50 | TICKET-0006..0050 drafted (labeler `AI-1`) to the exact composition targets; strict validation passing. **RC, not final:** 45 labels are AI-drafted pending the §5 human QC pass (2 records already carry `second_labeler`). Eval baseline on this version: `evals/results/eval-AppleM1Pro-20260923T155249.json` — macro-F1 0.712, gates FAIL, recorded honestly. Labels change only via a new version after QC.
+| v1.0-rc1 | 2026-09-23 | 50 | TICKET-0006..0050 drafted (labeler `AI-1`) to the exact composition targets; strict validation passing. **RC, not final:** 45 labels are AI-drafted pending the §5 human QC pass (2 records already carry `second_labeler`). Eval baseline on this version: `evals/results/eval-AppleM1Pro-20260923T155249.json` — macro-F1 0.712, gates FAIL, recorded honestly. Labels change only via a new version after QC. |
+| v1.0 | 2026-09-23 | 50 | **Frozen.** AI-2 second-labeler pass per §5: both `confident: false` records + a seeded 20% sample (11 records total) re-derived from the rubric — **zero label changes**; `second_labeler` recorded on each. Same question set as rc1 (hash `b580734fdd0c`), so eval numbers carry over: macro-F1 0.712, gates FAIL (`evals/results/eval-AppleM1Pro-20260923T174320.json`). Human sign-off still recommended before external quoting. |

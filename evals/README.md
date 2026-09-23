@@ -14,7 +14,7 @@ the feature, not a limitation.
 ```bash
 python3 evals/run_eval.py --selftest
 .venv-bench/bin/python evals/run_eval.py --file datasets/golden-set/golden-template.json
-.venv-bench/bin/python evals/run_eval.py --file datasets/golden-set/golden-v1.0-rc1.json --strict
+.venv-bench/bin/python evals/run_eval.py --file datasets/golden-set/golden-v1.0.json --strict
 ```
 
 ## Metrics
@@ -79,7 +79,31 @@ If the question set in the dataset drifts from the runner's canonical
   ordered) — expected for the base checkpoint per the clamping warning;
   calibration tuning is the Phase-1 lever, not more labels; (3) latency
   includes full-ticket texts on this M1 Pro — batched short-state serving
-  measured 50 ms p50 in `benchmarks/`.
+  measured 61.6 ms p50 in `benchmarks/` (payload v2).
+
+- **2026-09-23 — full strict eval on `golden-v1.0.json` (50 tickets, FROZEN v1.0)**
+  (M1 Pro, FP16, b=16, 2 passes, payload v2 / question-set hash `b580734fdd0c`,
+  report `evals/results/eval-AppleM1Pro-20260923T174320.json`, console log
+  `evals/results/eval-v1.0-final-20260923.txt`). **Gates: FAIL** — same
+  baseline, now against the frozen v1.0 set:
+
+  | Metric | Result | Gate | Verdict |
+  |---|---:|---|---|
+  | department macro-F1 | 0.712 (acc 0.74) | ≥ 0.85 | ❌ |
+  | department ECE | 0.202 | < 0.05 | ❌ |
+  | refund ECE | 0.689 (acc 0.96) | < 0.05 | ❌ |
+  | urgency accuracy | 0.48 (ECE-mass 0.163) | (no gate v1) | — |
+  | determinism | 2/2 passes identical | identical | ✅ |
+  | latency P95 | ~80+ ms on full tickets (p50 79.3, max 164) | < 60 ms | ❌ |
+
+  Metrics are identical to the rc1 run — expected: the engine is deterministic
+  and the AI-2 second-labeler pass (guidelines §5: 2 unconfident records + a
+  20% sample) changed **zero labels**, so rc1 and v1.0 measure the same task.
+  Labels are now AI-1 drafted + AI-2 verified; **human sign-off is still
+  recommended before quoting these numbers externally.** Remaining levers,
+  in order of expected yield: calibration tuning for the refund ECE, criteria
+  rewording for the account/sales recall misses, M3 Max-class nodes or async
+  probes for the latency gate.
 
 ## Found-and-fixed while building
 

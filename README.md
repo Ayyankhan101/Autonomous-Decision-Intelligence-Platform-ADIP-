@@ -119,13 +119,13 @@ M3 Max, 40-core GPU, 128 GiB, MLX 0.32.2, FP16, end-to-end (prompt → tokenizat
 
 Apple M1 Pro (8-core CPU: 6P+2E, **14-core GPU**, Metal 4), 16 GB unified memory, macOS 26.6.2, Python 3.13, FP16 — full method, determinism checks, and raw timing samples in [`benchmarks/README.md`](benchmarks/README.md) and `benchmarks/results/`:
 
-| Call (3 questions, FP16) | P50 | P95 |
+| Call (3 questions, FP16, payload v2) | P50 | P95 |
 |---|---:|---:|
-| short state, batch_size=1 | 62.3 ms | 63.5 ms |
-| short state, batch_size=16 | **50.2 ms** | 50.9 ms |
-| ~512-token state, batch_size=1 | 388.2 ms | 403.7 ms |
+| short state, batch_size=1 | 72.2 ms | 73.3 ms |
+| short state, batch_size=16 | **61.6 ms** | 62.1 ms |
+| ~512-token state, batch_size=1 | 374.2 ms | 375.4 ms |
 
-Takeaway: M1 Pro-class nodes deliver ~50 ms triage decisions with `batch_size=16` (~48–60 decisions/s per node) — inside the ≤ 150 ms pipeline target. Peak RSS 934.6 MiB matches the published model footprint; all runs 100% deterministic.
+Takeaway: M1 Pro-class nodes deliver ~62 ms triage decisions with `batch_size=16` (~49/s per node) — inside the ≤ 150 ms pipeline target, but the decision-only < 60 ms gate misses by ~2 ms (recorded, not massaged). Peak RSS ~935–940 MiB matches the published model footprint; all runs 100% deterministic.
 
 ## Honest limitations (full list: blueprint §8)
 

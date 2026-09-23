@@ -1,6 +1,6 @@
 {
-  "$comment": "Working file for the golden set. Now matches frozen v1.0 (50 tickets): exemplars by AB, 0006..0050 drafted by AI-1, AI-2 second-labeler pass per guidelines.md section 5 (2 unconfident + 9-record 20% sample, zero label changes). Strict gate: python3 datasets/golden-set/validate.py --file datasets/golden-set/golden-template.json --strict --expect 50",
-  "version": "draft-v1.0-rc1",
+  "$comment": "FROZEN golden v1.0 (50 tickets). Exemplars TICKET-0001..0005 human-labeled (AB). TICKET-0006..0050 AI-drafted (AI-1) and AI-2 second-labeled per guidelines.md section 5 (2 unconfident + 9-record 20% sample, zero label changes on re-derivation). Labels change only via a new version. Human sign-off recommended before external quoting of eval numbers.",
+  "version": "v1.0",
   "dataset": "ticket-triage",
   "question_set": {
     "department": {

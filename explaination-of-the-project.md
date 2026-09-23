@@ -505,15 +505,15 @@ v1 had none. This mirrors the discipline of the laya-mlx repo itself (fidelity h
 | Pipeline, strict mode | + capped counterfactual/attribution probes (4–8 × ~18–50 ms) | ≤ 500 ms P50, ≤ 1,000 ms P95 |
 | Offline eval (batch) | batch_size 16→64 | up to 143.3 q/s measured (repeated-template fixture) |
 
-**Measured baseline — Apple M1 Pro (8-core CPU: 6P+2E, 14-core GPU, Metal 4, 16 GB unified memory), 2026-09-23** (harness: `benchmarks/`, raw samples: `benchmarks/results/`):
+**Measured baseline — Apple M1 Pro (8-core CPU: 6P+2E, 14-core GPU, Metal 4, 16 GB unified memory), 2026-09-23, post-review payload v2** (harness: `benchmarks/`, raw samples: `benchmarks/results/`, provenance: `payload_version` + `question_set_sha256` stamped in every result JSON):
 
-| Call (3 questions, FP16) | P50 | P95 | vs M3 Max anchor |
+| Call (3 questions, FP16, payload v2) | P50 | P95 | vs M3 Max anchor |
 |---|---:|---:|---|
-| short state, batch_size=1 | 62.3 ms | 63.5 ms | ~2.6× per row |
-| short state, batch_size=16 | 50.2 ms | 50.9 ms | −19% vs unbatched |
-| ~512-token state, batch_size=1 | 388.2 ms | 403.7 ms | 49.84 ms @ 1q → ~2.6× per row |
+| short state, batch_size=1 | 72.2 ms | 73.3 ms | ~4.1× per row |
+| short state, batch_size=16 | 61.6 ms | 62.1 ms | −15% vs unbatched |
+| ~512-token state, batch_size=1 | 374.2 ms | 375.4 ms | 49.84 ms @ 1q → ~2.5× per row |
 
-Serving implications: load with `batch_size ≥ 3` (collapses the 3-question triage call into one forward pass); strict-mode inline probes drop to 2–4 on M1 Pro-class nodes (~50 ms/probe batched); interactive requests must keep redacted states short — full-context work belongs in batch jobs. All runs 100% deterministic; peak process RSS 934.6 MiB (matches the published 943.6 MiB model peak).
+Serving implications: load with `batch_size ≥ 3` (collapses the 3-question triage call into one forward pass); strict-mode inline probes drop to 2–4 on M1 Pro-class nodes (~60 ms/probe batched); interactive requests must keep redacted states short — full-context work belongs in batch jobs. All runs 100% deterministic; peak process RSS 934.7–939.8 MiB (matches the published 943.6 MiB model peak). Note: the decision-only < 60 ms gate misses by ~2 ms on this hardware at b16 P95 — accept M3 Max-class nodes, shorter states, or async probes.
 
 **Cost:**
 
@@ -559,9 +559,9 @@ Multi-node fleet behind nginx; nightly fleet benchmarks; hosted-support offering
 
 | Metric | v1 claim (Jev) | v2 target (laya-mlx) | Measured (M1 Pro, 2026-09-23) |
 |---|---|---|---|
-| Decision-only latency | 70–500 ms | ≤ 45 ms P50 for a 3-question call (17.75 ms measured @ 1 short question) | 50.2 ms P50 batched; 62.3 ms unbatched |
+| Decision-only latency | 70–500 ms | ≤ 45 ms P50 for a 3-question call (17.75 ms measured @ 1 short question, M3 Max) | 61.6 ms P50 batched; 72.2 ms unbatched (M1 Pro, payload v2) |
 | Pipeline latency | < 500 ms | P50 ≤ 150 ms, P95 ≤ 400 ms (standard) | — (pipeline not yet built) |
-| Throughput | 10,000+/s per cluster | 56–110 decisions/s per node; linear with nodes | 48–60 decisions/s per node (b=16) |
+| Throughput | 10,000+/s per cluster | 56–110 decisions/s per node; linear with nodes | ~49 decisions/s per node (b=16, v2) |
 | Uptime | 99.99% | 99.9% single node (99.99% = Phase 3 multi-node) | — |
 | Calibration error | < 5% | ECE < 0.05, reported per question kind and dtype | — |
 | Accuracy | "> 90%" (unmeasured) | macro-F1 ≥ 0.85 on frozen golden set (measured in CI) | — |
