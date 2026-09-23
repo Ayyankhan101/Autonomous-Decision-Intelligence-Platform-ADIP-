@@ -134,27 +134,38 @@ Useful runtime features ADIP uses: `Router` (language routing across the three c
 
 **The core decision flow (one decision = one laya call):**
 
-```text
-request (text state)
-   │
-   ▼
-[Privacy scan]  Presidio PII detect + redact          ── 30–50 ms
-   │
-   ▼
-[Fairness screen] rule/parity screen on live traffic  ── 10–20 ms
-   │
-   ▼
-[laya predict]  all typed questions in ONE batched    ── 18–45 ms
-   │            call (choice + score + noul)
-   ▼
-[Policy router] thresholds → AUTO / REVIEW / ESCALATE ── <1 ms
-   │
-   ▼
-[Explanation]  template assembly from probabilities   ── 5–10 ms
-   │
-   ▼
-response                      [Audit + metrics: async, off critical path]
+```mermaid
+flowchart TD
+    REQ(["request: text state"]) --> S1
+
+    S1["1 · PRIVACY SCAN\n30–50 ms"]:::stage
+    S2["2 · FAIRNESS SCREEN\n10–20 ms"]:::stage
+    S3["3 · TYPED DECISION\n18–45 ms"]:::stage
+    S4["4 · POLICY ROUTER\n≤1 ms"]:::stage
+    S5["5 · EXPLANATION\n5–10 ms"]:::stage
+    S6["6 · AUDIT LOG\nasync · immutable · replayable"]:::stage
+
+    S1 -- "Presidio PII redaction\nPERSON / EMAIL placeholders" --> S2
+    S2 -- "rules + parity checks\nflag → never auto-decide" --> S3
+    S3 -- "ONE batched laya.predict call\nchoice + score + noul together" --> S4
+    S4 -- "p ≥ 0.90 and margin ≥ 0.20" --> AUTO
+    S4 -- "mid-band probability" --> REVIEW
+    S4 -- "high entropy / fairness flag" --> ESCALATE
+
+    AUTO(["AUTO_DECIDE"]):::decision
+    REVIEW(["REVIEW"]):::decision
+    ESCALATE(["ESCALATE"]):::decision
+
+    AUTO --> S5
+    REVIEW --> S5
+    ESCALATE --> S5
+    S5 -- "templates + probability distributions\n(no LLM prose)" --> S6
+
+    classDef stage fill:#e8eef7,stroke:#3b6ea5,color:#111
+    classDef decision fill:#f7e8d8,stroke:#b06a2c,color:#111
 ```
+
+Audit + metrics logging is asynchronous and off the critical path; end-to-end latency targets are in Section 10.
 
 Note what is gone from v1: there is no "parallel Jev queries" stage. One `predict` call answers every typed question for a decision in a single batched forward pass.
 
