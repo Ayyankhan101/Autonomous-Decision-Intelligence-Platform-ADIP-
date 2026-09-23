@@ -132,6 +132,29 @@ Takeaway: M1 Pro-class nodes deliver ~50 ms triage decisions with `batch_size=16
 4. **Temperature clamping** — the runtime clamps calibration temperatures to [0.5, 5.0] and warns; ADIP logs every clamped bucket.
 5. **No free-text output** — explanations are assembled from distributions + perturbation attribution, not generated prose.
 
+## Multi-purpose: beyond ticket triage
+
+Ticket triage is one question set, not the product. The engine answers three
+kinds of questions (`choice` / `score` / `noul`) about any redacted text — so
+the same pipeline (privacy → router → laya → explanation → audit → eval gates)
+serves developer workflows too (blueprint §5.1):
+
+| Option | Question set (swap-in) | Types |
+|---|---|---|
+| Bug/issue triage | severity (P0–P3), component, "duplicate?" | score, choice, noul |
+| PR routing | "which team reviews this diff?", "security review?" | choice, noul |
+| Incident response | severity scoring, "page the on-call?" | score, noul |
+| Log/error classification | error category, P(is-regression), P(is-flaky-test) | choice, noul |
+| Internal-tooling support triage | same as the flagship, aimed at dev-portal tickets | choice, score, noul |
+
+Each option: ~50–80 ms per decision, $0 marginal cost, local/private,
+deterministic. Each costs ~a day to stand up (question set + small golden set
++ eval gates must pass before it ships).
+
+**Boundary:** it judges and routes; it does not write. No code generation,
+summaries, or replies (that needs an audited generative LLM stage), and input
+state must fit the ~512-token context — feed a diff *summary*, not a full PR.
+
 ## Platform (planned)
 
 ```mermaid

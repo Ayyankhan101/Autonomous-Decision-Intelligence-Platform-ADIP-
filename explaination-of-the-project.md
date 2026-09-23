@@ -374,6 +374,36 @@ async def process_ticket(ticket: Ticket) -> DecisionResponse:
     )
 ```
 
+### 5.1 The Platform Is Multi-Purpose: Developer-Workflow Applications
+
+Ticket triage is one question set, not the product. The engine answers exactly
+three question kinds (`choice` / `score` / `noul`) about any redacted text, so
+the same pipeline (privacy scan → router → laya → explainability → audit →
+eval gates) serves any domain where a decision is a pick, a rating, or a
+true/false with a probability.
+
+**Developer-workflow options that reuse the platform as-is:**
+
+| Option | Question set (swap-in) | Types |
+|---|---|---|
+| **Bug/issue triage** | severity (P0–P3), component, "is this a duplicate?" | score, choice, noul |
+| **PR routing** | "which team reviews this diff?", "needs security review?" | choice, noul |
+| **Incident response** | severity scoring, "page the on-call?" | score, noul |
+| **Log/error classification** | error category, P(is-regression), P(is-flaky-test) | choice, noul |
+| **Internal-tooling support triage** | same as §5, aimed at dev-portal tickets | choice, score, noul |
+
+Same properties as the flagship: ~50–80 ms per decision, $0 marginal cost,
+local/private, deterministic. Each new domain costs ~a day of setup: define
+the question set, label a small golden set (this repo's
+`datasets/golden-set/` pattern), and let the strict eval gates decide
+whether it ships.
+
+**Honest boundaries:** no text generation — it judges and routes, it cannot
+write code, summaries, or replies (needs an audited generative LLM stage).
+Input state must fit the ~512-token context — feed a diff *summary*, not a
+full PR. And a domain ships only if its eval gates pass; failing gates mean
+escalate-to-human, per the platform contract.
+
 ---
 
 ## 6. Technology Stack
