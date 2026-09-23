@@ -563,8 +563,8 @@ Multi-node fleet behind nginx; nightly fleet benchmarks; hosted-support offering
 | Pipeline latency | < 500 ms | P50 ≤ 150 ms, P95 ≤ 400 ms (standard) | — (pipeline not yet built) |
 | Throughput | 10,000+/s per cluster | 56–110 decisions/s per node; linear with nodes | ~49 decisions/s per node (b=16, v2) |
 | Uptime | 99.99% | 99.9% single node (99.99% = Phase 3 multi-node) | — |
-| Calibration error | < 5% | ECE < 0.05, reported per question kind and dtype | — |
-| Accuracy | "> 90%" (unmeasured) | macro-F1 ≥ 0.85 on frozen golden set (measured in CI) | — |
+| Calibration error | < 5% | ECE < 0.05, reported per question kind and dtype | dept 0.202 / refund 0.689 (gates FAIL — base checkpoint uncalibrated; calibration tuning is the Phase-1 lever) |
+| Accuracy | "> 90%" (unmeasured) | macro-F1 ≥ 0.85 on frozen golden set (measured in CI) | 0.712 macro-F1 / 0.74 acc on frozen v1.0 (target not met, recorded) |
 | Fairness | "disparate impact > 0.8" | kept, plus equal-opportunity diff < 0.05 and counterfactual flip rate | — |
 | Hallucinations | "zero" | constrained typed outputs; no free-text surface exists | by construction |
 | Cost per decision | < $0.0001 | $0 marginal; ~$0.000002 amortized | $0 marginal (local) |
@@ -616,7 +616,7 @@ Multi-node fleet behind nginx; nightly fleet benchmarks; hosted-support offering
 ### Week 1 (concrete)
 1. `uv init adip && uv add laya-mlx fastapi uvicorn presidio-analyzer prometheus-client`
 2. Download and pin the checkpoint: `laya.load("aac6fef/laya-mlx")`; record the resolved Hub revision in `checkpoint.lock`.
-3. Build the 50-ticket golden set v1; freeze with a version tag.
+3. Build the 50-ticket golden set v1; freeze with a version tag. *(done 2026-09-23 — `datasets/golden-set/golden-v1.0.json`, strict-validated, AI-2 second-labeled; eval baseline macro-F1 0.712 recorded)*
 4. Wrap `Agent.predict` in `DecisionService` (token guard, dtype pin, error paths: load failure, OOM, context overflow).
 5. FastAPI `POST /decide` returning the `DecisionOutput` schema; SQLite audit log.
 6. CI: GitHub Actions `macos-14` arm64, unit tier only.
