@@ -178,6 +178,8 @@ flowchart TD
 
 - [`explaination-of-the-project.md`](explaination-of-the-project.md) — full technical blueprint (architecture, schemas, eval strategy, cost model)
 - [`professtional-writing-end-sem-project.md`](professtional-writing-end-sem-project.md) — mirror of the blueprint for the end-sem deliverable
+- [`benchmarks/`](benchmarks/README.md) — latency harness + stored timing samples (M1 Pro measured)
+- [`datasets/golden-set/`](datasets/golden-set/README.md) — triage eval dataset: schema, labeling guidelines, exemplars, validator
 
 ## Attribution & licensing
 

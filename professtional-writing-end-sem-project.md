@@ -445,7 +445,7 @@ Each limitation, its consequence, and the mitigation ADIP adopts. This section e
 
 v1 had none. This mirrors the discipline of the laya-mlx repo itself (fidelity harness, determinism checks, stored timing samples).
 
-**Golden dataset:** 200+ labeled support tickets (public support-triage datasets + hand-labeled set) with department labels, urgency rubric levels, and refund propositions. Frozen with a version tag; every eval run names its dataset version.
+**Golden dataset:** 200+ labeled support tickets (public support-triage datasets + hand-labeled set) with department labels, urgency rubric levels, and refund propositions. Frozen with a version tag; every eval run names its dataset version. Schema, labeling guidelines, worked exemplars, and a validator live in `datasets/golden-set/` — v1 freezes 50 tickets (the MVP gate), expanded toward 200+ in Phase 1.
 
 **Test tiers:**
 

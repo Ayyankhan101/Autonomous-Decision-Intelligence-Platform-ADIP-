@@ -1,0 +1,70 @@
+{
+  "$comment": "Worked exemplars for the golden set. Each demonstrates the guidelines in action; ticket_ids are permanent (part of v1).",
+  "records": [
+    {
+      "ticket_id": "TICKET-0001",
+      "text": "Hi, I was billed twice for my annual CloudSync Pro renewal — [ORDER] shows two charges of $249, one on the 3rd and one on the 4th. I already checked with my bank. Please refund the duplicate charge today.",
+      "language": "en",
+      "source": "handwritten",
+      "labels": { "department": "billing", "urgency": 1, "refund": true },
+      "meta": {
+        "labeler": "AB",
+        "confident": true,
+        "hard_case": false,
+        "notes": "Money-primary complaint → billing; explicit time pressure ('today') + money blocked → 1; direct money-back ask → refund true."
+      }
+    },
+    {
+      "ticket_id": "TICKET-0002",
+      "text": "The desktop app crashes every time I try to export a board larger than 50 cards. There's a workaround (exporting in chunks) so it's not blocking me, but it should be fixed at some point.",
+      "language": "en",
+      "source": "handwritten",
+      "labels": { "department": "technical", "urgency": 0, "refund": false },
+      "meta": {
+        "labeler": "AB",
+        "confident": true,
+        "hard_case": false,
+        "notes": "Something broken → technical; explicit workaround + no time claim → 0 despite the crash (impact-based, not tone-based)."
+      }
+    },
+    {
+      "ticket_id": "TICKET-0003",
+      "text": "We're evaluating CloudSync Pro for a team of 12. Is there a discount at that seat count, and does the Business plan include the audit log add-on or is that priced separately?",
+      "language": "en",
+      "source": "handwritten",
+      "labels": { "department": "sales", "urgency": 0, "refund": false },
+      "meta": {
+        "labeler": "AB",
+        "confident": true,
+        "hard_case": false,
+        "notes": "Pre-purchase pricing question → sales; pure question → 0."
+      }
+    },
+    {
+      "ticket_id": "TICKET-0004",
+      "text": "My account got locked this morning after the 2FA reset and I cannot access CloudSync Pro at all — I have client deliverables due tomorrow and the paid product is completely unusable. Nothing I try unlocks it.",
+      "language": "en",
+      "source": "handwritten",
+      "labels": { "department": "account", "urgency": 2, "refund": false },
+      "meta": {
+        "labeler": "AB",
+        "confident": true,
+        "hard_case": true,
+        "notes": "H2 variant: account-access blocking is the primary state (not the invoice context) → account; 'cannot access paid product at all' asserted → 2."
+      }
+    },
+    {
+      "ticket_id": "TICKET-0005",
+      "text": "Your November invoice double-charged the seat count after we removed two users. No need to send anything back to my card — please just issue a credit note for the difference and apply it to the next invoice.",
+      "language": "en",
+      "source": "handwritten",
+      "labels": { "department": "billing", "urgency": 0, "refund": false },
+      "meta": {
+        "labeler": "AB",
+        "confident": true,
+        "hard_case": true,
+        "notes": "H4: money-adjacent wording, but a credit note is store credit, NOT money back → refund false. Money complaint → billing; no time claim → 0."
+      }
+    }
+  ]
+}

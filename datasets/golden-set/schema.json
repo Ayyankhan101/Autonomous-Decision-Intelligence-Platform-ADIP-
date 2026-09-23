@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "adip/golden-set/ticket-triage/v1",
+  "title": "ADIP golden dataset record — support-ticket triage v1",
+  "description": "One record per labeled support ticket. Labels follow the rubric in guidelines.md; this file is the machine-checkable contract. Frozen versions of the dataset live in datasets/ as golden-v<major>.<minor>.json.",
+  "type": "object",
+  "required": [
+    "ticket_id", "text", "language", "source", "labels", "meta"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "ticket_id": {
+      "type": "string",
+      "pattern": "^TICKET-[0-9]{4}$",
+      "description": "Stable, anonymized ID; never derived from PII. Range TICKET-0001..TICKET-0050 for v1."
+    },
+    "text": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 2000,
+      "description": "Redacted ticket body. MUST contain no real PII (see guidelines.md section 4); entities replaced with [PERSON] / [EMAIL] / [PHONE] / [ORDER] placeholders that keep sentence structure intact."
+    },
+    "language": {
+      "type": "string",
+      "enum": ["en", "es", "de", "fr", "zh", "other"],
+      "description": "ISO 639-1 where known; v1 golden set is en-dominant. Used to eval Router behavior, not to filter."
+    },
+    "source": {
+      "type": "string",
+      "enum": ["handwritten", "public-dataset-derived", "synthetic"],
+      "description": "Provenance. public-dataset-derived records must cite source_url in meta and must be paraphrased + redacted."
+    },
+    "labels": {
+      "type": "object",
+      "required": ["department", "urgency", "refund"],
+      "additionalProperties": false,
+      "properties": {
+        "department": {
+          "enum": ["billing", "technical", "sales", "account"],
+          "description": "Exactly one. Ties broken by guidelines.md section 2.1; the tie-break reason goes in meta.notes."
+        },
+        "urgency": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Expected zero-based rubric level: 0=not urgent, 1=soon, 2=critical (guidelines.md section 2.2)."
+        },
+        "refund": {
+          "type": "boolean",
+          "description": "True iff the customer asks for money back for this ticket (guidelines.md section 2.3). Store/exchange/credit requests are NOT refund=true."
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "required": ["labeler", "confident"],
+      "additionalProperties": false,
+      "properties": {
+        "labeler": {
+          "type": "string",
+          "description": "Labeler identifier (initials or anon id) for QC reconciliation."
+        },
+        "confident": {
+          "type": "boolean",
+          "description": "False if the labeler hesitated; triggers second-labeler review in QC."
+        },
+        "second_labeler": { "type": ["string", "null"] },
+        "disagreement": {
+          "type": "boolean",
+          "description": "True once two labelers disagreed and a reconciled label was fixed per guidelines.md section 5."
+        },
+        "hard_case": {
+          "type": "boolean",
+          "description": "True if the record exercises a known hard case from guidelines.md section 6; hard cases are mandatory in every version (>=8 per 50)."
+        },
+        "notes": { "type": "string" },
+        "source_url": { "type": "string" }
+      }
+    }
+  }
+}
