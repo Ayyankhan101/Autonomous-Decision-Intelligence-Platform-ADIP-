@@ -52,6 +52,10 @@ STATE_FULL = (
     "successful capture events 26 hours apart referencing the same order id. "
 ) * 4  # padded to ~512 tokens at load; the runtime truncates at its context limit
 
+# Question set mirrors evals/run_eval.py QUESTIONS and the golden set's
+# question_set. Latency is insensitive to criteria wording, but the payloads
+# must stay in sync so results stay comparable across harnesses; if you change
+# one, change all three (eval runner, golden set, this file).
 QUESTIONS = {
     "department": {
         "type": "choice",
@@ -60,6 +64,7 @@ QUESTIONS = {
             "billing": "invoices, payments, refunds, duplicate charges",
             "technical": "bugs, outages, integration failures",
             "sales": "new purchases, upgrades, pricing",
+            "account": "login, password, profile, subscription status, data requests",
         },
     },
     "urgency": {

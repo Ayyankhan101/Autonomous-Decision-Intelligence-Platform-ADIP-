@@ -15,7 +15,7 @@ Dependency-free (hand-rolled metrics, validated by --selftest).
 Usage:
   python3 evals/run_eval.py --selftest
   .venv-bench/bin/python evals/run_eval.py --file datasets/golden-set/golden-template.json
-  .venv-bench/bin/python evals/run_eval.py --file datasets/golden-set/golden-v1.0.json --strict
+  .venv-bench/bin/python evals/run_eval.py --file datasets/golden-set/golden-v1.0-rc1.json --strict
 """
 
 from __future__ import annotations
@@ -187,7 +187,10 @@ def extract_predictions(result: dict) -> dict:
     urg_expected = float(urg.get("score", 0.0))
     urg_pred = min(2, max(0, round(urg_expected)))
     urg_probs = urg.get("probabilities") or {}
-    urg_conf = float(urg_probs.get(str(urg_pred), 0.0))
+    # None (not 0.0) when the mass is missing — 0.0 would poison ECE as a real
+    # worst-case sample; the runner skips None confidences downstream.
+    urg_conf = urg_probs.get(str(urg_pred))
+    urg_conf = float(urg_conf) if urg_conf is not None else None
 
     ref_p = float(a["refund"].get("noul", 0.0))
     return {
@@ -250,12 +253,16 @@ def run_eval(path: Path, repeats: int, batch_size: int, strict: bool) -> int:
     p_urg = [x["urgency_pred"] for x in preds]
     p_ref = [x["refund_pred"] for x in preds]
 
-    # determinism across passes
-    deterministic = all(
-        json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
-        for x, y in zip(all_passes[0], all_passes[-1])
-        for a, b in [(x, y)]
-    ) if repeats > 1 else None
+    # determinism across passes: every consecutive pair must be identical
+    # (first-vs-last alone would miss a mid-run flip when repeats > 2)
+    deterministic = (
+        all(
+            json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
+            for x, y in zip(all_passes, all_passes[1:])
+            for a, b in zip(x, y)
+        )
+        if repeats > 1 else None
+    )
 
     dep_conf = [x["department_conf"] for x in preds]
     dep_ok = [p == t for p, t in zip(p_dep, y_dep)]
@@ -337,6 +344,8 @@ def main() -> int:
 
     if args.selftest:
         return run_selftest()
+    if args.strict and args.repeats < 2:
+        ap.error("--strict requires --repeats >= 2 (the determinism gate needs two passes)")
     return run_eval(REPO_ROOT / args.file if not Path(args.file).is_absolute() else Path(args.file),
                     args.repeats, args.batch_size, args.strict)
 

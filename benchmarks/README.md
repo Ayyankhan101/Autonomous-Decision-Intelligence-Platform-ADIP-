@@ -75,6 +75,12 @@ Raw timing samples: `benchmarks/results/latency-AppleM1Pro-*.json` (one JSON per
 
 _(add rows from new runs as other hardware is measured; keep raw JSONs)_
 
+> **Provenance note:** the three stored result JSONs above were generated with
+> a 3-option department payload (before the `account` option was synced into
+> this harness during the 2026-09-23 whole-system review). Latency impact is
+> negligible (padding dominates at these token counts), but future runs use
+> the 4-option payload that matches the eval runner and golden set exactly.
+
 ## Gates (blueprint §9)
 
 - decision-only P95 < 60 ms for a 3-question call

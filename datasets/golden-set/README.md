@@ -35,7 +35,7 @@ major version.
 | `schema.json` | JSON Schema contract; every record validates against it |
 | `guidelines.md` | Labeling rubric, decision trees, QC, and hard-case catalogue |
 | `exemplars.json` | 5 fully-worked examples (one per label area + one hard case) |
-| `golden-template.json` | 50-slot file with 5 exemplars in place; 45 tickets to fill |
+| `golden-template.json` | Working file, now filled with all 50 (frozen copy: `golden-v1.0-rc1.json`) |
 | `validate.py` | Schema + rubric cross-checks; run before freezing |
 
 ## Composition targets for v1 (50 tickets)
