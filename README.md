@@ -16,7 +16,67 @@ score  → expected rubric level over ordered tiers (urgency: 0–2)
 noul   → P(true) for a proposition               (does the customer want money back?)
 ```
 
-Wrapped in a six-stage pipeline: **privacy redaction → fairness screen → batched typed decision → policy router → explanation → immutable audit log.**
+Wrapped in a six-stage pipeline:
+
+```text
+                       request (text state)
+                              │
+                              ▼
+                ┌──────────────────────────────┐
+                │  1 · PRIVACY SCAN            │ Presidio PII redaction
+                │     30–50 ms                 │ [PERSON] / [EMAIL] placeholders
+                └──────────────┬───────────────┘
+                               ▼
+                ┌──────────────────────────────┐
+                │  2 · FAIRNESS SCREEN         │ rules + parity checks
+                │     10–20 ms                 │ flag → never auto-decide
+                └──────────────┬───────────────┘
+                               ▼
+                ┌──────────────────────────────┐
+                │  3 · TYPED DECISION          │ ONE batched laya.predict call
+                │     18–45 ms                 │ choice + score + noul together
+                └──────────────┬───────────────┘
+                               ▼
+                ┌──────────────────────────────┐
+                │  4 · POLICY ROUTER  <1 ms    │ versioned thresholds
+                └──────────────┬───────────────┘
+                     p ≥ 0.90  │  mid-band        high entropy /
+                  ┌────────────┼─────────┐  fairness flag
+                  ▼            ▼         ▼
+               AUTO_DECIDE   REVIEW   ESCALATE
+                  └────────────┼─────────┘
+                               ▼
+                ┌──────────────────────────────┐
+                │  5 · EXPLANATION             │ templates + probability
+                │     5–10 ms                  │ distributions (no LLM prose)
+                └──────────────┬───────────────┘
+                               ▼
+                ┌──────────────────────────────┐
+                │  6 · AUDIT LOG               │ async · immutable · replayable
+                └──────────────────────────────┘
+
+            every stage's latency budget: blueprint §3 / §10
+```
+
+End-to-end target: **≤ 150 ms P50** (standard mode), **≤ 400 ms P95**; strict mode adds bounded counterfactual probes (blueprint §10).
+
+## Architecture at a glance
+
+```text
+┌────────────────────────────────────────────────────────────────┐
+│  PRESENTATION    FastAPI REST API · dashboard · reports        │
+├────────────────────────────────────────────────────────────────┤
+│  PIPELINE        privacy → fairness → laya → policy →          │
+│                  explanation → audit      (the 6 stages above) │
+├────────────────────────────────────────────────────────────────┤
+│  INTELLIGENCE    laya-mlx Agent · MLX FP16 · ~0.9 GiB          │
+│                  bidirectional encoder → decision heads →      │
+│                  probabilities   (choice · score · noul)       │
+├────────────────────────────────────────────────────────────────┤
+│  DATA            SQLite→Postgres audit log · Prometheus metrics│
+└────────────────────────────────────────────────────────────────┘
+     all of it on one Apple Silicon Mac — nothing leaves the box
+```
 
 ## Why laya-mlx (and not a cloud LLM API)
 
@@ -50,6 +110,25 @@ M3 Max, 40-core GPU, 128 GiB, MLX 0.32.2, FP16, end-to-end (prompt → tokenizat
 5. **No free-text output** — explanations are assembled from distributions + perturbation attribution, not generated prose.
 
 ## Platform (planned)
+
+```text
+                 ┌────────────────┐
+   clients ────▶ │     nginx      │  TLS · load balancing
+                 └───────┬────────┘
+           ┌─────────────┼─────────────┐
+           ▼             ▼             ▼
+     ┌───────────┐ ┌───────────┐ ┌───────────┐
+     │ Mac node 1│ │ Mac node 2│ │ Mac node N│  bare-metal macOS
+     │ FastAPI   │ │ FastAPI   │ │ FastAPI   │  launchd keepalive
+     │ laya FP16 │ │ laya FP16 │ │ laya FP16 │  ~56 decisions/s each
+     └─────┬─────┘ └─────┬─────┘ └─────┬─────┘  (17.75 ms/call)
+           └─────────────┼─────────────┘
+                         ▼
+          ┌──────────────────────────────┐
+          │  Postgres audit log          │  immutable · replayable
+          │  Prometheus / Grafana        │  ECE + drift monitors
+          └──────────────────────────────┘
+```
 
 - **Runtime:** Python 3.11+, `uv`, `laya-mlx` with pinned checkpoint revisions + weight checksums
 - **Serving:** FastAPI; one uvicorn worker per agent; nginx across Mac nodes for scale-out

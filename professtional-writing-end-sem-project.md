@@ -43,7 +43,7 @@ Verified from the laya-mlx repository. These numbers anchor every budget in this
 | P50 / P95, one short question (MLX FP16) | 17.75 / 21.45 ms | 10.91 / 19.48 ms | 16.17 / 17.74 ms |
 | P50, one FULL-context question (MLX FP16) | 49.84 ms @ 512 tok | 43.50 ms @ 1,024 tok | 99.95 ms @ 1,024 tok |
 | Throughput, 50-question batch (batch_size=64) | 143.3 q/s | 402.2 q/s | 153.2 q/s |
-| Peak MLX allocation, one short question | 943.6 MiB | 687.6 MiB | — |
+| Peak MLX allocation, one short question | 943.6 MiB | 687.6 MiB | 943.6 MiB |
 | Pre-converted checkpoint | `aac6fef/laya-mlx` | `aac6fef/laya-multilingual-mlx` | `aac6fef/laya-typed-decisions-mlx` |
 
 **Benchmark provenance (important):** the laya-mlx README headline (13.42 / 7.39 ms) does **not** match the repo's own checked-in `BENCHMARKS.md` run (17.75 / 10.91 ms, laya / multilingual, MLX FP16, 1 short question). This document quotes **BENCHMARKS.md** and flags the discrepancy. BENCHMARKS.md also states these are one development machine, one run per configuration — all figures must be re-measured on ADIP's own hardware before being cited externally. The 50-question throughput fixture cycles three question templates (batch throughput, not per-request serving latency).
@@ -301,7 +301,7 @@ rank candidates by edit distance and feasibility tier
 ```
 
 - Candidate generation uses `laya.embed_fn_from_agent` mean-pooled embeddings (cosine similarity to plausible values) — no external vector DB needed.
-- Probe budget is capped (e.g., 24 probes ≈ 0.5–1.2 s at short-context latency); interactive requests get a small inline budget (4–8 probes), full sweeps run as async background jobs.
+- Probe budget is capped (e.g., 24 probes ≈ 0.4–1.2 s: 24 × 17.75 ms short-context to 24 × 49.84 ms full-context); interactive requests get a small inline budget (4–8 probes), full sweeps run as async background jobs.
 - Output feeds both the explanation layer and an actionable "what would change this decision" report.
 
 ### 4.6 Monitoring & Drift
@@ -353,7 +353,7 @@ async def process_ticket(ticket: Ticket) -> DecisionResponse:
     asyncio.create_task(pipeline.audit.log(state, result, decision))
     asyncio.create_task(pipeline.metrics.record(...))
 
-    # === RETURN (~80–150 ms P50 standard mode; ~500 ms P95 strict mode) ===
+    # === RETURN (~80–150 ms P50 standard mode; ~500 ms P50 strict mode, ≤ 1 s P95) ===
     return DecisionResponse(
         decision=decision,
         explanation=explanation,
@@ -483,7 +483,7 @@ Team reality: 1–3 students / engineers. Phases below are scoped to that; the e
 
 | Week | Deliverable |
 |---|---|
-| 1 | Environment: `uv` project, `pip install laya-mlx`, download + pin `aac6fef/laya-mlx`; golden set v1 (50 tickets); `DecisionService` wrapper around `Agent.predict`; FastAPI `POST /decide` |
+| 1 | Environment: `uv` project, `uv add laya-mlx`, download + pin `aac6fef/laya-mlx`; golden set v1 (50 tickets); `DecisionService` wrapper around `Agent.predict`; FastAPI `POST /decide` |
 | 2 | Presidio privacy scan in front of the model; SQLite audit log (WAL); offline fairness metrics notebook (disparate impact, ECE) |
 | 3 | Explanation assembler (contrastive templates); Prometheus `/metrics`; benchmark harness (stored samples, P50/P95) |
 | 4 | Dashboard (Streamlit or single-page HTML); eval report; demo video; README + model card |
@@ -570,7 +570,7 @@ Multi-node fleet behind nginx; nightly fleet benchmarks; hosted-support offering
 6. CI: GitHub Actions `macos-14` arm64, unit tier only.
 
 ### Weeks 2–4
-Follow the Phase 0 table (Section 11). Demo target: a ticket triaged end-to-end in < 100 ms on a MacBook, with a replayable audit row and an honest eval report.
+Follow the Phase 0 table (Section 11). Demo target: a ticket triaged end-to-end in < 150 ms P50 on a MacBook, with a replayable audit row and an honest eval report.
 
 ---
 
