@@ -5,6 +5,11 @@ The frozen evaluation dataset for ADIP's flagship triage use case
 are corrected by publishing a new version with a changelog entry, so eval
 results stay comparable across runs.
 
+This set covers the **ticket-triage** question set only. Developer-workflow
+domains from blueprint §5.1 (bug/issue triage, PR routing, incident response)
+get their own directories here (e.g. `datasets/bug-triage/`) with the same
+schema, guidelines, validator, and freeze discipline.
+
 ## What the model is asked (must match the serving config exactly)
 
 ```python

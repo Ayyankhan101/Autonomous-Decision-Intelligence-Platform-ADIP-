@@ -4,6 +4,10 @@ Local re-measurement of [laya-mlx](https://github.com/mizorewww/laya-mlx) latenc
 on the hardware ADIP actually targets, per blueprint §9 (Evaluation & Test
 Strategy) and the Phase 0 week-3 deliverable.
 
+**Scope:** measures the *engine*, not a domain — the timing numbers apply to
+any question set (ticket triage, bug triage, PR routing, etc.; blueprint §5.1).
+Only the question payload changes per domain; latency does not.
+
 ## Method (mirrors laya-mlx's checked-in BENCHMARKS.md)
 
 - Fresh Python process per configuration (each batch size runs separately).
@@ -64,6 +68,8 @@ Raw timing samples: `benchmarks/results/latency-AppleM1Pro-*.json` (one JSON per
 - **Strict-mode probe budget shrinks on this hardware:** probes cost ~50 ms each
   (batched) here, not the ~18–50 ms the blueprint budgets for M3 Max-class —
   inline budgets should drop to 2–4 probes on M1 Pro-class nodes, or run async.
+  Applies to every domain's policy probes — the engine, not the domain, sets
+  this budget.
 - **Determinism:** 100% identical answers JSON across repeated calls in all
   three configurations.
 

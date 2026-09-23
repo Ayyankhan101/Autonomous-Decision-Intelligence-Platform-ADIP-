@@ -26,7 +26,7 @@
 - **Private by architecture:** all inference is local (MLX, no cloud API, no PyTorch runtime). Sensitive state never leaves the machine.
 - **Free:** Apache-2.0 runtime and weights. Marginal cost per decision is $0; only hardware amortization remains.
 
-**Target users:** teams that need a fast, auditable **choice / score / probability** out of a text state — support triage, ticket routing, content moderation rubrics, lead scoring, document screening — especially where data cannot leave the premises.
+**Target users:** teams that need a fast, auditable **choice / score / probability** out of a text state — support triage, ticket routing, content moderation rubrics, lead scoring, document screening — **and developer workflows**: bug/issue triage, PR review routing, incident severity, log/error classification. Ticket triage (Section 5) is the flagship question set, not the product boundary; Section 5.1 catalogs the developer-workflow options.
 
 **Explicitly not the target:** free-form text generation. Laya does not write prose. If you need generated rationales, add a separate LLM stage; ADIP's explanations are assembled deterministically instead (Section 4.4).
 
@@ -547,7 +547,7 @@ Real-time fairness evaluation branch with counterfactual probes; counterfactual 
 
 ### Phase 2 — Extension (Weeks 11–16, 2–4 engineers)
 
-Second use case (document triage or lead scoring); fine-tuning exploration via upstream RLCD on domain-labeled data (gate: eval must beat the base checkpoint before any deployment); packaging (`pip install adip`); load testing on the serving-node profile; float32 validation pass.
+Second use case (per Section 5.1: bug/issue triage, PR routing, or incident response — whichever the eval gates pass first; document triage or lead scoring remain alternatives); fine-tuning exploration via upstream RLCD on domain-labeled data (gate: eval must beat the base checkpoint before any deployment); packaging (`pip install adip`); load testing on the serving-node profile; float32 validation pass.
 
 ### Phase 3 — Stretch (post-semester)
 

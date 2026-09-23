@@ -8,7 +8,10 @@
 
 ## What ADIP does
 
-Turn a **text state** into typed, calibrated, auditable decisions:
+Turn a **text state** into typed, calibrated, auditable decisions. Support-ticket
+triage is the flagship; the same engine handles developer workflows — bug/issue
+triage, PR routing, incident severity, log classification (see
+[Multi-purpose](#multi-purpose-beyond-ticket-triage) and blueprint §5.1):
 
 ```text
 choice → probabilities over named options        (route this ticket: billing | technical | sales)
@@ -194,7 +197,7 @@ flowchart TD
 |---|---|---|
 | **0 — MVP** | 1–4 | Ticket-triage demo: privacy → laya → policy → explanation → audit, P50 ≤ 150 ms, replayable audit log, honest eval report |
 | **1 — Hardening** | 5–10 | Counterfactual engine, fairness CI gates, Postgres, multilingual Router with logged routing evidence |
-| **2 — Extension** | 11–16 | Second use case, RLCD fine-tuning exploration (eval-gated), packaging, load tests |
+| **2 — Extension** | 11–16 | Second question set from the Multi-purpose list (bug/issue triage, PR routing, or incident response — eval-gated), RLCD fine-tuning exploration, packaging, load tests |
 | **3 — Stretch** | post-sem | Multi-node fleet. Explicitly not promised: SOC 2, FedRAMP, marketplace, 10k req/s clusters |
 
 ## Docs

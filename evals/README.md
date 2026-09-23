@@ -4,6 +4,13 @@ Scores laya-mlx predictions against the frozen golden set
 (`datasets/golden-set/`) — blueprint §9's nightly eval tier. Dependency-free
 metrics, validated by `--selftest` against hand-computed cases.
 
+**Scope:** the metrics are domain-agnostic (`choice` → F1/ECE/confusion,
+`score` → level accuracy, `noul` → ECE/Brier). Ticket triage is the first
+instance; bug/issue triage, PR routing, and incident response (blueprint §5.1)
+extend the same runner with their own canonical `QUESTIONS` and gates — the
+drift guard hard-fails a dataset whose question set doesn't match, which is
+the feature, not a limitation.
+
 ```bash
 python3 evals/run_eval.py --selftest
 .venv-bench/bin/python evals/run_eval.py --file datasets/golden-set/golden-template.json
