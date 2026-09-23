@@ -309,7 +309,7 @@ def run_eval(path: Path, repeats: int, batch_size: int, strict: bool) -> int:
             "department_ece_lt_0.05": report["department"]["ece"] < 0.05,
             "refund_ece_lt_0.05": report["refund"]["ece"] < 0.05,
             "deterministic": deterministic is True,
-            "latency_p95_lt_60ms": report["latency_ms"]["p50"] < 60,
+            "latency_p95_lt_60ms": sorted(latencies)[int(0.95 * (len(latencies) - 1))] < 60,
         }
         report["gates_passed"] = all(report["gates"].values())
 

@@ -7,7 +7,7 @@ metrics, validated by `--selftest` against hand-computed cases.
 ```bash
 python3 evals/run_eval.py --selftest
 .venv-bench/bin/python evals/run_eval.py --file datasets/golden-set/golden-template.json
-.venv-bench/bin/python evals/run_eval.py --file datasets/golden-set/golden-v1.0.json --strict
+.venv-bench/bin/python evals/run_eval.py --file datasets/golden-set/golden-v1.0-rc1.json --strict
 ```
 
 ## Metrics
@@ -34,7 +34,7 @@ If the question set in the dataset drifts from the runner's canonical
 | department ECE | < 0.05 |
 | refund ECE | < 0.05 |
 | determinism | passes identical |
-| latency P50 | < 60 ms per decision |
+| latency P95 | < 60 ms per decision |
 
 ## Status
 
@@ -45,7 +45,34 @@ If the question set in the dataset drifts from the runner's canonical
   `evals/results/eval-AppleM1Pro-20260923T150442.json`.
   **This is a 5-record smoke run, NOT evidence about model quality** — ECE and
   F1 on n=5 carry no signal. Strict gates activate once the 50-ticket set is
-  filled and frozen as `golden-v1.0.json`.
+  filled and frozen.
+
+- **2026-09-23 — full strict eval on `golden-v1.0-rc1.json` (50 tickets)**
+  (M1 Pro, FP16, b=16, 2 passes, report
+  `evals/results/eval-AppleM1Pro-20260923T155249.json`, console log
+  `evals/results/eval-v1.0-rc1-20260923.txt`). **Gates: FAIL** — recorded
+  honestly, this is the baseline to improve from:
+
+  | Metric | Result | Gate | Verdict |
+  |---|---:|---|---|
+  | department macro-F1 | 0.712 (acc 0.74) | ≥ 0.85 | ❌ |
+  | department ECE | 0.202 | < 0.05 | ❌ |
+  | refund ECE | 0.689 (acc 0.96) | < 0.05 | ❌ |
+  | urgency accuracy | 0.48 (ECE-mass 0.163) | (no gate v1) | — |
+  | determinism | 2/2 passes identical | identical | ✅ |
+  | latency P95 | ~80+ ms (p50 80.0, max 237) | < 60 ms | ❌ |
+
+  Confusion signal: `account` recall 0.50 — 6 of 12 lost, split 3×→billing,
+  3×→technical; `sales` recall 0.50 (3×→technical); `billing` and
+  `technical` hold ≥ 0.87 recall. The pre-registered hard-case traps behaved
+  as predicted (e.g. account-vs-technical security/migration cases).
+  **Caveats:** (1) 45 of 50 labels are AI-drafted pending human QC — treat
+  as provisional until a second labeler reviews; (2) refund ECE is badly
+  miscalibrated despite 0.96 accuracy (probabilities near-extreme but not
+  ordered) — expected for the base checkpoint per the clamping warning;
+  calibration tuning is the Phase-1 lever, not more labels; (3) latency
+  includes full-ticket texts on this M1 Pro — batched short-state serving
+  measured 50 ms p50 in `benchmarks/`.
 
 ## Found-and-fixed while building
 

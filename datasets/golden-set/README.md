@@ -49,10 +49,11 @@ major version.
 2. Run `python3 datasets/golden-set/validate.py --file datasets/golden-set/golden-template.json`.
 3. Second labeler QC pass on all `confident: false` + 20% random sample;
    disagreements reconciled per guidelines §5 and marked `disagreement: true`.
-4. Copy to `golden-v1.0.json`, update the changelog below, commit. **Frozen.**
+4. Copy to `golden-v1.0-rc1.json`, update the changelog below, commit. **Frozen.**
 
 ## Changelog
 
 | Version | Date | Records | Change |
 |---|---|---|---|
 | (unreleased) | — | 5 exemplars in template | structure + guidelines drafted |
+| v1.0-rc1 | 2026-09-23 | 50 | TICKET-0006..0050 drafted (labeler `AI-1`) to the exact composition targets; strict validation passing. **RC, not final:** 45 labels are AI-drafted pending the §5 human QC pass (2 records already carry `second_labeler`). Eval baseline on this version: `evals/results/eval-AppleM1Pro-20260923T155249.json` — macro-F1 0.712, gates FAIL, recorded honestly. Labels change only via a new version after QC.

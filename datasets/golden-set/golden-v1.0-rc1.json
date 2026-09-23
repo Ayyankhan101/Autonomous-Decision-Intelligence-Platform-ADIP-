@@ -1,6 +1,6 @@
 {
-  "$comment": "Golden v1.0 RC1 (50 tickets). TICKET-0001..0005 are frozen exemplars (labeler AB); TICKET-0006..0050 are AI-drafted (labeler AI-1) pending human QC per guidelines.md section 5. Strict gate: python3 datasets/golden-set/validate.py --file datasets/golden-set/golden-template.json --strict --expect 50. Do not edit exemplar labels.",
-  "version": "draft-v1.0-rc1",
+  "$comment": "FROZEN golden v1.0-rc1 (50 tickets). TICKET-0001..0005: human-labeled frozen exemplars (AB). TICKET-0006..0050: AI-drafted (AI-1), pending human QC per guidelines.md section 5 — TICKET-0043 and TICKET-0049 carry second_labeler already. Do not edit labels in place; changes require a new version.",
+  "version": "v1.0-rc1",
   "dataset": "ticket-triage",
   "question_set": {
     "department": {
