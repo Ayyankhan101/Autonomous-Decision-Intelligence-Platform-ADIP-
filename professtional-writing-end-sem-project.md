@@ -445,7 +445,7 @@ Each limitation, its consequence, and the mitigation ADIP adopts. This section e
 
 v1 had none. This mirrors the discipline of the laya-mlx repo itself (fidelity harness, determinism checks, stored timing samples).
 
-**Golden dataset:** 200+ labeled support tickets (public support-triage datasets + hand-labeled set) with department labels, urgency rubric levels, and refund propositions. Frozen with a version tag; every eval run names its dataset version. Schema, labeling guidelines, worked exemplars, and a validator live in `datasets/golden-set/` — v1 freezes 50 tickets (the MVP gate), expanded toward 200+ in Phase 1.
+**Golden dataset:** 200+ labeled support tickets (public support-triage datasets + hand-labeled set) with department labels, urgency rubric levels, and refund propositions. Frozen with a version tag; every eval run names its dataset version. Schema, labeling guidelines, worked exemplars, and a validator live in `datasets/golden-set/` — v1 freezes 50 tickets (the MVP gate), expanded toward 200+ in Phase 1. The scoring runner lives in `evals/` (macro-F1, ECE, Brier, confusion matrix, determinism passes; metrics selftest-validated) and hard-fails if the dataset's question set drifts from the serving config.
 
 **Test tiers:**
 
@@ -475,7 +475,7 @@ v1 had none. This mirrors the discipline of the laya-mlx repo itself (fidelity h
 | Pipeline, strict mode | + capped counterfactual/attribution probes (4–8 × ~18–50 ms) | ≤ 500 ms P50, ≤ 1,000 ms P95 |
 | Offline eval (batch) | batch_size 16→64 | up to 143.3 q/s measured (repeated-template fixture) |
 
-**Measured baseline — Apple M1 Pro (16 GB), 2026-09-23** (harness: `benchmarks/`, raw samples: `benchmarks/results/`):
+**Measured baseline — Apple M1 Pro (8-core CPU: 6P+2E, 14-core GPU, Metal 4, 16 GB unified memory), 2026-09-23** (harness: `benchmarks/`, raw samples: `benchmarks/results/`):
 
 | Call (3 questions, FP16) | P50 | P95 | vs M3 Max anchor |
 |---|---:|---:|---|

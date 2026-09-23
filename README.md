@@ -114,7 +114,7 @@ M3 Max, 40-core GPU, 128 GiB, MLX 0.32.2, FP16, end-to-end (prompt → tokenizat
 
 ### Measured on our hardware
 
-Apple M1 Pro, 16 GB, macOS 26.6, Python 3.13, FP16 — full method, determinism checks, and raw timing samples in [`benchmarks/README.md`](benchmarks/README.md) and `benchmarks/results/`:
+Apple M1 Pro (8-core CPU: 6P+2E, **14-core GPU**, Metal 4), 16 GB unified memory, macOS 26.6.2, Python 3.13, FP16 — full method, determinism checks, and raw timing samples in [`benchmarks/README.md`](benchmarks/README.md) and `benchmarks/results/`:
 
 | Call (3 questions, FP16) | P50 | P95 |
 |---|---:|---:|
@@ -179,6 +179,7 @@ flowchart TD
 - [`explaination-of-the-project.md`](explaination-of-the-project.md) — full technical blueprint (architecture, schemas, eval strategy, cost model)
 - [`professtional-writing-end-sem-project.md`](professtional-writing-end-sem-project.md) — mirror of the blueprint for the end-sem deliverable
 - [`benchmarks/`](benchmarks/README.md) — latency harness + stored timing samples (M1 Pro measured)
+- [`evals/`](evals/README.md) — eval runner: macro-F1, ECE, Brier, confusion matrix vs the frozen golden set
 - [`datasets/golden-set/`](datasets/golden-set/README.md) — triage eval dataset: schema, labeling guidelines, exemplars, validator
 
 ## Attribution & licensing

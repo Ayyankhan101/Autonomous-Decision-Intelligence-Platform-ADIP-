@@ -17,7 +17,9 @@ QUESTIONS = {
 }
 ```
 
-The eval harness sends `text` as state and these questions; predictions are
+The eval harness sends `text` as state and these questions (the canonical,
+verbose form is stored in `golden-template.json -> question_set` and must
+byte-match `evals/run_eval.py -> QUESTIONS`; the runner hard-fails on drift); predictions are
 compared to `labels`. Changing the question set or option list = new dataset
 major version.
 

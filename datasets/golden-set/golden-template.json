@@ -3,9 +3,25 @@
   "version": "unreleased",
   "dataset": "ticket-triage",
   "question_set": {
-    "department": { "type": "choice", "criteria": ["billing", "technical", "sales", "account"] },
-    "urgency": { "type": "score", "criteria": ["not urgent", "soon", "critical"] },
-    "refund": { "type": "noul", "instructions": "Does the customer ask for money back?" }
+    "department": {
+      "type": "choice",
+      "instructions": "Which team should handle this request?",
+      "criteria": {
+        "billing": "invoices, payments, refunds, duplicate charges",
+        "technical": "bugs, outages, integration failures",
+        "sales": "new purchases, upgrades, pricing",
+        "account": "login, password, profile, subscription status, data requests"
+      }
+    },
+    "urgency": {
+      "type": "score",
+      "instructions": "How urgent is this request?",
+      "criteria": ["not urgent", "soon", "critical"]
+    },
+    "refund": {
+      "type": "noul",
+      "instructions": "Does the customer ask for money back?"
+    }
   },
   "records": [
     {

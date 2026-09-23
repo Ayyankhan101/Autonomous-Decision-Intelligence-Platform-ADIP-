@@ -1,0 +1,90 @@
+{
+  "schema": "adip.eval.v1",
+  "timestamp_utc": "2026-09-23T15:04:42.892102+00:00",
+  "dataset": "datasets/golden-set/golden-template.json",
+  "n_records": 5,
+  "checkpoint": "aac6fef/laya-mlx",
+  "dtype": "float16",
+  "batch_size": 16,
+  "passes": 2,
+  "environment": {
+    "chip": "AppleM1Pro",
+    "python": "3.13.13",
+    "os": "macOS-26.6.2-arm64-arm-64bit-Mach-O"
+  },
+  "department": {
+    "macro_f1": 0.6667,
+    "per_class": {
+      "billing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 2
+      },
+      "technical": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6667,
+        "support": 1
+      },
+      "sales": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 1
+      },
+      "account": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 1
+      }
+    },
+    "accuracy": 0.8,
+    "brier_multiclass": 0.2641,
+    "ece": 0.2882,
+    "confusion": {
+      "billing": {
+        "billing": 2,
+        "technical": 0,
+        "sales": 0,
+        "account": 0
+      },
+      "technical": {
+        "billing": 0,
+        "technical": 1,
+        "sales": 0,
+        "account": 0
+      },
+      "sales": {
+        "billing": 0,
+        "technical": 0,
+        "sales": 1,
+        "account": 0
+      },
+      "account": {
+        "billing": 0,
+        "technical": 1,
+        "sales": 0,
+        "account": 0
+      }
+    }
+  },
+  "urgency": {
+    "accuracy": 0.4,
+    "ece_on_predicted_level_mass": 0.307
+  },
+  "refund": {
+    "accuracy": 0.8,
+    "ece": 0.669,
+    "brier": 0.5457
+  },
+  "determinism_passes_identical": true,
+  "latency_ms": {
+    "n": 10,
+    "p50": 87.31,
+    "mean": 93.56,
+    "max": 166.36
+  },
+  "gates": {}
+}

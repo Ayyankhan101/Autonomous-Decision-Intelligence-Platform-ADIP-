@@ -37,7 +37,7 @@ with the full environment record and raw samples.
 
 ## Results
 
-First measured run: **Apple M1 Pro, 16 GB, macOS 26.6, Python 3.13, MLX (laya-mlx), FP16** — 2026-09-23.
+First measured run: **Apple M1 Pro (8-core CPU: 6P+2E, 14-core GPU, Metal 4), 16 GB unified memory, macOS 26.6.2, Python 3.13, MLX (laya-mlx), FP16** — 2026-09-23.
 Raw timing samples: `benchmarks/results/latency-AppleM1Pro-*.json` (one JSON per config,
 50 stored samples each, environment record + determinism check included).
 
