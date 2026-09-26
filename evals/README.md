@@ -168,7 +168,8 @@ Tightening or loosening a gate = edit `adip/config.py` + this table together;
   pays ~1.1 s lazy model load (documented; add a warmup ping to healthchecks),
   and Prometheus histograms render 0 until the first post-fix observe —
   verified working after the fix. *(superseded by the 2026-09-26 load test:
-  **P50 79.4 / P95 137.6 ms** over 200 distinct-input calls — see
+  **P50 93.7 / P95 256.4 ms** over 200 distinct-input calls (payload v3,
+stamped) — see
   `serving/README.md`)*
 
 - **2026-09-26 — latest strict eval, two decision fixes (M1 Pro)**
@@ -217,7 +218,8 @@ Tightening or loosening a gate = edit `adip/config.py` + this table together;
   `aspirational_targets`: macro-F1 0.85 ❌, dept ECE 0.05 ❌, urgency ECE
   0.05 ❌, urgency accuracy 0.60 ❌, decision p95 60 ms ❌ (all five `met:
   false`). Remaining work for the two red gates: label QC + account/sales
-  criteria fixes (macro-F1) and a held-out calibration set (dept ECE).
+  criteria fixes (macro-F1) and a held-out calibration set (dept ECE) — *both
+  closed later the same day, see the entry below.*
 
 - **2026-09-26 — payload v3 + department calibration: all 9 gates PASS (exit 0)**
 

@@ -1,10 +1,12 @@
 {
-  "schema": "adip.loadtest.v2",
-  "dataset": "golden-v1.0.json",
+  "schema": "adip.loadtest.v3",
+  "dataset": "golden-v2.0.json",
+  "payload_version": 3,
+  "question_set_sha256": "13393cd59b87",
   "rounds": 4,
   "n_calls": 200,
-  "pipeline_p50_ms": 79.38,
-  "pipeline_p95_ms": 137.64,
+  "pipeline_p50_ms": 93.7,
+  "pipeline_p95_ms": 256.38,
   "kpi_targets_ms": {
     "p50": 150.0,
     "p95": 400.0
@@ -15,15 +17,15 @@
   "stage_p50_ms": {
     "privacy": 0.04,
     "fairness": 0.0,
-    "decision": 79.31,
+    "decision": 93.62,
     "policy": 0.0,
     "explanation": 0.01
   },
   "audit_rows_this_run": 200,
-  "audit_rows_total": 402,
+  "audit_rows_total": 1002,
   "route_mix": {
-    "AUTO": 84,
-    "REVIEW": 112,
+    "REVIEW": 104,
+    "AUTO": 92,
     "ESCALATE": 4
   },
   "replay_checked": 20,

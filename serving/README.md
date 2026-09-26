@@ -56,21 +56,26 @@ curl -s localhost:8100/audit/<decision_id>/replay
 curl -s localhost:8100/metrics
 ```
 
-## Measured (M1 Pro, payload v2, 2026-09-26 load test, 200 distinct-input calls)
+## Measured (M1 Pro, payload v3, 2026-09-26 load test, 200 distinct-input calls, quiet machine)
 
 | Metric | Result | Target |
 |---|---:|---|
-| End-to-end P50 | **79.38 ms** | ≤ 150 ms ✅ |
-| End-to-end P95 | **137.64 ms** | ≤ 400 ms ✅ |
+| End-to-end P50 | **93.70 ms** | ≤ 150 ms ✅ |
+| End-to-end P95 | **256.38 ms** | ≤ 400 ms ✅ |
 | `kpi_pass` | `true` | ✅ (loadtest exits 1 otherwise) |
-| Decision stage share | 79.31 ms p50 | every other stage ≤ 0.04 ms |
-| Audit rows written | 200 / 200 (total 402 in db) | every call lands ✅ |
+| Decision stage share | 93.62 ms p50 | every other stage ≤ 0.04 ms |
+| Audit rows written | 200 / 200 | every call lands ✅ |
 | Audit replay | 20/20 bit-for-bit | ✅ |
-| Route mix | AUTO 84 / REVIEW 112 / ESCALATE 4 | recorded, not a target |
+| Route mix | AUTO 92 / REVIEW 104 / ESCALATE 4 | recorded, not a target (payload v2 ran 84/112/4 — calibration raises `department_conf`) |
 | Shape errors | 0 | ✅ |
 
 Repeating the same short text is cheaper than this (61.6 ms p50 — prefix
 cache hits); distinct tickets cost what the numbers above show.
+
+- **Timing needs a quiet machine.** Under CPU contention (load avg > 4) the
+  identical run measured 174–181 ms p50 and 1.1–1.8 s p95 — KPI **fail**.
+  The artifact records whatever the run measured; re-run when the box is idle
+  before quoting numbers.
 
 ## Operational notes
 

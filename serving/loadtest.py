@@ -24,6 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from adip.config import GOLDEN_SET_DEFAULT, KPI_P50_MS, KPI_P95_MS  # noqa: E402
+from adip.questions import PAYLOAD_VERSION, question_set_sha256  # noqa: E402
 from serving.pipeline import DecisionService, replay  # noqa: E402
 
 # blueprint section 10: standard-mode pipeline target is <= 150 ms P50 and
@@ -112,8 +113,10 @@ def main() -> int:
     replay_rate = round(replay_ok / max(len(replay_sample), 1), 4)
 
     result = {
-        "schema": "adip.loadtest.v2",
+        "schema": "adip.loadtest.v3",
         "dataset": str(Path(args.dataset).name),
+        "payload_version": PAYLOAD_VERSION,
+        "question_set_sha256": question_set_sha256(),
         "rounds": args.rounds,
         "n_calls": len(ids),
         "pipeline_p50_ms": p50,

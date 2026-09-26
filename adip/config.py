@@ -62,7 +62,7 @@ GATE_DECISION_P50_MS = 100.0      # replaces the unreachable decision-p95<60ms g
                                  # (latency ∝ input tokens: 135 tok→48.5 ms, 483→132 ms)
 
 # Aspirational §9/§11 targets — reported, NOT enforced by --strict.
-GATE_MACRO_F1_TARGET = 0.85       # needs label QC + account/sales criteria fixes
+GATE_MACRO_F1_TARGET = 0.85       # aspirational (payload v3 criteria fixes landed: 0.7698; 0.85 needs OOF headroom)
 GATE_ECE_TARGET = 0.05            # all heads; needs a held-out calibration set
 GATE_ECE_DEPT_TARGET = 0.10       # first interim dept bar — unreachable at n=50
                                   # (evidence above), kept as a reported target

@@ -488,7 +488,7 @@ v1 had none. This mirrors the discipline of the laya-mlx repo itself (fidelity h
 | Calibration | ECE (15 bins) + Brier per question kind, per dtype (FP16 and FP32) | nightly | **strict (D6, dept bar re-set same day):** dept < 0.15 (measured 0.0981 calibrated, T=0.6 ✅), urgency < 0.15 (0.1491 ✅), refund < 0.05 (0.0365 ✅); aspirational < 0.05 all heads |
 | Accuracy | macro-F1, per-class precision/recall on the golden set | nightly | **strict (D6):** macro-F1 ≥ 0.75 interim — measured **0.7698 ✅** (payload v3); aspirational ≥ 0.85 |
 | Fairness | disparate impact ≥ 0.80; equal opportunity diff < 0.05; counterfactual flip rate reported | nightly | thresholds on `AUTO_DECIDE` rates |
-| Latency | iterations=50, warmup=5, every timing sample stored (mirrors `benchmarks.run`) | nightly | **strict (D6):** decision p50 ≤ 100 ms (measured 93.6 ms ✅ on the payload-v3 gates run; 79.55 ms payload v2); pipeline p95 ≤ 400 ms (measured 137.6 ms ✅, in `serving/loadtest.py`); aspirational decision p95 < 60 ms — **FAIL on M1 Pro: 125.8 ms over distinct inputs, 62.0 ms only for a repeated/cached input** |
+| Latency | iterations=50, warmup=5, every timing sample stored (mirrors `benchmarks.run`) | nightly | **strict (D6):** decision p50 ≤ 100 ms (measured 93.6 ms ✅ on the payload-v3 gates run; 79.55 ms payload v2); pipeline p95 ≤ 400 ms (measured 256.4 ms ✅ payload v3, in `serving/loadtest.py`); aspirational decision p95 < 60 ms — **FAIL on M1 Pro: 125.8 ms over distinct inputs, 62.0 ms only for a repeated/cached input** |
 | Regression | decision-flip rate vs pinned baseline checkpoint across the golden set | every checkpoint bump | < 2% unexplained flips |
 
 **Gate renegotiation (D6, 2026-09-26):** the §9/§11 bars above were measured
@@ -526,7 +526,7 @@ exit 0 (`eval-AppleM1Pro-20260926T073703.json`).
 | Pipeline, strict mode | + capped counterfactual/attribution probes (4–8 × ~18–50 ms) | ≤ 500 ms P50, ≤ 1,000 ms P95 |
 | Offline eval (batch) | batch_size 16→64 | up to 143.3 q/s measured (repeated-template fixture) |
 
-**Measured baseline — Apple M1 Pro (8-core CPU: 6P+2E, 14-core GPU, Metal 4, 16 GB unified memory), through 2026-09-26, payload v2 for stored bench runs / payload v3 for evals since 2026-09-26** (harness: `benchmarks/`, raw samples: `benchmarks/results/`, provenance: `payload_version` + `question_set_sha256` stamped in every result JSON; warmup calls excluded from samples):
+**Measured baseline — Apple M1 Pro (8-core CPU: 6P+2E, 14-core GPU, Metal 4, 16 GB unified memory), through 2026-09-26, payload v2 for stored bench runs, payload v3 for evals and the load test since 2026-09-26** (harness: `benchmarks/`, raw samples: `benchmarks/results/`, provenance: `payload_version` + `question_set_sha256` stamped in every result JSON; warmup calls excluded from samples):
 
 | Call (3 questions, FP16, payload v2) | P50 | P95 | vs M3 Max anchor |
 |---|---:|---:|---|
@@ -536,7 +536,7 @@ exit 0 (`eval-AppleM1Pro-20260926T073703.json`).
 | ~512-token state (2,828 chars), batch_size=1 | 374.1 ms | 375.4 ms | 49.84 ms @ 1q → ~2.5× per row |
 | **50 distinct golden tickets × 2 passes (eval runner, payload v2)** | **79.5 ms** | **125.8 ms** | what serving actually sees |
 | 50 distinct golden tickets × 2 passes (eval runner, payload v3) | 93.6 ms | 330.1 ms (under system load; p50 93.3–100.4 across same-day runs) | current gates run |
-| 200 distinct-input pipeline calls (load test) | 79.4 ms | 137.6 ms | KPI ≤150 / ≤400 PASS |
+| 200 distinct-input pipeline calls (load test, payload v3, stamped) | 93.7 ms | 256.4 ms | KPI ≤150 / ≤400 PASS (quiet machine; contended runs 174–181 ms fail) |
 
 Serving implications: load with `batch_size ≥ 3` (collapses the 3-question triage call into one forward pass); interactive requests must keep redacted states short — full-context work belongs in batch jobs. All runs 100% deterministic; peak process RSS 934–941 MiB (matches the published 943.6 MiB model peak).
 
@@ -593,7 +593,7 @@ Multi-node fleet behind nginx; nightly fleet benchmarks; hosted-support offering
 | Metric | v1 claim (Jev) | v2 target (laya-mlx) | Measured (M1 Pro, 2026-09-26) |
 |---|---|---|---|
 | Decision-only latency | 70–500 ms | ≤ 45 ms P50 for a 3-question call (17.75 ms measured @ 1 short question, M3 Max) | 61.6 ms P50 / 62.0 ms P95 **repeated input** (b=16); **79.5 / 125.8 ms over 50 distinct tickets (payload v2); 93.6 / 330.1 ms payload v3 under load → the original <60 ms P95 bar is unreachable (D6: strict gate replaced by decision p50 ≤ 100 ms — measured 93.6 ms ✅)** (latency tracks input tokens: 135 tok → 48.5 ms, 483 → 132 ms, 810 → 204 ms) |
-| Pipeline latency | < 500 ms | P50 ≤ 150 ms, P95 ≤ 400 ms (standard) | **P50 79.4 / P95 137.6 ms — PASS** (200-call load test, `serving/results/loadtest-4r.json`; decision stage 79.3 ms of it, all other stages < 0.1 ms; audit replay 20/20 bit-for-bit, KPI p50/p95 both PASS) |
+| Pipeline latency | < 500 ms | P50 ≤ 150 ms, P95 ≤ 400 ms (standard) | **P50 93.7 / P95 256.4 ms — PASS** (200-call load test, payload v3, `serving/results/loadtest-4r.json` stamped `payload_version: 3`; decision stage 93.6 ms of it, all other stages < 0.1 ms; audit replay 20/20 bit-for-bit, KPI p50/p95 both PASS; contended-machine runs measured 174–181 / 1064–1768 ms and failed — timing needs a quiet box) |
 | Throughput | 10,000+/s per cluster | 56–110 decisions/s per node; linear with nodes | 16.2 decisions/s (repeated short input, b=16) / 12.6 decisions/s (distinct tickets) per node |
 | Uptime | 99.99% | 99.9% single node (99.99% = Phase 3 multi-node) | — |
 | Calibration error | < 5% | ECE < 0.05, reported per question kind and dtype | dept **0.0981 calibrated (T=0.6) / 0.1629 raw** (strict 0.15 after evidence re-set: ✅; interim target 0.10: in-sample ✅, OOF 0.1356 ❌; aspirational 0.05: ❌; T Brier-fit pinned in `adip/config.py` + artifact, `tests/test_config.py` asserts) / urgency **0.1491** (strict 0.15: ✅, aspirational: ❌) / refund **0.0365 shipped, ✅** under both (raw 0.0725; 0.0393 out-of-fold; T=0.45 pinned in `adip/config.py` and asserted against the artifact by `tests/test_config.py`). The old 0.689 was a one-sided ECE metric artifact — fixed in the runner |
@@ -655,7 +655,7 @@ Multi-node fleet behind nginx; nightly fleet benchmarks; hosted-support offering
 6. CI: GitHub Actions `macos-14` arm64, unit tier only. *(done 2026-09-26 — `.github/workflows/ci.yml`: ubuntu unit tier (ruff + 58 model-free tests) on push/PR; macos-14 model tier (`pytest -m model`) on main/manual dispatch)*
 
 ### Weeks 2–4
-Follow the Phase 0 table (Section 11). Demo target: a ticket triaged end-to-end in < 150 ms P50 on a MacBook, with a replayable audit row and an honest eval report. *(measured: P50 79.4 / P95 137.6 ms over 200 distinct-input calls — target met, `serving/`)*
+Follow the Phase 0 table (Section 11). Demo target: a ticket triaged end-to-end in < 150 ms P50 on a MacBook, with a replayable audit row and an honest eval report. *(measured: P50 93.7 / P95 256.4 ms over 200 distinct-input calls — target met, `serving/`)*
 
 ---
 

@@ -88,7 +88,8 @@ Raw timing samples: `benchmarks/results/latency-AppleM1Pro-*.json` (one JSON per
   harness's 61.4–62.1 ms (b≥16) is a *repeated* short input that hits the
   runtime prefix cache. Distinct tickets — what serving actually sends — cost
   **79.5 ms P50 / 125.8 ms P95** (eval runner, 50 golden tickets × 2 passes,
-  warmup excluded) and **79.4 / 137.6 ms** end-to-end (200-call load test).
+  warmup excluded, payload v2) and **93.7 / 256.4 ms** end-to-end (200-call
+  load test, payload v3, stamped — quiet machine; contended runs fail KPI).
   An ad-hoc token-scaling probe (20 iterations each) shows why: 135 tokens →
   48.5 ms, 483 → 132 ms, 810 → 204 ms — latency tracks input tokens, so
   `batch_size` past 16 changes nothing (61.39–61.84 ms across b16→b48). Honest
