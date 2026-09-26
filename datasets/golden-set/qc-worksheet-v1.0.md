@@ -54,6 +54,7 @@ For each flagged row: read the ticket + guidelines section 2, then fill in the d
 | Reviewer (human) | ____________ |
 | Date | ____________ |
 | Must-flags resolved | ____ / 0 |
+| Adjudicated (closed) | 0 |
 | Verify-items resolved | ____ / 12 |
 | Labels amended | ____ (0 => v1.0 stands; >0 => cut v1.1 with changelog) |
 | Result | [ ] v1.0 CONFIRMED   [ ] v1.1 REQUIRED |

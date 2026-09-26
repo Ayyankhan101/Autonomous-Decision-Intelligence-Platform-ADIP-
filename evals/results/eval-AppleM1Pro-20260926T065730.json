@@ -1,0 +1,126 @@
+{
+  "schema": "adip.eval.v1",
+  "timestamp_utc": "2026-09-26T06:57:30.782534+00:00",
+  "dataset": "datasets/golden-set/golden-v1.0.json",
+  "n_records": 50,
+  "checkpoint": "aac6fef/laya-mlx",
+  "dtype": "float16",
+  "batch_size": 16,
+  "passes": 2,
+  "payload_version": 2,
+  "question_set_sha256": "b580734fdd0c",
+  "dataset_version": "v1.0",
+  "environment": {
+    "chip": "AppleM1Pro",
+    "python": "3.13.13",
+    "os": "macOS-26.6.2-arm64-arm-64bit-Mach-O"
+  },
+  "department": {
+    "macro_f1": 0.7117,
+    "per_class": {
+      "billing": {
+        "precision": 0.7,
+        "recall": 0.9333,
+        "f1": 0.8,
+        "support": 15
+      },
+      "technical": {
+        "precision": 0.6842,
+        "recall": 0.8667,
+        "f1": 0.7647,
+        "support": 15
+      },
+      "sales": {
+        "precision": 0.8,
+        "recall": 0.5,
+        "f1": 0.6154,
+        "support": 8
+      },
+      "account": {
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1": 0.6667,
+        "support": 12
+      }
+    },
+    "accuracy": 0.74,
+    "brier_multiclass": 0.3853,
+    "ece": 0.2024,
+    "confusion": {
+      "billing": {
+        "billing": 14,
+        "technical": 0,
+        "sales": 1,
+        "account": 0
+      },
+      "technical": {
+        "billing": 2,
+        "technical": 13,
+        "sales": 0,
+        "account": 0
+      },
+      "sales": {
+        "billing": 1,
+        "technical": 3,
+        "sales": 4,
+        "account": 0
+      },
+      "account": {
+        "billing": 3,
+        "technical": 3,
+        "sales": 0,
+        "account": 6
+      }
+    }
+  },
+  "urgency": {
+    "accuracy": 0.56,
+    "ece_on_predicted_level_mass": 0.1491
+  },
+  "refund": {
+    "accuracy": 0.96,
+    "temperature_applied": 0.45,
+    "ece": 0.0365,
+    "ece_raw": 0.0725,
+    "ece_semantics": "confidence = max(P(true), 1-P(true)) vs decision correctness; gated value applies adip.config.REFUND_TEMPERATURE",
+    "p_true_mean_by_label": {
+      "refund_true": 0.9009,
+      "refund_false": 0.0247
+    },
+    "brier_p_true": 0.0247,
+    "brier_p_true_raw": 0.031
+  },
+  "determinism_passes_identical": true,
+  "latency_ms": {
+    "n": 100,
+    "warmup_calls": 5,
+    "p50": 79.98,
+    "p95": 159.8,
+    "mean": 93.55,
+    "max": 268.66
+  },
+  "gates": {},
+  "aspirational_targets": {
+    "macro_f1_ge_0.85": {
+      "threshold": 0.85,
+      "met": false
+    },
+    "department_ece_lt_0.05": {
+      "threshold": 0.05,
+      "met": false
+    },
+    "urgency_ece_lt_0.05": {
+      "threshold": 0.05,
+      "met": false
+    },
+    "urgency_accuracy_ge_0.60": {
+      "threshold": 0.6,
+      "met": false
+    },
+    "decision_p95_lt_60ms": {
+      "threshold": 60.0,
+      "met": false
+    },
+    "note": "reported, not enforced by --strict since the 2026-09-26 D6 renegotiation; evidence in README (Eval gates) and BLUEPRINT \u00a712"
+  }
+}

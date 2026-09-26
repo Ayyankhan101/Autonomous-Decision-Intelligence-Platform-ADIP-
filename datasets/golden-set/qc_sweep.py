@@ -12,8 +12,8 @@ in the text, and emits `qc-worksheet-v1.0.md` listing:
 Human reviewer fills the "human decision" column; any amendment = new dataset
 version per the freeze discipline.
 
-Usage: python3 datasets/golden-set/qc_sweep.py [--dataset datasets/golden-set/golden-v1.0.json]
-Exit 0 = worksheet written (print count of must-flags).
+Usage: python3 datasets/golden-set/qc_sweep.py [--dataset datasets/golden-set/golden-v2.0.json]
+Exit 0 = clean sweep (worksheet written); 1 = unresolved must-flags remain.
 """
 
 from __future__ import annotations
@@ -25,24 +25,37 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT))
+from adip.questions import DEPTS  # noqa: E402
 
 MONEY_BACK = re.compile(
     r"\b(refund\w*|money back|reimburse\w*|reverse (that |the )?charge|chargeback|disput\w*)\b", re.I)
 CREDIT_NOTE = re.compile(r"\b(credit note|store credit|exchange)\b", re.I)
+# re.S: ticket text is multi-line; without it `.*`/`.{0,20}` cannot cross a
+# newline and a genuine urgency=2 ticket gets flagged for a regex-scope miss.
 URGENT2 = re.compile(
     r"\b(cannot access|completely unusable|locked out|security (incident|breach)|"
     r"data loss|active(ly)? block\w*|is blocked|payments? (are |is |were |get )?blocked|payments failing|zero service|"
-    r"sign-in alert\b.*another country|compromis\w*|cannot ship|silently failing)\b", re.I)
+    r"sign-in alert\b.*another country|compromis\w*|cannot ship|silently failing)\b", re.I | re.S)
 URGENT1 = re.compile(
     r"\b(since yesterday|deadline|by (monday|tuesday|wednesday|thursday|friday)|"
     r"this week|next week|still waiting|blocked from|piling up|before .{0,20}(close|review)|"
-    r"travel(ing)? (today|tomorrow))\b", re.I)
+    r"travel(ing)? (today|tomorrow))\b", re.I | re.S)
 DEPT_SIG = {
     "billing": re.compile(r"\b(charge[ds]?|invoice|refund|billing|autopay|overcharge|renewal|proration)\b", re.I),
     "technical": re.compile(r"\b(crash|bug|error|fail(s|ed|ing)?|outage|sync|integration|webhook|export|hangs)\b", re.I),
     "sales": re.compile(r"\b(pricing|discount|quote|upgrade|plan|seats|evaluating|pre-purchase|partner|reseller)\b", re.I),
     "account": re.compile(r"\b(login|log in|sign-in|password|2fa|profile|permissions|workspace (admin|owner)|suspend\w*|deletion|delete)\b", re.I),
 }
+
+# The payload can emit any department in adip.questions.DEPTS; a department
+# added there without a signal regex here would otherwise KeyError deep in the
+# sweep loop (now flagged as a must-flag, but the vocabulary gap is a setup
+# error, not a label defect).
+_missing_sigs = set(DEPTS) - set(DEPT_SIG)
+if _missing_sigs:
+    raise SystemExit(f"DEPT_SIG has no signal regex for {sorted(_missing_sigs)} "
+                     f"(payload departments: {DEPTS})")
 
 
 def sweep(records: list[dict]) -> tuple[list[str], list[str]]:
@@ -67,15 +80,20 @@ def sweep(records: list[dict]) -> tuple[list[str], list[str]]:
         if lab["urgency"] == 0 and URGENT1.search(text):
             verify.append(f"{tid}: urgency=0 but time/impact words present — confirm impact-based reading")
         # department must have signal-word support
-        if not DEPT_SIG[lab["department"]].search(text):
+        sig = DEPT_SIG.get(lab["department"])
+        if sig is None:
+            must_flags.append(f"{tid}: department={lab['department']!r} not in QC vocabulary")
+        elif not sig.search(text):
             verify.append(f"{tid}: department={lab['department']} has no lexical signal in text (tie-break case?)")
         # hard_case=true needs the citation (validator also checks; belt+braces)
-        if r["meta"].get("hard_case") and not re.search(r"\bH\d+", r["meta"].get("notes", "")):
+        if r["meta"].get("hard_case") and not re.search(r"\bH\d+\b", r["meta"].get("notes", "")):
             must_flags.append(f"{tid}: hard_case=true without H-ref in notes")
     return must_flags, verify
 
 
-def worksheet(records: list[dict], must_flags: list[str], verify: list[str]) -> str:
+def worksheet(records: list[dict], must_flags: list[str], verify: list[str],
+              adjudicated: list[str] | None = None) -> str:
+    adjudicated = adjudicated or []
     lines = [
         "# Golden v1.0 Human QC Worksheet (AI-3 sweep assistant)",
         "",
@@ -100,6 +118,10 @@ def worksheet(records: list[dict], must_flags: list[str], verify: list[str]) -> 
             f"  - text: \"{excerpt}\"",
         ]
 
+    if adjudicated:
+        lines += ["", f"## Adjudicated ({len(adjudicated)}) — closed by the AI-3 pass, no reviewer action", ""]
+        lines += [f"- {a}" for a in adjudicated]
+
     lines += ["", f"## Verify ({len(verify)}) — evidence ambiguous, confirm current label", ""]
     if verify:
         for v in verify:
@@ -115,6 +137,7 @@ def worksheet(records: list[dict], must_flags: list[str], verify: list[str]) -> 
         "| Reviewer (human) | ____________ |",
         "| Date | ____________ |",
         "| Must-flags resolved | ____ / " + str(len(must_flags)) + " |",
+        "| Adjudicated (closed) | " + str(len(adjudicated)) + " |",
         "| Verify-items resolved | ____ / " + str(len(verify)) + " |",
         "| Labels amended | ____ (0 => v1.0 stands; >0 => cut v1.1 with changelog) |",
         "| Result | [ ] v1.0 CONFIRMED   [ ] v1.1 REQUIRED |",
@@ -125,7 +148,7 @@ def worksheet(records: list[dict], must_flags: list[str], verify: list[str]) -> 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--dataset", default=str(REPO_ROOT / "datasets/golden-set/golden-v1.0.json"))
+    ap.add_argument("--dataset", default=str(REPO_ROOT / "datasets/golden-set/golden-v2.0.json"))
     args = ap.parse_args()
 
     data = json.loads(Path(args.dataset).read_text())
@@ -151,15 +174,30 @@ def main() -> int:
         "TICKET-0039": "'cannot ship today's release' = total inability + deadline -> urg 2 correct",
         "TICKET-0041": "active compromise before further devices hit -> security incident, urg 2 correct",
     }
-    if must_flags:
-        must_flags = [f for f in must_flags if f.split(":")[0] not in adjudications] or \
-            [f + " [ADJUDICATED CORRECT: " + adjudications.get(f.split(":")[0], "see notes") + "]" for f in must_flags]
+    # Partition, never drop: the old `unresolved or annotated-all` idiom
+    # silently discarded every adjudicated flag as soon as one unresolved flag
+    # remained, so the worksheet's sign-off totals undercounted.
+    unresolved, adjudicated = [], []
+    for f in must_flags:
+        tid = f.split(":")[0]
+        if tid in adjudications:
+            adjudicated.append(f"{f} [ADJUDICATED CORRECT: {adjudications[tid]}]")
+        else:
+            unresolved.append(f)
+    if adjudicated:
+        print(f"adjudicated: {len(adjudicated)} (carried into the worksheet, "
+              f"excluded from the exit-code count)")
 
-    ws = worksheet(records, must_flags, verify)
+    ws = worksheet(records, unresolved, verify, adjudicated)
     out = Path(args.dataset).parent / "qc-worksheet-v1.0.md"
     out.write_text(ws)
-    print(f"worksheet: {out.relative_to(REPO_ROOT)}")
-    return 0
+    try:
+        shown = out.relative_to(REPO_ROOT)
+    except ValueError:
+        shown = out
+    print(f"worksheet: {shown}")
+    # exit 1 = unresolved label defects remain (CI-gateable); 0 = clean sweep
+    return 1 if unresolved else 0
 
 
 if __name__ == "__main__":

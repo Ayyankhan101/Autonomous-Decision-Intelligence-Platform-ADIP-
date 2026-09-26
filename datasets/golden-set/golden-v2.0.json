@@ -1,6 +1,6 @@
 {
-  "$comment": "Working file for the golden set. Labels match frozen v2.0 (50 tickets, labels identical to v1.0): exemplars by AB, 0006..0050 drafted by AI-1, AI-2 second-labeler pass per guidelines.md section 5 (2 unconfident + 9-record 20% sample, zero label changes). question_set synced to payload v3. Strict gate: python3 datasets/golden-set/validate.py --file datasets/golden-set/golden-template.json --strict --expect 50",
-  "version": "v1.0",
+  "$comment": "FROZEN golden v2.0 (50 tickets). Labels are byte-identical to v1.0 (human AB exemplars + AI-1 drafts, AI-2 second-labeler pass, AI-3 QC sweep — see changelog in README.md); only the question set changed: sales criteria enriched to the rubric pre-purchase scope (payload v3, sha 13393cd59b87). Question-set change = new major version per the freeze rule. Labels change only via a new version. Human sign-off still recommended before external quoting of eval numbers.",
+  "version": "v2.0",
   "dataset": "ticket-triage",
   "question_set": {
     "department": {

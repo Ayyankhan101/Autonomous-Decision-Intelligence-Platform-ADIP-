@@ -19,4 +19,3 @@
   "gate_pass_after_calibration": true,
   "honesty_note": "Out-of-fold CV metrics; each record's calibrated p uses a T fit without it. T_global is the production recipe but overfits this n=50 by construction - refit on a held-out calibration set before trusting the gate verdict for external claims."
 }
-saved: evals/results/calibration-predictions-AppleM1Pro-20260923T183030.json

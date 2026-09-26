@@ -13,7 +13,6 @@ Design contract (blueprint section 3):
 from __future__ import annotations
 
 import json
-import math
 import re
 import sqlite3
 import threading
@@ -22,7 +21,20 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-PAYLOAD_VERSION = 2
+from adip.config import (
+    BATCH_SIZE,
+    CHECKPOINT,
+    CONF_AUTO,
+    CONF_REVIEW,
+    DEPT_TEMPERATURE,
+    DTYPE,
+    REFUND_REVIEW_HI,
+    REFUND_TEMPERATURE,
+    REFUND_THRESHOLD,
+)
+from adip.decisions import urgency_level
+from adip.questions import PAYLOAD_VERSION, QUESTIONS
+from adip.stats import apply_temperature, apply_temperature_dist, percentile
 
 # --------------------------------------------------------------------------
 # Stage 1: privacy scan (v0: regex redaction; Presidio swap-in is Phase 1)
@@ -84,31 +96,8 @@ def _get_agent():
         with _AGENT_LOCK:
             if _AGENT is None:
                 import laya_mlx as laya
-                _AGENT = laya.load("aac6fef/laya-mlx", dtype="float16", batch_size=16)
+                _AGENT = laya.load(CHECKPOINT, dtype=DTYPE, batch_size=BATCH_SIZE)
     return _AGENT
-
-
-QUESTIONS = {
-    "department": {
-        "type": "choice",
-        "instructions": "Which team should handle this request?",
-        "criteria": {
-            "billing": "invoices, payments, refunds, duplicate charges",
-            "technical": "bugs, outages, integration failures",
-            "sales": "new purchases, upgrades, pricing",
-            "account": "login, password, profile, subscription status, data requests",
-        },
-    },
-    "urgency": {
-        "type": "score",
-        "instructions": "How urgent is this request?",
-        "criteria": ["not urgent", "soon", "critical"],
-    },
-    "refund": {
-        "type": "noul",
-        "instructions": "Does the customer ask for money back?",
-    },
-}
 
 
 def typed_decision(state: dict, cfg: dict) -> dict:
@@ -117,39 +106,42 @@ def typed_decision(state: dict, cfg: dict) -> dict:
     a = result["answers"]
 
     dep = a["department"]
-    dist = dep.get("probabilities") or {}
-    selected = dep.get("choice") or max(dist, key=dist.get)
+    dist_raw = dep.get("probabilities") or {}
+    # Same rule as the eval gate: department_conf ships calibrated by
+    # adip.config.DEPT_TEMPERATURE (fit evals/calibrate_dept.py, OOF-validated
+    # in evals/results/calibration-dept-*.json). Scalar scaling preserves the
+    # argmax, so `selected` and every routing decision driven by the label are
+    # untouched; only the confidence the router thresholds read is calibrated
+    # (raw ECE 0.1629 could never clear a calibration gate — the refund head
+    # follows the identical pattern). Raw dist kept for audit/replay provenance.
+    dist = apply_temperature_dist(dist_raw, DEPT_TEMPERATURE)
+    selected = dep.get("choice") or max(dist_raw, key=dist_raw.get)
     urg = a["urgency"]
     urg_score = float(urg.get("score", 0.0))
-    urg_pred = min(2, max(0, round(urg_score)))
+    urg_pred = urgency_level(urg_score, urg.get("probabilities") or {})
     ref_p = float(a["refund"].get("noul", 0.0))
 
     state["decision"] = {
         "department": selected,
         "department_dist": dist,
+        "department_dist_raw": dist_raw,
         "department_conf": float(dist.get(selected, 0.0)),
         "urgency": urg_pred,
         "urgency_score": urg_score,
         "refund_p": ref_p,
-        # calibration recipe from evals/calibrate.py (v1.0 predictions, T fit
-        # on 50 records out-of-fold; refit on a held-out set before external claims)
-        "refund_p_calibrated": _apply_temperature(ref_p, 0.45),
+        # calibration recipe from evals/calibrate.py (T fit out-of-fold on the
+        # golden predictions; value pinned in adip.config.REFUND_TEMPERATURE and
+        # asserted against the artifact by tests/test_config.py)
+        "refund_p_calibrated": round(apply_temperature(ref_p, REFUND_TEMPERATURE), 4),
     }
     return state
 
 
-def _apply_temperature(p: float, T: float) -> float:
-    p = min(max(p, 1e-6), 1.0 - 1e-6)
-    z = math.log(p / (1.0 - p)) / T
-    return round(1.0 / (1.0 + math.exp(-z)), 4)
-
-
 # --------------------------------------------------------------------------
 # Stage 4: policy router (blueprint section 4: AUTO / REVIEW / ESCALATE)
+# Thresholds come from adip.config; reason strings interpolate them so a
+# threshold change cannot leave the log claiming the old number.
 # --------------------------------------------------------------------------
-
-CONF_AUTO = 0.60
-CONF_REVIEW = 0.35
 
 
 def policy_router(state: dict, cfg: dict) -> dict:
@@ -158,14 +150,15 @@ def policy_router(state: dict, cfg: dict) -> dict:
     route = "AUTO"
 
     if d["department_conf"] < CONF_REVIEW:
-        route, reasons = "ESCALATE", ["department_conf < 0.35"]
+        route, reasons = "ESCALATE", [f"department_conf < {CONF_REVIEW:.2f}"]
     elif d["department_conf"] < CONF_AUTO:
-        route, reasons = "REVIEW", ["department_conf < 0.60"]
+        route, reasons = "REVIEW", [f"department_conf < {CONF_AUTO:.2f}"]
 
     if d["urgency"] == 2 and route == "AUTO":
         route, reasons = "REVIEW", reasons + ["urgency critical -> human confirm"]
-    if d["refund_p_calibrated"] >= 0.5 and d["refund_p_calibrated"] < 0.7 and route == "AUTO":
-        route, reasons = "REVIEW", reasons + ["refund 0.5..0.7 borderline"]
+    if REFUND_THRESHOLD <= d["refund_p_calibrated"] < REFUND_REVIEW_HI and route == "AUTO":
+        route, reasons = "REVIEW", reasons + [
+            f"refund {REFUND_THRESHOLD}..{REFUND_REVIEW_HI} borderline"]
 
     state["policy"] = {"route": route, "reasons": reasons,
                        "thresholds": {"auto": CONF_AUTO, "review": CONF_REVIEW}}
@@ -247,6 +240,15 @@ class AuditLog:
                 "stage_ms_json", "pipeline_ms", "payload_version"]
         return dict(zip(keys, row))
 
+    def close(self) -> None:
+        """Close this thread's connection. Connections are thread-local, so a
+        one-shot AuditLog (see replay()) leaks one connection per call without
+        this."""
+        conn = getattr(self._local, "conn", None)
+        if conn is not None:
+            conn.close()
+            self._local.conn = None
+
 
 # --------------------------------------------------------------------------
 # Orchestrator
@@ -310,9 +312,11 @@ class DecisionService:
             lst.append(value)
 
     def summary(self) -> dict:
+        # adip.stats.percentile: same linear-interpolated statistic the eval
+        # runner and latency harness report, so p50/p95 are comparable across
+        # artifacts (the old floor-rank copy here disagreed by ~5 ms at p95).
         def pct(xs, p):
-            s = sorted(xs)
-            return round(s[int(p / 100 * (len(s) - 1))], 2) if s else None
+            return round(percentile(xs, p), 2) if xs else None
         return {
             "n": len(self.pipeline_ms),
             "pipeline_p50_ms": pct(self.pipeline_ms, 50),
@@ -326,9 +330,16 @@ def replay(decision_id: str, audit_path: str | Path = "serving/audit.db") -> dic
     proves the audit row fully determines the decision (blueprint section 11)."""
     svc = DecisionService.__new__(DecisionService)
     svc.audit = AuditLog(audit_path)
-    rec = svc.audit.fetch(decision_id)
+    try:
+        rec = svc.audit.fetch(decision_id)
+    finally:
+        svc.audit.close()
     if not rec:
         raise KeyError(decision_id)
+    if rec["route"] == "ERROR":
+        # the row exists but holds no decision — see app._record_error
+        return {"matches": False, "failed": True, "route": "ERROR",
+                "stored": json.loads(rec["decision_json"]), "recomputed": None}
     state: dict = {"text": rec["text_redacted"], "decision_id": rec["decision_id"]}
     for name, fn in STAGES:
         if name in ("privacy",):  # redaction already applied on stored text
@@ -338,6 +349,7 @@ def replay(decision_id: str, audit_path: str | Path = "serving/audit.db") -> dic
         state = fn(state, {})
     return {
         "matches": state["decision"] == json.loads(rec["decision_json"]),
+        "route": rec["route"],
         "stored": json.loads(rec["decision_json"]),
         "recomputed": state["decision"],
     }

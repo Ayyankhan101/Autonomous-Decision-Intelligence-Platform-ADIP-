@@ -12,7 +12,8 @@ Usage:
   python3 evals/calibrate.py --predictions evals/results/predictions-<chip>-<ts>.json
   python3 evals/calibrate.py --selftest
 
-Exit 0 always (analysis tool); prints a JSON summary.
+Exit 0 = artifact written and serving's REFUND_TEMPERATURE matches this fit;
+    1 = fit disagrees with the serving temperature (config must be updated).
 """
 
 from __future__ import annotations
@@ -25,7 +26,9 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "evals"))
-from run_eval import ece, brier_binary  # selftest-validated metrics
+sys.path.insert(0, str(REPO_ROOT))
+from run_eval import PAYLOAD_VERSION, ece, brier_binary  # selftest-validated metrics
+from adip.config import GATE_ECE_REFUND, REFUND_TEMPERATURE, REFUND_THRESHOLD
 
 EPS = 1e-6
 T_GRID = [round(0.05 * i, 3) for i in range(1, 201)]  # 0.05 .. 10.0
@@ -87,26 +90,48 @@ def main() -> int:
         return run_selftest()
     if not args.predictions:
         ap.error("--predictions is required (or use --selftest)")
+    if args.folds < 2:
+        ap.error(f"--folds must be >= 2, got {args.folds} (1 fold has no held-out data)")
 
-    dump = json.loads(Path(args.predictions).read_text())
-    recs = dump["records"]
+    try:
+        dump = json.loads(Path(args.predictions).read_text())
+    except json.JSONDecodeError as e:
+        raise SystemExit(f"{args.predictions}: not valid JSON ({e})")
+    recs = dump.get("records") if isinstance(dump, dict) else None
+    if not recs:
+        raise SystemExit(f"{args.predictions}: no records[] — refusing to calibrate "
+                         "an empty or malformed predictions dump")
+    missing = sorted({"refund_p", "y_refund"} - set(recs[0]))
+    if missing:
+        raise SystemExit(f"{args.predictions}: records missing {missing}")
+    # provenance: a T fit on a different payload_version than the serving
+    # pipeline sends would silently ship a calibration for the wrong task
+    src_payload = dump.get("payload_version")
+    if src_payload is not None and src_payload != PAYLOAD_VERSION:
+        raise SystemExit(f"{args.predictions}: payload_version {src_payload} != "
+                         f"runner's {PAYLOAD_VERSION}; refit from a current dump")
+    n = len(recs)
+    if args.folds > n:
+        ap.error(f"--folds {args.folds} > n_records {n} (empty folds divide by zero)")
     ps_raw = [r["refund_p"] for r in recs]
     ys = [bool(r["y_refund"]) for r in recs]
-    correct = [bool(r["refund_p"] >= 0.5) == y for r, y in zip(recs, ys)]
+    correct = [bool(r["refund_p"] >= REFUND_THRESHOLD) == y for r, y in zip(recs, ys)]
 
     n = len(ps_raw)
     fold_size = n // args.folds
     folds = [list(range(i * fold_size, (i + 1) * fold_size)) for i in range(args.folds - 1)]
     folds.append(list(range((args.folds - 1) * fold_size, n)))
+    # OOF alignment contract: folds must be ascending and disjoint so oof_cal
+    # lines up index-for-index with `correct`/`ys` below. shuffle anything here
+    # and the ECE pairs calibrated p with the wrong label.
+    assert [i for f in folds for i in f] == list(range(n)), "folds must partition 0..n-1 in order"
 
-    oof_raw, oof_cal, fold_Ts = [], [], []
+    oof_cal, fold_Ts = [], []
     for fold in folds:
         train = [i for i in range(n) if i not in fold]
         T = fit_T([ps_raw[i] for i in train], [ys[i] for i in train])
         fold_Ts.append(T)
-        for i in fold:
-            oof_raw.append(ps_raw[i])
-            oof_cal.append(1.0 / (1.0 + math.exp(-logit(ps_raw[i]) / T)))
+        oof_cal.extend(apply_T([ps_raw[i] for i in fold], T))
 
     # global T fit on all data (for production reference; NOT used for the CV numbers)
     T_global = fit_T(ps_raw, ys)
@@ -123,16 +148,21 @@ def main() -> int:
     summary = {
         "schema": "adip.calibration.v1",
         "source": str(Path(args.predictions).name),
+        "payload_version": dump.get("payload_version"),
         "n_records": n,
         "refund_accuracy": round(acc, 4),
-        "ece_raw_oof": ece_raw,
+        # `raw` = uncalibrated model output on all n records (nothing is fit,
+        # so no CV is needed or possible); `calibrated` = out-of-fold, each
+        # record scored by a T fit without it. The old `_oof` suffix on the raw
+        # pair implied cross-validation on the baseline side.
+        "ece_raw": ece_raw,
         "ece_calibrated_oof": ece_cal,
-        "brier_raw_oof": brier_raw,
+        "brier_raw": brier_raw,
         "brier_calibrated_oof": brier_cal,
         "fold_temperatures": fold_Ts,
         "T_global_fit": T_global,
         "recipe": f"p_cal = sigmoid(logit(p) / {T_global})",
-        "gate_pass_after_calibration": ece_cal < 0.05,
+        "gate_pass_after_calibration": ece_cal < GATE_ECE_REFUND,
         "honesty_note": (
             "Out-of-fold CV metrics; each record's calibrated p uses a T fit "
             "without it. T_global is the production recipe but overfits this "
@@ -143,7 +173,15 @@ def main() -> int:
     print(json.dumps(summary, indent=2))
     out = REPO_ROOT / "evals" / "results" / f"calibration-{Path(args.predictions).stem}.json"
     out.write_text(json.dumps(summary, indent=2))
+    # round-trip check: an artifact that does not re-parse is a broken artifact
+    json.loads(out.read_text())
     print(f"saved: {out.relative_to(REPO_ROOT)}")
+    if abs(T_global - REFUND_TEMPERATURE) > 1e-9:
+        print(f"ACTION REQUIRED: serving applies adip.config.REFUND_TEMPERATURE="
+              f"{REFUND_TEMPERATURE}, but this fit produced T={T_global}. Refit "
+              "changed the shipped calibration - update adip/config.py "
+              "(tests/test_config.py asserts the two match).")
+        return 1
     return 0
 
 

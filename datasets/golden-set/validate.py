@@ -21,9 +21,14 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT))
+from adip.questions import DEPTS as DEPT_VOCAB, URGENCY_LEVELS  # noqa: E402
+
 LANGS = {"en", "es", "de", "fr", "zh", "other"}
 SOURCES = {"handwritten", "public-dataset-derived", "synthetic"}
-DEPTS = {"billing", "technical", "sales", "account"}
+# department vocabulary comes from the question payload itself (adip.questions)
+DEPTS = set(DEPT_VOCAB)
 
 TICKET_ID_RE = re.compile(r"^TICKET-[0-9]{4}$")
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
@@ -53,7 +58,10 @@ META_KEYS = {"labeler", "confident", "second_labeler", "disagreement",
 def load_records(path: Path) -> list[dict]:
     obj = json.loads(path.read_text())
     if isinstance(obj, dict):
-        return obj.get("records", [])
+        if "records" not in obj:
+            raise SystemExit(f"{path}: top-level object has no 'records' key "
+                             f"(keys: {sorted(obj)})")
+        return obj["records"]
     if isinstance(obj, list):
         return obj
     raise SystemExit(f"{path}: top level must be an object with 'records' or a list")
@@ -113,8 +121,8 @@ def check_record(rec: dict, idx: int, errors: list[str]) -> None:
     if labels["department"] not in DEPTS:
         errors.append(f"{where}: department {labels['department']!r} not in {sorted(DEPTS)}")
     u = labels["urgency"]
-    if not isinstance(u, int) or isinstance(u, bool) or u not in (0, 1, 2):
-        errors.append(f"{where}: urgency must be integer 0..2, got {u!r}")
+    if not isinstance(u, int) or isinstance(u, bool) or u not in URGENCY_LEVELS:
+        errors.append(f"{where}: urgency must be integer {URGENCY_LEVELS[0]}..{URGENCY_LEVELS[-1]}, got {u!r}")
     if not isinstance(labels["refund"], bool):
         errors.append(f"{where}: refund must be boolean, got {labels['refund']!r}")
 
@@ -134,6 +142,15 @@ def check_record(rec: dict, idx: int, errors: list[str]) -> None:
         errors.append(f"{where}: meta.labeler must be a non-empty string")
     if not isinstance(meta.get("confident"), bool):
         errors.append(f"{where}: meta.confident must be boolean")
+    # typed optional fields: schema.json declares these, so a wrong type is a
+    # schema violation even though the key itself is allowed above
+    if "disagreement" in meta and not isinstance(meta["disagreement"], bool):
+        errors.append(f"{where}: meta.disagreement must be boolean, got {meta['disagreement']!r}")
+    if "notes" in meta and not isinstance(meta["notes"], str):
+        errors.append(f"{where}: meta.notes must be a string, got {type(meta['notes']).__name__}")
+    if "second_labeler" in meta and (not isinstance(meta["second_labeler"], str)
+                                     or not meta["second_labeler"].strip()):
+        errors.append(f"{where}: meta.second_labeler must be a non-empty string")
     if meta.get("hard_case") is True:
         notes = meta.get("notes", "")
         if not HARD_CASE_REF_RE.search(notes):
@@ -143,10 +160,13 @@ def check_record(rec: dict, idx: int, errors: list[str]) -> None:
         errors.append(f"{where}: public-dataset-derived requires meta.source_url")
 
 
-def composition(records: list[dict], expect: int, errors: list[str],
-                warnings: list[str]) -> None:
+def composition(records: list[dict], expect: int | None, errors: list[str],
+                warnings: list[str], enforce_targets: bool = False) -> None:
+    """Count check runs whenever `expect` is given; per-class composition
+    targets run only under enforce_targets (they describe the frozen 50-ticket
+    release, not arbitrary future cuts)."""
     n = len(records)
-    if n != expect:
+    if expect is not None and n != expect:
         errors.append(f"composition: {n} records, expected {expect}")
 
     depts = Counter(r.get("labels", {}).get("department") for r in records)
@@ -158,7 +178,7 @@ def composition(records: list[dict], expect: int, errors: list[str],
     warnings.append(f"composition snapshot: departments={dict(depts)} urgencies={dict(urg)} "
                     f"refund_true={refund_true} non_en={non_en} hard_cases={hard}")
 
-    if expect == 50:
+    if enforce_targets and expect == 50:
         for d, target in DEPT_TARGETS.items():
             if depts.get(d, 0) != target:
                 errors.append(f"composition: department {d} = {depts.get(d, 0)}, target {target}")
@@ -171,6 +191,9 @@ def composition(records: list[dict], expect: int, errors: list[str],
             errors.append(f"composition: non-en = {non_en}, target {NON_EN_TARGET}")
         if hard < HARD_CASE_MIN:
             errors.append(f"composition: hard cases = {hard}, minimum {HARD_CASE_MIN}")
+    elif enforce_targets:
+        warnings.append(f"composition targets skipped: they are defined for the "
+                        f"50-ticket freeze, got expect={expect}")
 
 
 def main() -> int:
@@ -194,8 +217,15 @@ def main() -> int:
     for i, rec in enumerate(records):
         check_record(rec, i, errors)
 
-    expect = args.expect if args.expect is not None else (50 if args.strict else len(records))
-    composition(records, expect, errors if args.strict else [], warnings)
+    # --expect N is enforced even without --strict; per-class composition
+    # targets (the 50-ticket freeze) require --strict
+    if args.expect is not None:
+        expect = args.expect
+    elif args.strict:
+        expect = 50
+    else:
+        expect = None
+    composition(records, expect, errors, warnings, enforce_targets=args.strict)
 
     for w in warnings:
         print(f"NOTE: {w}")

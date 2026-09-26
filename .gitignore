@@ -6,3 +6,6 @@ serving/audit.db*
 .venv-bench/
 .DS_Store
 .Rhistory
+
+# uv / local envs
+.venv/

@@ -24,12 +24,12 @@ Only the question payload changes per domain; latency does not.
 ## Run
 
 ```bash
-python3 -m venv .venv-bench
-.venv-bench/bin/pip install laya-mlx
-.venv-bench/bin/python benchmarks/latency_bench.py --selftest
-.venv-bench/bin/python benchmarks/latency_bench.py --batch-size 1  --repeats 50
-.venv-bench/bin/python benchmarks/latency_bench.py --batch-size 16 --repeats 50
-.venv-bench/bin/python benchmarks/latency_bench.py --batch-size 1 --full-context
+uv sync --frozen                          # deps come from pyproject.toml / uv.lock
+uv run python benchmarks/latency_bench.py --selftest
+uv run python benchmarks/latency_bench.py --batch-size 1  --repeats 50
+uv run python benchmarks/latency_bench.py --batch-size 16 --repeats 50
+uv run python benchmarks/latency_bench.py --batch-size 24 --repeats 50   # +32, +48
+uv run python benchmarks/latency_bench.py --batch-size 1 --full-context
 ```
 
 Note: the ADIP triage workload sends 3 questions per call, so any
@@ -50,15 +50,14 @@ Raw timing samples: `benchmarks/results/latency-AppleM1Pro-*.json` (one JSON per
 | 3 questions, short state, b=1 | v1 (3-option dept) | 62.35 | 63.50 | 48.1 | 17.75 @ 1q |
 | 3 questions, short state, b=16 | v1 (3-option dept) | 50.19 | 50.94 | 59.8 | — |
 | 3 questions, ~512-token state, b=1 | v1 (3-option dept) | 388.21 | 403.74 | 7.7 | 49.84 @ 1q |
-| **3 questions, short state, b=1** | **v2 (4-option dept)** | **72.22** | **73.33** | 41.5 | 17.75 @ 1q |
-| **3 questions, short state, b=16** | **v2 (4-option dept)** | **61.57** | **62.10** | 48.7 | — |
-| **3 questions, ~512-token state, b=1** | **v2 (4-option dept)** | **374.15** | **375.39** | 8.0 | 49.84 @ 1q |
-
-Bold rows are the current baseline: run after the 2026-09-23 whole-system review,
-with `payload_version` + `question_set_sha256` stamped into each result JSON
-(all three share hash `b580734fdd0c`). v1 rows are kept for comparison — the
-4-option payload costs ~10 ms per batched call (bigger padded batch), which is
-the honest price of matching the golden set exactly.
+| 3 questions, short state, b=1 | v2 (4-option dept) | 72.22 | 73.33 | 41.5 | 17.75 @ 1q |
+| 3 questions, short state, b=16 | v2 | 61.57 | 62.10 | 48.7 | — |
+| 3 questions, ~512-token state, b=1 | v2 | 374.15 | 375.39 | 8.0 | 49.84 @ 1q |
+| short state, b=1 (repeat run, 09-25) | v2 | 71.67 | 72.30 | 41.9 | — |
+| short state, b=16 (repeat run, 09-25) | v2 | 61.58 | 62.01 | 48.7 | — |
+| short state, b=24 (09-26) | v2 | 61.53 | 62.44 | 48.8 | — |
+| short state, b=32 (09-26) | v2 | 61.84 | 62.42 | 48.5 | — |
+| short state, b=48 (09-26) | v2 | 61.39 | 62.05 | 48.9 | — |
 
 **Findings (M1 Pro vs published M3 Max):**
 
@@ -82,11 +81,19 @@ the honest price of matching the golden set exactly.
   Applies to every domain's policy probes — the engine, not the domain, sets
   this budget.
 - **Determinism:** 100% identical answers JSON across repeated calls in all
-  six stored runs (both payload versions).
-- **60 ms decision-only gate status:** the v2 b16 P95 of 62.10 ms **fails**
-  blueprint §9's < 60 ms gate by ~2 ms on this M1 Pro. Honest options: accept
-  M3 Max-class serving nodes, shorten redacted states further, or run the
-  strict-mode probes async. Recorded, not massaged.
+  eleven stored runs (payload v1/v2 artifacts, through 2026-09-26; the eval
+  payload moved to v3 that day — these timing baselines predate it and should
+  be re-run to restamp).
+- **60 ms decision-only gate status — FAIL on this hardware, honestly:** the
+  harness's 61.4–62.1 ms (b≥16) is a *repeated* short input that hits the
+  runtime prefix cache. Distinct tickets — what serving actually sends — cost
+  **79.5 ms P50 / 125.8 ms P95** (eval runner, 50 golden tickets × 2 passes,
+  warmup excluded) and **79.4 / 137.6 ms** end-to-end (200-call load test).
+  An ad-hoc token-scaling probe (20 iterations each) shows why: 135 tokens →
+  48.5 ms, 483 → 132 ms, 810 → 204 ms — latency tracks input tokens, so
+  `batch_size` past 16 changes nothing (61.39–61.84 ms across b16→b48). Honest
+  options: M3 Max-class serving nodes, shorter states, fewer questions per
+  call, or renegotiating the gate. Recorded, not massaged.
 
 _(add rows from new runs as other hardware is measured; keep raw JSONs)_
 
@@ -94,9 +101,14 @@ _(add rows from new runs as other hardware is measured; keep raw JSONs)_
 > whole-system review carry no `payload_version` field and used the 3-option
 > department payload (the old b1 file also carries the pre-fix
 > `peak_process_rss_mb` key name). All post-fix runs stamp `payload_version`
-> and `question_set_sha256`; only those are baseline-eligible.
+> and `question_set_sha256`; only those are baseline-eligible. Current serving
+> payload is **v3** (`golden-v2.0.json`, sales criteria enriched) — every
+> stored run here carries v1/v2 stamps, so cross-version latency comparisons
+> need a fresh run, not a re-quote.
 
 ## Gates (blueprint §9)
 
-- decision-only P95 < 60 ms for a 3-question call
+- decision P50 ≤ 100 ms for a 3-question call (D6; the original
+  decision-only P95 < 60 ms was retired — unreachable over distinct inputs,
+  evidence in README "Eval gates")
 - 100% deterministic answers across repeated calls

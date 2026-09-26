@@ -35,9 +35,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
+from adip.config import BATCH_SIZE, CHECKPOINT  # noqa: E402
+from adip.questions import PAYLOAD_VERSION, QUESTIONS  # noqa: E402
+from adip.stats import percentile  # noqa: E402
+
 RESULTS_DIR = REPO_ROOT / "benchmarks" / "results"
 
-CHECKPOINT = "aac6fef/laya-mlx"
+N_QUESTIONS = len(QUESTIONS)  # questions per predict() call
 
 STATE_SHORT = "I was billed twice. Please refund the duplicate charge from last Tuesday."
 STATE_FULL = (
@@ -52,56 +57,15 @@ STATE_FULL = (
     "successful capture events 26 hours apart referencing the same order id. "
 ) * 4  # padded to ~512 tokens at load; the runtime truncates at its context limit
 
-# Question set mirrors evals/run_eval.py QUESTIONS and the golden set's
-# question_set. Latency is insensitive to criteria wording, but the payloads
-# must stay in sync so results stay comparable across harnesses; if you change
-# one, change all three (eval runner, golden set, this file).
-QUESTIONS = {
-    "department": {
-        "type": "choice",
-        "instructions": "Which team should handle this request?",
-        "criteria": {
-            "billing": "invoices, payments, refunds, duplicate charges",
-            "technical": "bugs, outages, integration failures",
-            "sales": "new purchases, upgrades, pricing",
-            "account": "login, password, profile, subscription status, data requests",
-        },
-    },
-    "urgency": {
-        "type": "score",
-        "instructions": "How urgent is this request?",
-        "criteria": ["not urgent", "soon", "critical"],
-    },
-    "refund": {
-        "type": "noul",
-        "instructions": "Does the customer ask for money back?",
-    },
-}
-
-N_QUESTIONS = len(QUESTIONS)  # questions per predict() call
-
-# Bump when the QUESTIONS payload changes; stamped into every result JSON so
-# provenance is machine-readable (v1 = the pre-review 3-option department
-# payload; v2 = 4-option payload synced with the eval runner + golden set).
-PAYLOAD_VERSION = 2
+# QUESTIONS / PAYLOAD_VERSION / N_QUESTIONS come from adip.questions — one
+# payload shared with serving and the eval runner. Latency is insensitive to
+# criteria wording, but results stay comparable across harnesses only while the
+# payload is literally the same object.
 
 
 # --------------------------------------------------------------------------
 # stats helpers (pure python, covered by --selftest)
 # --------------------------------------------------------------------------
-
-def percentile(sorted_samples: list[float], pct: float) -> float:
-    """Linear-interpolated percentile on a pre-sorted list."""
-    if not sorted_samples:
-        raise ValueError("empty sample list")
-    if len(sorted_samples) == 1:
-        return sorted_samples[0]
-    rank = (pct / 100.0) * (len(sorted_samples) - 1)
-    lo = int(rank)
-    hi = min(lo + 1, len(sorted_samples) - 1)
-    frac = rank - lo
-    return sorted_samples[lo] * (1 - frac) + sorted_samples[hi] * frac
-
 
 def summarize(samples_ms: list[float], questions_per_call: int) -> dict:
     s = sorted(samples_ms)
@@ -114,7 +78,8 @@ def summarize(samples_ms: list[float], questions_per_call: int) -> dict:
         "mean_ms": round(statistics.fmean(s), 3),
         "max_ms": round(s[-1], 3),
         "questions_per_call": questions_per_call,
-        "q_per_s_at_p50": round(questions_per_call * 1000.0 / p50, 2),
+        # guard: a sub-ms sample set rounding to p50==0.0 must not raise
+        "q_per_s_at_p50": round(questions_per_call * 1000.0 / p50, 2) if p50 > 0 else 0.0,
     }
 
 
@@ -241,7 +206,7 @@ def bench(batch_size: int, repeats: int, warmup: int, full_context: bool,
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--batch-size", type=int, default=16)
+    ap.add_argument("--batch-size", type=int, default=BATCH_SIZE)
     ap.add_argument("--repeats", type=int, default=50)
     ap.add_argument("--warmup", type=int, default=5)
     ap.add_argument("--full-context", action="store_true",
@@ -249,6 +214,13 @@ def main() -> int:
     ap.add_argument("--dtype", default="float16", choices=["float16", "float32"])
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args()
+
+    if args.repeats < 1:
+        ap.error(f"--repeats must be >= 1, got {args.repeats}")
+    if args.warmup < 0:
+        ap.error(f"--warmup must be >= 0, got {args.warmup}")
+    if args.batch_size < 1:
+        ap.error(f"--batch-size must be >= 1, got {args.batch_size}")
 
     if args.selftest:
         return run_selftest()
@@ -261,8 +233,10 @@ def main() -> int:
     stamp = record["timestamp_utc"].replace(":", "").replace("-", "")[:15]
     suffix = "fullctx" if args.full_context else f"b{args.batch_size}"
     out = RESULTS_DIR / f"latency-{host}-{suffix}-{stamp}.json"
-    out.write_text(json.dumps(record, indent=2))
+    # stamped into the record BEFORE the write so the saved JSON and the JSON
+    # printed to stdout are the same document
     record["results_file"] = str(out.relative_to(REPO_ROOT))
+    out.write_text(json.dumps(record, indent=2))
 
     print(json.dumps({k: v for k, v in record.items() if k != "samples_ms"},
                      indent=2))
