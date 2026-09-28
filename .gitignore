@@ -9,3 +9,6 @@ serving/audit.db*
 
 # uv / local envs
 .venv/
+
+# subagent session scratch (SDD workspace)
+.superpowers/
