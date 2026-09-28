@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from fastapi.testclient import TestClient
+
+from jevcity.api.app import build_engine, create_app
+from jevcity.schemas import LayaMode
+
 
 
 def test_state_payload_shape(client):
@@ -137,3 +142,19 @@ def test_404s(client):
         json={"operator_id": "op", "decision_id": "nope",
               "override_type": "CHANGE_PRIORITY", "reason": "x"},
     ).status_code == 404
+
+
+def test_reset_clears_laya_cache():
+    engine = build_engine(mode=LayaMode.CACHE)
+    client = TestClient(create_app(engine))
+    client.post("/api/simulation/start", json={"session_seed": 42, "scenario_seed": 7})
+    client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "accident", "zone": "north", "severity": "severe"},
+    )
+    assert engine.adapter.cache  # populated by the incident decision
+    client.post(
+        "/api/simulation/reset",
+        json={"session_seed": 42, "scenario_seed": 7},
+    )
+    assert engine.adapter.cache == {}

@@ -153,6 +153,7 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
     @app.post("/api/simulation/reset", response_model=SimulationActionResponse)
     def sim_reset(req: SimulationResetRequest) -> SimulationActionResponse:
         engine.simulation.reset(SeedConfig(req.session_seed, req.scenario_seed))
+        engine.adapter = LayaAdapter(mode=engine.adapter.mode)
         engine.decisions.clear()
         engine.decision_history.clear()
         engine.validation_by_event.clear()
