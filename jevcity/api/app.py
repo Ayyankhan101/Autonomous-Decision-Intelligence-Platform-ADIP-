@@ -29,6 +29,7 @@ from jevcity.schemas import (
     WhatIfRequest,
     WhatIfResult,
 )
+from jevcity.simulation.replay import load_recording, stream
 from jevcity.simulation.seeds import SeedConfig
 from jevcity.simulation.state import SimulationState
 
@@ -131,7 +132,18 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
     def sim_start(req: SimulationStartRequest) -> SimulationActionResponse:
         engine.simulation.start(req.session_seed, req.scenario_seed)
         engine.adapter = LayaAdapter(mode=engine.adapter.mode)
-        return SimulationActionResponse()
+        if req.recording is None:
+            return SimulationActionResponse()
+        try:
+            records = load_recording(req.recording)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        stream(engine.simulation, records, speed=req.speed, sleeper=lambda _s: None)
+        out = engine.process_pending()
+        return SimulationActionResponse(
+            incident_id=records[0].incident_id if records else None,
+            decision_ids=[r.decision_id for r in out],
+        )
 
     @app.post("/api/simulation/pause", response_model=SimulationActionResponse)
     def sim_pause() -> SimulationActionResponse:

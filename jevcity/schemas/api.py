@@ -75,6 +75,11 @@ class SimulationStartRequest(BaseModel):
 
     session_seed: int = 42
     scenario_seed: int = 7
+    recording: str | None = Field(
+        default=None,
+        description="JSONL recording filename under datasets/jevcity/ (replay mode)",
+    )
+    speed: float = Field(default=1.0, gt=0, le=100, description="wall pacing multiplier")
 
 
 class SimulationResetRequest(BaseModel):

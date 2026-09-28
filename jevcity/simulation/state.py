@@ -120,6 +120,12 @@ class SimulationState:
         self.second_emergency_fired = True
         return self.inject_incident(incident_type, zone, SeverityHint.SEVERE)
 
+    def append_replay(self, event: EventEnvelope) -> None:
+        """Register one pre-recorded event (plan Phase 1 replay path)."""
+        self.raw_events.append(event.model_dump(mode="json"))
+        self.events.append(event)
+        self._register_incident(event)
+
     # --- internals ----------------------------------------------------
 
     def _register_incident(self, event: EventEnvelope) -> None:

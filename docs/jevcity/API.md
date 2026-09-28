@@ -19,7 +19,7 @@ JSON Schema exports (dashboard contract): `schemas/*.json` via `python -m jevcit
 
 | Method | Path | Body |
 |--------|------|------|
-| POST | `/api/simulation/start` | `{session_seed, scenario_seed}` |
+| POST | `/api/simulation/start` | `{session_seed, scenario_seed, recording?, speed?}` — `recording` = JSONL filename under `datasets/jevcity/` streams the recording through the live pipeline (sync; `speed` reserved for live pacing) |
 | POST | `/api/simulation/pause` | — |
 | POST | `/api/simulation/reset` | `{session_seed, scenario_seed}` |
 | POST | `/api/simulation/incident` | `{incident_type, zone, severity?, source_id?, notes?, multi_report?}` |
