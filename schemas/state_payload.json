@@ -1,0 +1,90 @@
+{
+  "$defs": {
+    "ResourceType": {
+      "enum": [
+        "ambulance",
+        "fire_truck",
+        "police_unit",
+        "flood_response_unit",
+        "traffic_management_unit"
+      ],
+      "title": "ResourceType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "GET /api/state \u2014 dashboard polls this every 1\u20132 s.",
+  "properties": {
+    "available_resources": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/ResourceType"
+      },
+      "title": "Available Resources",
+      "type": "object"
+    },
+    "decision_count": {
+      "minimum": 0,
+      "title": "Decision Count",
+      "type": "integer"
+    },
+    "incident_count": {
+      "minimum": 0,
+      "title": "Incident Count",
+      "type": "integer"
+    },
+    "last_laya_status": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Laya Status"
+    },
+    "laya_mode": {
+      "title": "Laya Mode",
+      "type": "string"
+    },
+    "open_incident_count": {
+      "minimum": 0,
+      "title": "Open Incident Count",
+      "type": "integer"
+    },
+    "running": {
+      "title": "Running",
+      "type": "boolean"
+    },
+    "scenario_seed": {
+      "title": "Scenario Seed",
+      "type": "integer"
+    },
+    "session_seed": {
+      "title": "Session Seed",
+      "type": "integer"
+    },
+    "simulated_time": {
+      "format": "date-time",
+      "title": "Simulated Time",
+      "type": "string"
+    }
+  },
+  "required": [
+    "simulated_time",
+    "running",
+    "session_seed",
+    "scenario_seed",
+    "incident_count",
+    "decision_count",
+    "open_incident_count",
+    "available_resources",
+    "laya_mode"
+  ],
+  "title": "StatePayload",
+  "type": "object"
+}

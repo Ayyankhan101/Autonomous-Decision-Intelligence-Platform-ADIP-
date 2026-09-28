@@ -1,0 +1,577 @@
+{
+  "$defs": {
+    "AnomalyOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "data_quality_anomaly": {
+          "title": "Data Quality Anomaly",
+          "type": "boolean"
+        },
+        "data_quality_score": {
+          "description": "badness: higher = more anomalous",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Data Quality Score",
+          "type": "number"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "situational_anomaly": {
+          "title": "Situational Anomaly",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "data_quality_anomaly",
+        "data_quality_score",
+        "situational_anomaly"
+      ],
+      "title": "AnomalyOutput",
+      "type": "object"
+    },
+    "DataQualitySignal": {
+      "additionalProperties": false,
+      "properties": {
+        "anomaly": {
+          "default": false,
+          "title": "Anomaly",
+          "type": "boolean"
+        },
+        "data_quality_score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Data Quality Score",
+          "type": "number"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        }
+      },
+      "required": [
+        "data_quality_score"
+      ],
+      "title": "DataQualitySignal",
+      "type": "object"
+    },
+    "DecisionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "assigned_resource_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Assigned Resource Ids",
+          "type": "array"
+        },
+        "available_resource_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Available Resource Ids",
+          "type": "array"
+        },
+        "decision_id": {
+          "title": "Decision Id",
+          "type": "string"
+        },
+        "decision_time_simulated": {
+          "format": "date-time",
+          "title": "Decision Time Simulated",
+          "type": "string"
+        },
+        "dry_run": {
+          "default": false,
+          "title": "Dry Run",
+          "type": "boolean"
+        },
+        "incident_id": {
+          "title": "Incident Id",
+          "type": "string"
+        },
+        "laya": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LayaBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "laya_answer_confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Laya Answer Confidence"
+        },
+        "matched_rules": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Matched Rules",
+          "type": "array"
+        },
+        "overall_confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Overall Confidence"
+        },
+        "override": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OverrideRecord"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "policy_id": {
+          "default": "city-priority-policy",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "policy_version": {
+          "default": "0.1.0",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "priority": {
+          "$ref": "#/$defs/Priority"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "recommended_resources": {
+          "items": {
+            "$ref": "#/$defs/ResourceType"
+          },
+          "title": "Recommended Resources",
+          "type": "array"
+        },
+        "signals": {
+          "$ref": "#/$defs/Signals"
+        },
+        "state": {
+          "$ref": "#/$defs/DecisionState"
+        }
+      },
+      "required": [
+        "decision_id",
+        "incident_id",
+        "state",
+        "priority",
+        "signals",
+        "decision_time_simulated"
+      ],
+      "title": "DecisionRecord",
+      "type": "object"
+    },
+    "DecisionSource": {
+      "enum": [
+        "laya_proposed",
+        "policy_finalized",
+        "fallback_rule",
+        "human_required"
+      ],
+      "title": "DecisionSource",
+      "type": "string"
+    },
+    "DecisionState": {
+      "enum": [
+        "AUTO_APPROVED",
+        "HOLD_FOR_HUMAN",
+        "REJECTED_INPUT",
+        "CONTENTION_ESCALATION",
+        "OVERRIDE_ACTIVE",
+        "MODEL_DEGRADED"
+      ],
+      "title": "DecisionState",
+      "type": "string"
+    },
+    "LayaBlock": {
+      "additionalProperties": false,
+      "properties": {
+        "answer_confidence_priority": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer Confidence Priority"
+        },
+        "checkpoint": {
+          "title": "Checkpoint",
+          "type": "string"
+        },
+        "device": {
+          "title": "Device",
+          "type": "string"
+        },
+        "final_decision_source": {
+          "$ref": "#/$defs/DecisionSource",
+          "default": "policy_finalized"
+        },
+        "guardrail_applied": {
+          "default": true,
+          "title": "Guardrail Applied",
+          "type": "boolean"
+        },
+        "latency_ms": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Latency Ms",
+          "type": "number"
+        },
+        "questions_hash": {
+          "default": "",
+          "title": "Questions Hash",
+          "type": "string"
+        },
+        "recommended_resource_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ResourceType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "router_model": {
+          "title": "Router Model",
+          "type": "string"
+        },
+        "state_hash": {
+          "default": "",
+          "title": "State Hash",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/LayaStatus"
+        },
+        "suggested_needs_human_review": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Suggested Needs Human Review"
+        },
+        "suggested_priority": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Priority"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "status",
+        "checkpoint",
+        "router_model",
+        "device"
+      ],
+      "title": "LayaBlock",
+      "type": "object"
+    },
+    "LayaStatus": {
+      "enum": [
+        "ok",
+        "error",
+        "timeout",
+        "invalid_response",
+        "unavailable"
+      ],
+      "title": "LayaStatus",
+      "type": "string"
+    },
+    "ModelStatus": {
+      "enum": [
+        "ok",
+        "error",
+        "timeout",
+        "invalid_input"
+      ],
+      "title": "ModelStatus",
+      "type": "string"
+    },
+    "OverrideRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "operator_id": {
+          "title": "Operator Id",
+          "type": "string"
+        },
+        "override_type": {
+          "$ref": "#/$defs/OverrideType"
+        },
+        "previous_priority": {
+          "$ref": "#/$defs/Priority"
+        },
+        "previous_state": {
+          "$ref": "#/$defs/DecisionState"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "timestamp": {
+          "format": "date-time",
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operator_id",
+        "override_type",
+        "reason",
+        "timestamp",
+        "previous_state",
+        "previous_priority"
+      ],
+      "title": "OverrideRecord",
+      "type": "object"
+    },
+    "OverrideType": {
+      "enum": [
+        "CHANGE_PRIORITY",
+        "ASSIGN_RESOURCES",
+        "DISMISS_INCIDENT",
+        "ESCALATE_TO_HUMAN",
+        "MARK_DATA_UNTRUSTED",
+        "OVERRIDE_AUTOMATION_HOLD"
+      ],
+      "title": "OverrideType",
+      "type": "string"
+    },
+    "Priority": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "Priority",
+      "type": "string"
+    },
+    "ResourceType": {
+      "enum": [
+        "ambulance",
+        "fire_truck",
+        "police_unit",
+        "flood_response_unit",
+        "traffic_management_unit"
+      ],
+      "title": "ResourceType",
+      "type": "string"
+    },
+    "SeveritySignal": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "prediction": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prediction"
+        },
+        "status": {
+          "$ref": "#/$defs/ModelStatus",
+          "default": "ok"
+        }
+      },
+      "title": "SeveritySignal",
+      "type": "object"
+    },
+    "Signals": {
+      "additionalProperties": false,
+      "properties": {
+        "anomaly": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnomalyOutput"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "data_quality": {
+          "$ref": "#/$defs/DataQualitySignal"
+        },
+        "severity": {
+          "$ref": "#/$defs/SeveritySignal"
+        },
+        "situational_anomaly": {
+          "default": false,
+          "title": "Situational Anomaly",
+          "type": "boolean"
+        },
+        "traffic": {
+          "$ref": "#/$defs/TrafficSignal"
+        }
+      },
+      "required": [
+        "severity",
+        "traffic",
+        "data_quality"
+      ],
+      "title": "Signals",
+      "type": "object"
+    },
+    "TrafficSignal": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "predicted_congestion_delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Predicted Congestion Delta"
+        },
+        "status": {
+          "$ref": "#/$defs/ModelStatus",
+          "default": "ok"
+        }
+      },
+      "title": "TrafficSignal",
+      "type": "object"
+    },
+    "WhatIfScenario": {
+      "enum": [
+        "remove_one_ambulance",
+        "close_road",
+        "second_emergency"
+      ],
+      "title": "WhatIfScenario",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "audit_written": {
+      "default": false,
+      "title": "Audit Written",
+      "type": "boolean"
+    },
+    "decision": {
+      "$ref": "#/$defs/DecisionRecord"
+    },
+    "dry_run": {
+      "default": true,
+      "title": "Dry Run",
+      "type": "boolean"
+    },
+    "laya_mode": {
+      "title": "Laya Mode",
+      "type": "string"
+    },
+    "live_state_mutated": {
+      "default": false,
+      "title": "Live State Mutated",
+      "type": "boolean"
+    },
+    "sandbox_id": {
+      "title": "Sandbox Id",
+      "type": "string"
+    },
+    "scenario": {
+      "$ref": "#/$defs/WhatIfScenario"
+    }
+  },
+  "required": [
+    "sandbox_id",
+    "scenario",
+    "laya_mode",
+    "decision"
+  ],
+  "title": "WhatIfResult",
+  "type": "object"
+}

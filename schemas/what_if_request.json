@@ -1,0 +1,36 @@
+{
+  "$defs": {
+    "WhatIfScenario": {
+      "enum": [
+        "remove_one_ambulance",
+        "close_road",
+        "second_emergency"
+      ],
+      "title": "WhatIfScenario",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "scenario": {
+      "$ref": "#/$defs/WhatIfScenario"
+    },
+    "session_seed": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Session Seed"
+    }
+  },
+  "required": [
+    "scenario"
+  ],
+  "title": "WhatIfRequest",
+  "type": "object"
+}

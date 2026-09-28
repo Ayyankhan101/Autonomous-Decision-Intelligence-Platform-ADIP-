@@ -6,6 +6,26 @@
 
 ---
 
+## JevCity — incident decisioning (plan Rev 2)
+
+This repo also hosts **JevCity** (`jevcity/` package): autonomous incident triage built on
+the same laya-mlx platform, per `JevCity_Implementation_Plan_Revised_v2_Laya.docx` —
+"Laya proposes; deterministic policy guardrail decides."
+
+- Vertical slice implemented: simulation (seeded) → validation → stub ML → mock-Laya
+  adapter → guardrail (16 invariants) → greedy allocation → append-only audit → API → What-If.
+- Docs: [`docs/jevcity/PHASE0_SIGNOFF.md`](docs/jevcity/PHASE0_SIGNOFF.md) (22-item gate),
+  [`ERRATA.md`](docs/jevcity/ERRATA.md) (plan-vs-repo resolutions),
+  [`ARCHITECTURE.md`](docs/jevcity/ARCHITECTURE.md), [`API.md`](docs/jevcity/API.md),
+  [`DEMO_BEATS.md`](docs/jevcity/DEMO_BEATS.md).
+- API (port **8200**): `uvicorn jevcity.api.app:app --port 8200` — 16 endpoints incl.
+  simulation controls, overrides (actor+reason enforced), What-If (`dry_run`, zero live writes).
+- Tests: `tests/jevcity/` — invariant property tests, audit append-only/hash-chain, adapter
+  fail-closed, API contracts. Full suite: `uv run pytest`.
+- Triage platform (`adip/`, `serving/` on port 8100) untouched underneath.
+
+---
+
 ## What ADIP does
 
 Turn a **text state** into typed, calibrated, auditable decisions. Support-ticket

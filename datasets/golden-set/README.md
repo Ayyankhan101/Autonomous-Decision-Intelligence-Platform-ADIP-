@@ -38,8 +38,9 @@ exactly this: sales criteria, labels untouched).
 | `guidelines.md` | Labeling rubric, decision trees, QC, and hard-case catalogue |
 | `exemplars.json` | 5 fully-worked examples (one per label area + one hard case) |
 | `golden-template.json` | Working file, filled with all 50 (frozen copies: `golden-v2.0.json` current, `golden-v1.0.json` historical) |
-| `golden-v2.0.json` | the frozen set every eval run names (payload v3) |
-| `golden-v1.0.json` | frozen labels v1.0 (payload v2 question set — kept for provenance; labels identical to v2.0) |
+| `golden-v2.0.json` | **CURRENT** — the frozen set every eval run names (payload v3) |
+| `golden-v1.0.json` | frozen labels v1.0 (payload v2 question set) — **provenance only, never use for new runs** (labels identical to v2.0) |
+| `golden-v1.0-rc1.json` | pre-freeze release candidate — **provenance only, never use for new runs** (superseded by `golden-v2.0.json`) |
 | `validate.py` | Schema + rubric cross-checks; run before freezing |
 | `qc_sweep.py` | regex label-vs-text sweep; `--strict` exits 1 on unresolved must-flags |
 | `qc-worksheet-v1.0.md` | human QC worksheet with sign-off box |

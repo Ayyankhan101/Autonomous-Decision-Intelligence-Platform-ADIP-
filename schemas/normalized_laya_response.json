@@ -1,0 +1,173 @@
+{
+  "$defs": {
+    "ChoiceAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "answer_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Answer Confidence",
+          "type": "number"
+        },
+        "choice": {
+          "title": "Choice",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "distribution": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Distribution",
+          "type": "object"
+        }
+      },
+      "required": [
+        "choice",
+        "confidence",
+        "answer_confidence"
+      ],
+      "title": "ChoiceAnswer",
+      "type": "object"
+    },
+    "LayaStatus": {
+      "enum": [
+        "ok",
+        "error",
+        "timeout",
+        "invalid_response",
+        "unavailable"
+      ],
+      "title": "LayaStatus",
+      "type": "string"
+    },
+    "LayaUsage": {
+      "additionalProperties": false,
+      "properties": {
+        "input_tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Input Tokens",
+          "type": "integer"
+        },
+        "output_tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Output Tokens",
+          "type": "integer"
+        }
+      },
+      "title": "LayaUsage",
+      "type": "object"
+    },
+    "NoulAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "answer_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Answer Confidence",
+          "type": "number"
+        },
+        "noul": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Noul",
+          "type": "number"
+        }
+      },
+      "required": [
+        "noul",
+        "answer_confidence"
+      ],
+      "title": "NoulAnswer",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "answers": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/ChoiceAnswer"
+          },
+          {
+            "$ref": "#/$defs/NoulAnswer"
+          }
+        ]
+      },
+      "title": "Answers",
+      "type": "object"
+    },
+    "checkpoint": {
+      "title": "Checkpoint",
+      "type": "string"
+    },
+    "device": {
+      "title": "Device",
+      "type": "string"
+    },
+    "engine": {
+      "default": "laya",
+      "title": "Engine",
+      "type": "string"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    },
+    "latency_ms": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Latency Ms",
+      "type": "number"
+    },
+    "questions_hash": {
+      "title": "Questions Hash",
+      "type": "string"
+    },
+    "router_model": {
+      "title": "Router Model",
+      "type": "string"
+    },
+    "runtime": {
+      "title": "Runtime",
+      "type": "string"
+    },
+    "state_hash": {
+      "title": "State Hash",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/LayaStatus"
+    },
+    "usage": {
+      "$ref": "#/$defs/LayaUsage"
+    }
+  },
+  "required": [
+    "status",
+    "runtime",
+    "checkpoint",
+    "router_model",
+    "device",
+    "state_hash",
+    "questions_hash"
+  ],
+  "title": "NormalizedLayaResponse",
+  "type": "object"
+}

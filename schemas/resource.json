@@ -1,0 +1,72 @@
+{
+  "$defs": {
+    "ResourceStatus": {
+      "enum": [
+        "available",
+        "assigned",
+        "busy",
+        "offline"
+      ],
+      "title": "ResourceStatus",
+      "type": "string"
+    },
+    "ResourceType": {
+      "enum": [
+        "ambulance",
+        "fire_truck",
+        "police_unit",
+        "flood_response_unit",
+        "traffic_management_unit"
+      ],
+      "title": "ResourceType",
+      "type": "string"
+    },
+    "Zone": {
+      "enum": [
+        "north",
+        "south",
+        "east",
+        "west",
+        "central"
+      ],
+      "title": "Zone",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "assigned_incident_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Assigned Incident Id"
+    },
+    "resource_id": {
+      "title": "Resource Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/ResourceStatus",
+      "default": "available"
+    },
+    "type": {
+      "$ref": "#/$defs/ResourceType"
+    },
+    "zone": {
+      "$ref": "#/$defs/Zone"
+    }
+  },
+  "required": [
+    "resource_id",
+    "type",
+    "zone"
+  ],
+  "title": "Resource",
+  "type": "object"
+}

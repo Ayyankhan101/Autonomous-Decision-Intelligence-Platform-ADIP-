@@ -1,0 +1,86 @@
+{
+  "$defs": {
+    "ModelStatus": {
+      "enum": [
+        "ok",
+        "error",
+        "timeout",
+        "invalid_input"
+      ],
+      "title": "ModelStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Confidence"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    },
+    "explanation_factors": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Explanation Factors",
+      "type": "array"
+    },
+    "latency_ms": {
+      "minimum": 0,
+      "title": "Latency Ms",
+      "type": "number"
+    },
+    "model_name": {
+      "title": "Model Name",
+      "type": "string"
+    },
+    "model_version": {
+      "title": "Model Version",
+      "type": "string"
+    },
+    "prediction": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Prediction"
+    },
+    "status": {
+      "$ref": "#/$defs/ModelStatus"
+    }
+  },
+  "required": [
+    "status",
+    "model_name",
+    "model_version",
+    "latency_ms"
+  ],
+  "title": "ModelOutput",
+  "type": "object"
+}

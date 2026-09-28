@@ -1,0 +1,272 @@
+{
+  "$defs": {
+    "EventContext": {
+      "additionalProperties": false,
+      "properties": {
+        "time_of_day_bucket": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Time Of Day Bucket"
+        },
+        "traffic_level": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Traffic Level"
+        },
+        "weather": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Weather"
+        }
+      },
+      "title": "EventContext",
+      "type": "object"
+    },
+    "IncidentType": {
+      "enum": [
+        "accident",
+        "fire",
+        "flood",
+        "traffic_spike"
+      ],
+      "title": "IncidentType",
+      "type": "string"
+    },
+    "InjectionMode": {
+      "enum": [
+        "missing_fields",
+        "out_of_range",
+        "conflicting_reports",
+        "adversarial_notes"
+      ],
+      "title": "InjectionMode",
+      "type": "string"
+    },
+    "Location": {
+      "additionalProperties": false,
+      "properties": {
+        "lat": {
+          "maximum": 90,
+          "minimum": -90,
+          "title": "Lat",
+          "type": "number"
+        },
+        "lon": {
+          "maximum": 180,
+          "minimum": -180,
+          "title": "Lon",
+          "type": "number"
+        },
+        "road_segment_id": {
+          "title": "Road Segment Id",
+          "type": "string"
+        },
+        "zone": {
+          "$ref": "#/$defs/Zone"
+        }
+      },
+      "required": [
+        "zone",
+        "lat",
+        "lon",
+        "road_segment_id"
+      ],
+      "title": "Location",
+      "type": "object"
+    },
+    "QualityHints": {
+      "additionalProperties": false,
+      "properties": {
+        "injection_mode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/InjectionMode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "is_synthetic": {
+          "default": true,
+          "title": "Is Synthetic",
+          "type": "boolean"
+        }
+      },
+      "title": "QualityHints",
+      "type": "object"
+    },
+    "ReportedAttributes": {
+      "additionalProperties": false,
+      "properties": {
+        "injuries_reported": {
+          "anyOf": [
+            {
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Injuries Reported"
+        },
+        "lanes_blocked": {
+          "anyOf": [
+            {
+              "maximum": 20,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lanes Blocked"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "severity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SeverityHint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "vehicles_involved": {
+          "anyOf": [
+            {
+              "maximum": 200,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vehicles Involved"
+        }
+      },
+      "title": "ReportedAttributes",
+      "type": "object"
+    },
+    "SeverityHint": {
+      "enum": [
+        "minor",
+        "moderate",
+        "severe"
+      ],
+      "title": "SeverityHint",
+      "type": "string"
+    },
+    "Zone": {
+      "enum": [
+        "north",
+        "south",
+        "east",
+        "west",
+        "central"
+      ],
+      "title": "Zone",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "context": {
+      "$ref": "#/$defs/EventContext"
+    },
+    "event_id": {
+      "title": "Event Id",
+      "type": "string"
+    },
+    "event_type": {
+      "default": "incident_report",
+      "title": "Event Type",
+      "type": "string"
+    },
+    "incident_id": {
+      "title": "Incident Id",
+      "type": "string"
+    },
+    "incident_type": {
+      "$ref": "#/$defs/IncidentType"
+    },
+    "ingest_time": {
+      "format": "date-time",
+      "title": "Ingest Time",
+      "type": "string"
+    },
+    "location": {
+      "$ref": "#/$defs/Location"
+    },
+    "quality_hints": {
+      "$ref": "#/$defs/QualityHints"
+    },
+    "reported_attributes": {
+      "$ref": "#/$defs/ReportedAttributes"
+    },
+    "simulated_time": {
+      "format": "date-time",
+      "title": "Simulated Time",
+      "type": "string"
+    },
+    "source_id": {
+      "title": "Source Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "incident_id",
+    "source_id",
+    "incident_type",
+    "simulated_time",
+    "ingest_time",
+    "location",
+    "reported_attributes"
+  ],
+  "title": "EventEnvelope",
+  "type": "object"
+}

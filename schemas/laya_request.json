@@ -1,0 +1,256 @@
+{
+  "$defs": {
+    "IncidentType": {
+      "enum": [
+        "accident",
+        "fire",
+        "flood",
+        "traffic_spike"
+      ],
+      "title": "IncidentType",
+      "type": "string"
+    },
+    "LayaState": {
+      "additionalProperties": false,
+      "properties": {
+        "active_competing_incidents": {
+          "minimum": 0,
+          "title": "Active Competing Incidents",
+          "type": "integer"
+        },
+        "available_ambulances": {
+          "minimum": 0,
+          "title": "Available Ambulances",
+          "type": "integer"
+        },
+        "data_quality_reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Data Quality Reasons",
+          "type": "array"
+        },
+        "data_quality_score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Data Quality Score",
+          "type": "number"
+        },
+        "incident_id": {
+          "title": "Incident Id",
+          "type": "string"
+        },
+        "incident_type": {
+          "$ref": "#/$defs/IncidentType"
+        },
+        "injuries_reported": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Injuries Reported"
+        },
+        "lanes_blocked": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lanes Blocked"
+        },
+        "severity_confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Severity Confidence"
+        },
+        "severity_prediction": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Severity Prediction"
+        },
+        "simulated_time": {
+          "format": "date-time",
+          "title": "Simulated Time",
+          "type": "string"
+        },
+        "traffic_confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Traffic Confidence"
+        },
+        "traffic_congestion_delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Traffic Congestion Delta"
+        },
+        "traffic_level": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Traffic Level"
+        },
+        "vehicles_involved": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vehicles Involved"
+        },
+        "weather": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Weather"
+        },
+        "zone": {
+          "$ref": "#/$defs/Zone"
+        }
+      },
+      "required": [
+        "incident_id",
+        "incident_type",
+        "zone",
+        "simulated_time",
+        "data_quality_score",
+        "available_ambulances",
+        "active_competing_incidents"
+      ],
+      "title": "LayaState",
+      "type": "object"
+    },
+    "QuestionDef": {
+      "additionalProperties": false,
+      "properties": {
+        "criteria": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Criteria",
+          "type": "object"
+        },
+        "instructions": {
+          "title": "Instructions",
+          "type": "string"
+        },
+        "labels": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Labels"
+        },
+        "type": {
+          "enum": [
+            "choice",
+            "noul"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "instructions",
+        "criteria"
+      ],
+      "title": "QuestionDef",
+      "type": "object"
+    },
+    "Zone": {
+      "enum": [
+        "north",
+        "south",
+        "east",
+        "west",
+        "central"
+      ],
+      "title": "Zone",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "questions": {
+      "additionalProperties": {
+        "$ref": "#/$defs/QuestionDef"
+      },
+      "title": "Questions",
+      "type": "object"
+    },
+    "state": {
+      "$ref": "#/$defs/LayaState"
+    }
+  },
+  "required": [
+    "state",
+    "questions"
+  ],
+  "title": "LayaRequest",
+  "type": "object"
+}

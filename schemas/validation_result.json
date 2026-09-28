@@ -1,0 +1,80 @@
+{
+  "$defs": {
+    "ValidationFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "pattern": "^(hard|soft)$",
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "severity",
+        "code",
+        "message"
+      ],
+      "title": "ValidationFinding",
+      "type": "object"
+    },
+    "ValidationStatus": {
+      "enum": [
+        "valid",
+        "soft_flagged",
+        "hard_rejected"
+      ],
+      "title": "ValidationStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "data_quality_score": {
+      "default": 0.0,
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Data Quality Score",
+      "type": "number"
+    },
+    "event_id": {
+      "title": "Event Id",
+      "type": "string"
+    },
+    "hard_errors": {
+      "items": {
+        "$ref": "#/$defs/ValidationFinding"
+      },
+      "title": "Hard Errors",
+      "type": "array"
+    },
+    "incident_id": {
+      "title": "Incident Id",
+      "type": "string"
+    },
+    "soft_warnings": {
+      "items": {
+        "$ref": "#/$defs/ValidationFinding"
+      },
+      "title": "Soft Warnings",
+      "type": "array"
+    },
+    "validation_status": {
+      "$ref": "#/$defs/ValidationStatus"
+    }
+  },
+  "required": [
+    "event_id",
+    "incident_id",
+    "validation_status"
+  ],
+  "title": "ValidationResult",
+  "type": "object"
+}

@@ -1,0 +1,67 @@
+{
+  "$defs": {
+    "OverrideType": {
+      "enum": [
+        "CHANGE_PRIORITY",
+        "ASSIGN_RESOURCES",
+        "DISMISS_INCIDENT",
+        "ESCALATE_TO_HUMAN",
+        "MARK_DATA_UNTRUSTED",
+        "OVERRIDE_AUTOMATION_HOLD"
+      ],
+      "title": "OverrideType",
+      "type": "string"
+    },
+    "Priority": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "Priority",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Invariant 7: operator_id and reason are required (min_length=1).",
+  "properties": {
+    "decision_id": {
+      "minLength": 1,
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "new_priority": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Priority"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "operator_id": {
+      "minLength": 1,
+      "title": "Operator Id",
+      "type": "string"
+    },
+    "override_type": {
+      "$ref": "#/$defs/OverrideType"
+    },
+    "reason": {
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    }
+  },
+  "required": [
+    "operator_id",
+    "decision_id",
+    "override_type",
+    "reason"
+  ],
+  "title": "OverrideRequest",
+  "type": "object"
+}

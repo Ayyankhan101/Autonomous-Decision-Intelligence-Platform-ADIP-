@@ -33,6 +33,14 @@ passes) and per-decision latency summary. Reports land in
 If the question set in the dataset drifts from the runner's canonical
 `QUESTIONS`, the run hard-fails instead of measuring the wrong task.
 
+## Result file status
+
+| Class | Files | Rule |
+|---|---|---|
+| **CURRENT** | `eval-AppleM1Pro-20260926T073703.json` (latest strict), `…T063855`, `…T062210`, `calibration-dept-20260926.json` | use for gates/KPI/reports |
+| **HISTORICAL (cited)** | `eval-…T150442/T155249/T174320` (0923 runs), `eval-v1.0-rc1-20260923.txt`, `eval-v1.0-final-20260923.txt`, `calibration-refund-20260923.json` (shipped thresholds in `adip/config.py`) | provenance only — referenced by docs/runtime; never for new runs |
+| **ARCHIVED** | `archive/` (25 intermediate runs + prediction companions) | superseded — **do not use** (see `archive/README.md`) |
+
 ## Gates (`--strict` — D6 renegotiation, 2026-09-26; dept ECE bar re-set same day)
 
 Enforced (constants in `adip/config.py`; keys are exactly these). Latest run

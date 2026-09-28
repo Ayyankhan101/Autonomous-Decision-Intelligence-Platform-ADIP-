@@ -1,0 +1,34 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "data_quality_anomaly": {
+      "title": "Data Quality Anomaly",
+      "type": "boolean"
+    },
+    "data_quality_score": {
+      "description": "badness: higher = more anomalous",
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Data Quality Score",
+      "type": "number"
+    },
+    "reasons": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Reasons",
+      "type": "array"
+    },
+    "situational_anomaly": {
+      "title": "Situational Anomaly",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "data_quality_anomaly",
+    "data_quality_score",
+    "situational_anomaly"
+  ],
+  "title": "AnomalyOutput",
+  "type": "object"
+}

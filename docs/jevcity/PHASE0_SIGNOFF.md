@@ -1,0 +1,52 @@
+# Phase 0 Exit Conditions — JevCity (single authoritative checklist)
+
+Source: plan §4 "Phase 0 Definition of Done" items 1–22 (Laya items 13–22).
+Errata C7: this list **replaces** §12's six-item list and §9.1's prose —
+§12 rows are folded into items 1–5 (scope/contracts/seeds/architecture/risk) here.
+Gate 1 may not close until every row is ✅.
+
+Legend: ✅ done with evidence · 🟡 partial (evidence exists, JevCity-specific gap open) · ⬜ open
+
+## Original items 1–12
+
+| # | Item | Status | Evidence / gap |
+|---|------|--------|----------------|
+| 1 | Dataset feasibility check complete | 🟡 | Triage dataset feasibility proven (repo README/BLUEPRINT); JevCity historical-replay datasets **not yet chosen** — synthetic simulator is the Phase 1 primary path |
+| 2 | Severity target or proxy confirmed | ✅ | Proxy confirmed: rule-table stub `jevcity/models/severity.py`, contract `ModelOutput`; real gradient-boosting baseline = Phase 2 |
+| 3 | Traffic target/proxy/synthetic/heuristic fallback approved | ✅ | Rule-based heuristic documented (`docs/jevcity/ERRATA.md` C5 counts it as independent signal) |
+| 4 | Event schema has event_id, incident_id, source_id, simulated_time, ingest_time, location, attributes, quality_hints | ✅ | `jevcity/schemas/event.py` (frozen) |
+| 5 | Multi-report contradiction detection supported by schema | ✅ | same — `incident_id` correlation + `quality_hints.injection_mode` |
+| 6 | Resource schema and status model defined | ✅ | `jevcity/schemas/resources.py` (5 types × 4 statuses) |
+| 7 | Model output contract: status, prediction, confidence, model_version, latency_ms, error_code | ✅ | `jevcity/schemas/models.py` |
+| 8 | Decision record contract: decision_id, incident_id, policy_version, matched_rules, signals, confidence, state, laya block, reasons | ✅ | `jevcity/schemas/decision.py` |
+| 9 | Audit entry contract: actor, action, reason, timestamp, before/after, decision ID, policy version, model versions, Laya metadata | ✅ | `jevcity/schemas/audit.py` + append-only store `jevcity/audit/log.py` |
+| 10 | Dashboard API endpoint list + polling payload agreed | ✅ | 16 endpoints in `docs/jevcity/API.md`; payload `jevcity/schemas/api.py`; JSON Schema export `schemas/*.json` |
+| 11 | Deterministic demo seed strategy documented | ✅ | `docs/jevcity/ARCHITECTURE.md` §Seeding; implemented `jevcity/simulation/seeds.py` |
+| 12 | Laya runtime integration assumption verified **or** local fallback used | 🟡 | Verified: `laya-mlx` works in-repo (BLUEPRINT, evals/, benchmarks/). **Fallback active for slice:** mock/cache adapter modes. `laya-serve`/`/v1/systemone` = unverified (ERRATA C1) — live mode = Phase 3 |
+
+## Laya items 13–22
+
+| # | Item | Status | Evidence / gap |
+|---|------|--------|----------------|
+| 13 | Laya runtime selected and installed | ✅ | `laya-mlx==0.2.0` pinned in `pyproject.toml` |
+| 14 | Checkpoint selected and cached offline | ✅ | `aac6fef/laya-typed-decisions-mlx` (BLUEPRINT §47); HF cache path in CI; demo needs no internet |
+| 15 | Latency measured on target hardware | ✅ | `benchmarks/results/latency-AppleM1Pro-*.json` — 61.6–93.6 ms / 3-question decision (M1 Pro) → all plan budgets pass (§5 demo <250 ms, §6 CPU <750 ms) |
+| 16 | Laya state builder contract approved | ✅ | `jevcity/decision_engine/laya_adapter/state_builder.py` + spec in `docs/jevcity/ARCHITECTURE.md` §State builder (compact, decision-relevant fields only, bounded text, sha256 hashing) |
+| 17 | Laya question schema approved | ✅ | `jevcity/decision_engine/laya_adapter/questions.py` — priority (choice, 4), needs_human_review (noul), recommended_resource_type (choice, 5); matches plan §3.1.1; **schema shape validated against laya-mlx API = Phase 3 task** (ERRATA/M1) |
+| 18 | Laya confidence semantics documented | 🟡 | Documented + derivation implemented (`jevcity/decision_engine/laya_adapter/normalize.py`, ERRATA C2/C3): uncalibrated until fixture-measured. **Open:** upstream `answer_confidence` field verification against laya-mlx raw output |
+| 19 | Laya fallback behavior approved | ✅ | mock → cache → deterministic rule engine → HOLD_FOR_HUMAN (fail-closed); plan §5.4 fallback requirement |
+| 20 | Deterministic replay/cache strategy approved | ✅ | cache key `state_hash + questions_hash + checkpoint + device + dtype` (plan); implemented `jevcity/decision_engine/laya_adapter/adapter.py`; determinism proven repo-wide 100/100 (BLUEPRINT §8.5) |
+| 21 | Laya evaluation fixture set approved | ⬜ | **Open:** JevCity decision fixtures not created yet (repo golden set = triage). Gate pair frozen per ERRATA C4: accuracy ≥0.70, ECE ≤0.15 |
+| 22 | Apple MLX hardware compatibility + numerical parity checked | ✅ | BLUEPRINT §8.12 fidelity story; validated vs upstream PyTorch laya |
+
+## Risk burn-down (§12 fold-in)
+
+| Risk | State |
+|------|-------|
+| Laya latency breaks demo timing | **Retired** — measured 61–94 ms ≪ 250 ms budget (item 15) |
+| Uncalibrated confidence mis-gates automation | **Managed** — dual-gate design (§5.8 correction) + ERRATA C3 |
+| Adapter unavailable at demo | **Managed** — mock/cache modes, item 19 |
+| Fixture gate unmet (ECE) | **Open** — item 21; interim thresholds per C4 |
+
+**Gate 1 verdict:** 🟡 not closable — items 1, 12, 18, 21 open (all JevCity-fixture/live-integration
+class, none block the Phase 0→1→2 build under the mock adapter).

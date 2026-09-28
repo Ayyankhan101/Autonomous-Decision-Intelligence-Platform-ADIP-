@@ -107,6 +107,13 @@ _(add rows from new runs as other hardware is measured; keep raw JSONs)_
 > stored run here carries v1/v2 stamps, so cross-version latency comparisons
 > need a fresh run, not a re-quote.
 
+## Result file status
+
+| Class | Files | Rule |
+|---|---|---|
+| **CURRENT** | `latency-AppleM1Pro-b1-20260925T171408.json`, `b16-20260925T171411.json`, `fullctx-20260923T174239.json`, `b24/b32/b48-20260926T*.json` | use for performance claims/reports |
+| **ARCHIVED** | `archive/` (b1/b16 2026-09-23 runs, `fullctx-20260923T141617`) | superseded — **do not use** (see `archive/README.md`) |
+
 ## Gates (blueprint §9)
 
 - decision P50 ≤ 100 ms for a 3-question call (D6; the original
