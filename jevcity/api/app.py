@@ -132,6 +132,10 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
     def sim_start(req: SimulationStartRequest) -> SimulationActionResponse:
         engine.simulation.start(req.session_seed, req.scenario_seed)
         engine.adapter = LayaAdapter(mode=engine.adapter.mode)
+        engine.decisions.clear()
+        engine.decision_history.clear()
+        engine.validation_by_event.clear()
+        engine._processed = 0
         if req.recording is None:
             return SimulationActionResponse()
         try:

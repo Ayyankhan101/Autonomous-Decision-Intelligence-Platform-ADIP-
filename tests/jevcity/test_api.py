@@ -158,3 +158,35 @@ def test_reset_clears_laya_cache():
         json={"session_seed": 42, "scenario_seed": 7},
     )
     assert engine.adapter.cache == {}
+
+
+def test_incident_after_restart_produces_decision():
+    client = TestClient(create_app())
+    client.post("/api/simulation/start", json={"session_seed": 42, "scenario_seed": 7})
+    client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "fire", "zone": "south", "severity": "minor"},
+    )
+    client.post("/api/simulation/start", json={"session_seed": 42, "scenario_seed": 7})
+    r = client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "flood", "zone": "east", "severity": "minor"},
+    )
+    assert r.json()["decision_ids"]
+
+
+def test_restart_with_recording_leaves_no_stale_decisions():
+    engine = build_engine()
+    client = TestClient(create_app(engine))
+    client.post("/api/simulation/start", json={"session_seed": 42, "scenario_seed": 7})
+    client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "accident", "zone": "north", "severity": "severe"},
+    )
+    r = client.post(
+        "/api/simulation/start",
+        json={"session_seed": 42, "scenario_seed": 7, "recording": "sim-session-v1.jsonl"},
+    )
+    ids = r.json()["decision_ids"]
+    state = client.get("/api/state").json()
+    assert state["decision_count"] == len(ids)

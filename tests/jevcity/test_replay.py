@@ -88,3 +88,22 @@ def test_api_start_bad_recording_422():
         json={"session_seed": 42, "scenario_seed": 7, "recording": "../etc/passwd"},
     )
     assert r.status_code == 422
+
+
+def test_load_rejects_unsorted(tmp_path):
+    rows = RECORDING.read_text().splitlines()
+    unsorted_file = tmp_path / "unsorted.jsonl"
+    unsorted_file.write_text(rows[1] + "\n" + rows[0] + "\n")
+    with pytest.raises(ValueError, match="non-decreasing"):
+        load_recording(unsorted_file, base=tmp_path)
+
+
+def test_load_rejects_fractional_seconds(tmp_path):
+    import json
+
+    row = json.loads(RECORDING.read_text().splitlines()[0])
+    row["simulated_time"] = "2026-09-27T10:00:01.500Z"
+    frac = tmp_path / "frac.jsonl"
+    frac.write_text(json.dumps(row) + "\n")
+    with pytest.raises(ValueError, match="whole seconds"):
+        load_recording(frac, base=tmp_path)

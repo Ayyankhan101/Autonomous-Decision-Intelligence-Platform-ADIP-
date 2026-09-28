@@ -30,9 +30,14 @@ def load_recording(path: str | Path, *, base: Path = DEFAULT_BASE) -> list[Event
         if not line.strip():
             continue
         try:
-            events.append(EventEnvelope.model_validate_json(line))
+            event = EventEnvelope.model_validate_json(line)
         except ValidationError as exc:
             raise ValueError(f"{path}:{lineno}: invalid event row ({exc.error_count()} errors)") from exc
+        if event.simulated_time.microsecond:
+            raise ValueError(f"{path}:{lineno}: simulated_time must be whole seconds (replay clock is integer)")
+        if events and event.simulated_time < events[-1].simulated_time:
+            raise ValueError(f"{path}:{lineno}: simulated_time must be non-decreasing (replay requires ordered recording)")
+        events.append(event)
     return events
 
 
