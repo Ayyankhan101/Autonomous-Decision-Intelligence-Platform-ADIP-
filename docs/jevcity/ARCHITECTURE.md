@@ -109,3 +109,13 @@ sandbox incident is rolled back from the live registry on completion.
 - JevCity API = port **8200** (`jevcity/api/app.py`).
 - Runtime evidence reused: laya-mlx latency/calibration artifacts cited in
   `PHASE0_SIGNOFF.md`; live integration remains Phase 3 (adapter fails closed today).
+
+## ML models (Phase 2)
+
+| Model | Version | Method | Labels | Confidence / uncertainty |
+|-------|---------|--------|--------|--------------------------|
+| severity_predictor | sev-gb-1.0.0 | GradientBoosting + CalibratedClassifierCV (sigmoid) | hint mapping (minor→LOW, moderate→MEDIUM, severe→HIGH, severe+injuries≥2→CRITICAL) | calibrated P(predicted class) |
+| traffic_impact_predictor | traffic-gbr-1.0.0 | GradientBoostingRegressor + quantile (0.1/0.9) | approved heuristic `traffic_delta` (sign-off item 3, ERRATA C5) | `confidence = 1 − (p90 − p10)` interval width |
+| anomaly_detector | anom-ml-1.0.0 | LogisticRegression (data-quality) + IsolationForest (situational) | `quality_hints.injection_mode` present → dq_label=1 | `data_quality_score = P(bad)`; hard_rejected → forced 1.0 |
+
+Shared: fixed-order encoder `jevcity/models/encode.py`, dataset `datasets/jevcity/ml/dataset.jsonl` (split `i % 5 == 0` held-out), wrapper `jevcity/models/wrapper.py` (timeout 0.5 s → TIMEOUT / fail-closed anomaly, exceptions → ERROR, measured latency), metrics `evals/eval_ml.py` → `evals/results/ml-phase2-v1.json`. Laya state carries `severity_model_version` + `traffic_model_version`; `overall_confidence` §5.8 min() unchanged (Laya excluded).

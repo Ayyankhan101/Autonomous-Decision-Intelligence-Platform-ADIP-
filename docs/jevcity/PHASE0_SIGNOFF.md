@@ -36,7 +36,7 @@ Legend: ✅ done with evidence · 🟡 partial (evidence exists, JevCity-specifi
 | 18 | Laya confidence semantics documented | 🟡 | Documented + derivation implemented (`jevcity/decision_engine/laya_adapter/normalize.py`, ERRATA C2/C3): uncalibrated until fixture-measured. **Open:** upstream `answer_confidence` field verification against laya-mlx raw output |
 | 19 | Laya fallback behavior approved | ✅ | mock → cache → deterministic rule engine → HOLD_FOR_HUMAN (fail-closed); plan §5.4 fallback requirement |
 | 20 | Deterministic replay/cache strategy approved | ✅ | cache key `state_hash + questions_hash + checkpoint + device + dtype` (plan); implemented `jevcity/decision_engine/laya_adapter/adapter.py`; determinism proven repo-wide 100/100 (BLUEPRINT §8.5) |
-| 21 | Laya evaluation fixture set approved | ⬜ | **Open:** JevCity decision fixtures not created yet (repo golden set = triage). Gate pair frozen per ERRATA C4: accuracy ≥0.70, ECE ≤0.15 |
+| 21 | Laya evaluation fixture set approved | ✅ | `fixtures/jevcity_decisions.jsonl` (≥50 frozen states + baseline-proposer labels, regenerable via `tools/gen_jevcity_fixtures.py`); runner `evals/run_jevcity_eval.py` gates frozen per ERRATA C4: accuracy ≥0.70, ECE ≤0.15 (model-free gate truth in `tests/jevcity/test_fixtures.py`, honesty contract in `tests/jevcity/test_eval_model.py`); measured report = `evals/results/eval-jevcity-*.json` — first measured run: **accuracy 0.5675, ECE 0.3528 → C4 not met** (gates frozen, checkpoint/label alignment = Phase-3-bound; determinism ✅, n=84) |
 | 22 | Apple MLX hardware compatibility + numerical parity checked | ✅ | BLUEPRINT §8.12 fidelity story; validated vs upstream PyTorch laya |
 
 ## Risk burn-down (§12 fold-in)
@@ -48,6 +48,8 @@ Legend: ✅ done with evidence · 🟡 partial (evidence exists, JevCity-specifi
 | Adapter unavailable at demo | **Managed** — mock/cache modes, item 19 |
 | Fixture gate unmet (ECE) | **Open** — item 21; interim thresholds per C4 |
 
-**Gate 1 verdict:** 🟡 not closable — items 12, 18, 21 open (live Laya integration +
-fixture/calibration class = Phase 2/3-bound; none block the Phase 1→2 build under the
-mock adapter).
+**Gate 1 verdict:** 🟡 not closable — items 12, 18 open (live Laya integration +
+upstream answer_confidence verification = Phase 3-bound; none block the Phase 2→3
+build under the mock adapter). Phase 2 closed item 21 (fixtures + runner shipped);
+first C4 measurement: accuracy 0.5675, ECE 0.3528 — gates frozen at 0.70/0.15,
+closing them = Phase 3 (checkpoint/label alignment).
