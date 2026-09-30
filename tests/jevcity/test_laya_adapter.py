@@ -69,12 +69,82 @@ def test_cache_mode_caches_by_key():
     assert len(adapter.cache) == 2
 
 
-def test_live_mode_fails_closed_unavailable():
-    adapter = LayaAdapter(mode=LayaMode.LIVE)
-    response = adapter.ask(_state())
+def test_live_mode_fails_closed_on_predict_error(monkeypatch):
+    def _boom(self, state):
+        raise RuntimeError("down")
+
+    monkeypatch.setattr(LayaAdapter, "_live_call", _boom)
+    response = LayaAdapter(mode=LayaMode.LIVE).ask(_state())
     assert response.status == LayaStatus.UNAVAILABLE
-    assert response.error_code == "live_integration_phase3"
+    assert response.error_code == "live_error:RuntimeError"
     assert response.answers == {}
+
+
+def test_live_mode_fails_closed_on_timeout(monkeypatch):
+    def _overrun(self, state):
+        raise TimeoutError("overrun")
+
+    monkeypatch.setattr(LayaAdapter, "_live_call", _overrun)
+    response = LayaAdapter(mode=LayaMode.LIVE).ask(_state())
+    assert response.status == LayaStatus.TIMEOUT
+    assert response.error_code == "live_timeout"
+    assert response.answers == {}
+
+
+def test_live_mode_fails_closed_on_unextractable_raw(monkeypatch):
+    def _weird(self, state):
+        return {"answers": {}}, 12.0
+
+    monkeypatch.setattr(LayaAdapter, "_live_call", _weird)
+    response = LayaAdapter(mode=LayaMode.LIVE).ask(_state())
+    assert response.status == LayaStatus.INVALID_RESPONSE
+    assert response.error_code == "raw_extract_failed"
+    assert response.answers == {}
+
+
+class _FakeLiveAgent:
+    """C1-verified laya_mlx answer shape (no upstream answer_confidence)."""
+
+    def predict(self, text, questions):
+        return {
+            "answers": {
+                "priority": {
+                    "action": "answer", "choice": "HIGH", "confidence": 0.41,
+                    "probabilities": {
+                        "LOW": 0.1, "MEDIUM": 0.2, "HIGH": 0.6, "CRITICAL": 0.1,
+                    },
+                    "type": "choice",
+                },
+                "needs_human_review": {
+                    "action": "answer", "confidence": 0.7, "noul": 0.7,
+                    "type": "noul",
+                },
+                "recommended_resource_type": {
+                    "action": "answer", "choice": "ambulance", "confidence": 0.55,
+                    "probabilities": {
+                        "ambulance": 0.55, "fire_truck": 0.15, "police_unit": 0.15,
+                        "flood_response_unit": 0.1, "traffic_management_unit": 0.05,
+                    },
+                    "type": "choice",
+                },
+            },
+            "model": "typed-decisions",
+            "usage": {},
+        }
+
+
+def test_live_mode_normalizes_upstream_shape(monkeypatch):
+    from jevcity.decision_engine.laya_adapter import adapter as adapter_mod
+
+    monkeypatch.setitem(adapter_mod._LIVE_AGENT, "agent", _FakeLiveAgent())
+    response = LayaAdapter(mode=LayaMode.LIVE).ask(_state())
+    assert response.status == LayaStatus.OK
+    priority = response.answers["priority"]
+    assert priority.choice == "HIGH"
+    assert priority.answer_confidence == 0.6
+    assert response.answers["needs_human_review"].answer_confidence == 0.7
+    assert response.answers["recommended_resource_type"].choice == "ambulance"
+    assert response.latency_ms >= 0.0
 
 
 def test_forced_timeout_status():
@@ -183,6 +253,8 @@ def test_health_probe_reports_runtime_readiness():
     from jevcity.schemas import LayaMode
 
     h = LayaAdapter(mode=LayaMode.MOCK).health()
+    agent_loaded = h.pop("live_agent_loaded")
+    assert isinstance(agent_loaded, bool)
     assert h == {
         "mode": "mock",
         "runtime": "laya-mlx",
@@ -190,6 +262,5 @@ def test_health_probe_reports_runtime_readiness():
         "router_model": "typed-decisions",
         "device": "mps",
         "dtype": DTYPE,
-        "live_agent_loaded": False,
         "live_timeout_s": 10.0,
     }
