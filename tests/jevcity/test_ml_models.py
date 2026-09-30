@@ -142,3 +142,32 @@ def test_anomaly_deterministic():
     a = model.predict(feats, [], _validation(), [])
     b = model.predict(feats, [], _validation(), [])
     assert a.model_dump() == b.model_dump()
+
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+REPORT = Path("evals/results/ml-phase2-v1.json")
+
+
+def test_eval_ml_selftest_and_report():
+    repo = Path(__file__).resolve().parents[2]
+    p = subprocess.run([sys.executable, "evals/eval_ml.py", "--selftest"],
+                       cwd=repo, capture_output=True, text=True, timeout=120)
+    assert p.returncode == 0, p.stdout + p.stderr
+    assert "selftest OK" in p.stdout
+    p2 = subprocess.run([sys.executable, "evals/eval_ml.py"],
+                        cwd=repo, capture_output=True, text=True, timeout=300)
+    assert p2.returncode == 0, p2.stdout + p2.stderr
+    report = json.loads(REPORT.read_text())
+    assert report["schema"] == "jevcity.ml.v1"
+    sev = report["models"]["severity"]
+    assert sev["version"] == "sev-gb-1.0.0"
+    assert sev["accuracy"] >= 0.65 and sev["ece"] <= 0.25 and sev["n"] >= 40
+    tr = report["models"]["traffic"]
+    assert tr["version"] == "traffic-gbr-1.0.0"
+    assert tr["mae"] <= 0.1
+    anom = report["models"]["anomaly"]
+    assert anom["version"] == "anom-ml-1.0.0"
+    assert anom["dq_f1"] >= 0.6

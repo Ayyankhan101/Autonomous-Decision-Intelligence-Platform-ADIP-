@@ -1,0 +1,28 @@
+{
+  "dataset": "datasets/jevcity/ml/dataset.jsonl",
+  "models": {
+    "anomaly": {
+      "dq_f1": 1.0,
+      "dq_precision": 1.0,
+      "dq_recall": 1.0,
+      "n": 70,
+      "situational_flag_rate_clean": 0.1833,
+      "version": "anom-ml-1.0.0"
+    },
+    "severity": {
+      "accuracy": 1.0,
+      "ece": 0.0414,
+      "n": 70,
+      "version": "sev-gb-1.0.0"
+    },
+    "traffic": {
+      "interval_within_0.1": 1.0,
+      "mae": 0.0,
+      "mean_confidence": 0.8066,
+      "n": 70,
+      "version": "traffic-gbr-1.0.0"
+    }
+  },
+  "schema": "jevcity.ml.v1",
+  "split": "i % 5 == 0 held-out"
+}

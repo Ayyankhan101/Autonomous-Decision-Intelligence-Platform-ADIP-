@@ -23,6 +23,7 @@ def test_selftests_pass():
         ("evals/run_eval.py", "--selftest"),
         ("evals/calibrate.py", "--selftest"),
         ("evals/calibrate_dept.py", "--selftest"),
+        ("evals/eval_ml.py", "--selftest"),
         ("benchmarks/latency_bench.py", "--selftest"),
     ]:
         p = run(script, flag)
