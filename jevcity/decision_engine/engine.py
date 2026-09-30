@@ -5,7 +5,7 @@ from __future__ import annotations
 import copy
 
 from jevcity.audit.log import AuditLog
-from jevcity.features.engineer import build_features
+from jevcity.features.engineer import build_features, history_features
 from jevcity.ingestion.correlate import correlate
 from jevcity.ingestion.validate import validate_raw
 from jevcity.models.anomaly import AnomalyDetector
@@ -147,14 +147,22 @@ class JevCityEngine:
             raise KeyError(f"no reports for incident {incident_id}")
 
         correlation = correlate(reports)
-        features = build_features(reports)
+        primary = sorted(reports, key=lambda e: e.simulated_time)[0]
+        features = build_features(
+            reports,
+            history=history_features(
+                self.simulation.incidents,
+                primary.location.zone.value,
+                primary.incident_type.value,
+                exclude_id=incident_id,
+            ),
+        )
         severity_out = self.severity.predict(features)
         traffic_out = self.traffic.predict(features)
         anomaly_out = self.anomaly.predict(
             features, reports, validation, correlation.contradictions
         )
 
-        primary = sorted(reports, key=lambda e: e.simulated_time)[0]
         competing = sum(
             1
             for inc in self.simulation.incidents.values()
