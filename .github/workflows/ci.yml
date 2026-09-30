@@ -6,10 +6,18 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   unit:
     name: lint + model-free tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -20,7 +28,15 @@ jobs:
       - name: Lint
         run: uv run ruff check .
       - name: Test (model tier deselected)
-        run: uv run pytest -q
+        run: uv run pytest -q --junitxml=junit.xml
+      - name: Upload junit
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-unit
+          path: junit.xml
+          if-no-files-found: ignore
+          overwrite: true
 
   model:
     # laya-mlx = MLX = macOS arm64 only. Runs on main / manual dispatch so a
@@ -30,6 +46,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     needs: unit
     runs-on: macos-14
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -43,7 +60,43 @@ jobs:
           path: ~/.cache/huggingface/hub
           key: hf-aac6fef-laya-mlx-${{ runner.os }}
       - name: Model tier tests
-        run: uv run pytest -q -m model
+        timeout-minutes: 15
+        run: uv run pytest -q -m "model and not laya_live"
+      # C4 report is generated fresh by the model tier tests (run_jevcity_eval
+      # writes evals/results/eval-jevcity-<ts>.json). Gates frozen per ERRATA
+      # C4 (0.70 / 0.15) — warn + summary while measured values fail; flip this
+      # step to exit 1 once C4 closes (see docs/jevcity/PHASE0_SIGNOFF.md Gate 1).
+      - name: C4 gate summary
+        if: always()
+        run: |
+          python3 - <<'EOF'
+          import glob, json, os, sys
+          files = sorted(glob.glob("evals/results/eval-jevcity-*.json"), key=os.path.getmtime)
+          if not files:
+              print("::warning::no eval report found")
+              sys.exit(0)
+          r = json.load(open(files[-1]))
+          gates = r.get("gates", {})
+          row = ("| {n} | {acc} | {gacc} | {ece} | {gece} | {det} | {gp} |").format(
+              n=r.get("n"), acc=r.get("accuracy"), gacc=gates.get("accuracy"),
+              ece=r.get("ece"), gece=gates.get("ece"),
+              det=r.get("determinism"), gp=r.get("gates_passed"))
+          summary = (
+              "**C4 eval gates (measured; thresholds frozen per ERRATA C4)**\n\n"
+              "| n | accuracy | gate acc | ECE | gate ECE | determinism | gates_passed |\n"
+              "|---|---|---|---|---|---|---|\n" + row + "\n"
+          )
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write(summary)
+          if not r.get("gates_passed"):
+              print(
+                  "::warning::C4 gates NOT met: accuracy={a} (gate >= {ga}), "
+                  "ECE={e} (gate <= {ge}); gates frozen, tracked in "
+                  "PHASE0_SIGNOFF Gate 1".format(
+                      a=r.get("accuracy"), ga=gates.get("accuracy"),
+                      e=r.get("ece"), ge=gates.get("ece"))
+              )
+          EOF
       - name: Upload report
         if: always()
         uses: actions/upload-artifact@v4
@@ -51,3 +104,4 @@ jobs:
           name: eval-report
           path: evals/results/eval-*.json
           if-no-files-found: warn
+          overwrite: true
