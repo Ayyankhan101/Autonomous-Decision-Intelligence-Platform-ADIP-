@@ -35,6 +35,7 @@ from .state_text import render_state
 
 DTYPE = "float16"
 LIVE_TIMEOUT_S = 10.0
+LIVE_MAX_ATTEMPTS = 2
 
 _QUESTIONS_JSON = {k: v.model_dump(mode="json") for k, v in QUESTIONS.items()}
 _LIVE_AGENT: dict[str, object] = {}
@@ -143,21 +144,20 @@ class LayaAdapter:
         questions_hash: str,
     ) -> NormalizedLayaResponse:
         """LIVE path: thread-timeout-guarded predict → to_raw → normalize (fail-closed)."""
-        try:
-            result, latency_ms = self._live_call(state)
-        except TimeoutError:
-            return NormalizedLayaResponse.failed(
-                LayaStatus.TIMEOUT,
-                runtime=self.runtime,
-                checkpoint=CHECKPOINT,
-                router_model=ROUTER_MODEL,
-                device=DEVICE,
-                state_hash=state_hash,
-                questions_hash=questions_hash,
-                error_code="live_timeout",
-                latency_ms=self.live_timeout_s * 1000.0,
-            )
-        except Exception as exc:
+        result, latency_ms, error = self._live_attempts(state)
+        if error is not None:
+            if isinstance(error, TimeoutError):
+                return NormalizedLayaResponse.failed(
+                    LayaStatus.TIMEOUT,
+                    runtime=self.runtime,
+                    checkpoint=CHECKPOINT,
+                    router_model=ROUTER_MODEL,
+                    device=DEVICE,
+                    state_hash=state_hash,
+                    questions_hash=questions_hash,
+                    error_code="live_timeout",
+                    latency_ms=self.live_timeout_s * 1000.0,
+                )
             return NormalizedLayaResponse.failed(
                 LayaStatus.UNAVAILABLE,
                 runtime=self.runtime,
@@ -166,7 +166,7 @@ class LayaAdapter:
                 device=DEVICE,
                 state_hash=state_hash,
                 questions_hash=questions_hash,
-                error_code=f"live_error:{type(exc).__name__}",
+                error_code=f"live_error:{type(error).__name__}",
                 latency_ms=0.0,
             )
         raw = to_raw(result)
@@ -189,6 +189,19 @@ class LayaAdapter:
             questions_hash=questions_hash,
             latency_ms=latency_ms,
         )
+
+    def _live_attempts(self, state: LayaState) -> tuple[dict | None, float, Exception | None]:
+        """Retry policy: TimeoutError retried once (LIVE_MAX_ATTEMPTS total); other errors fail fast."""
+        last_error: Exception = TimeoutError("live predict never attempted")
+        for _ in range(LIVE_MAX_ATTEMPTS):
+            try:
+                result, latency_ms = self._live_call(state)
+                return result, latency_ms, None
+            except TimeoutError as exc:
+                last_error = exc
+            except Exception as exc:
+                return None, 0.0, exc
+        return None, 0.0, last_error
 
     def _live_call(self, state: LayaState) -> tuple[dict, float]:
         """Run laya_mlx predict on a daemon thread; raise TimeoutError on overrun."""
