@@ -119,3 +119,19 @@ sandbox incident is rolled back from the live registry on completion.
 | anomaly_detector | anom-ml-1.0.0 | LogisticRegression (data-quality) + IsolationForest (situational) | `quality_hints.injection_mode` present → dq_label=1 | `data_quality_score = P(bad)`; hard_rejected → forced 1.0 |
 
 Shared: fixed-order encoder `jevcity/models/encode.py`, dataset `datasets/jevcity/ml/dataset.jsonl` (split `i % 5 == 0` held-out), wrapper `jevcity/models/wrapper.py` (timeout 0.5 s → TIMEOUT / fail-closed anomaly, exceptions → ERROR, measured latency), metrics `evals/eval_ml.py` → `evals/results/ml-phase2-v1.json`. Laya state carries `severity_model_version` + `traffic_model_version`; `overall_confidence` §5.8 min() unchanged (Laya excluded).
+
+## CI / repo protection
+
+- `.github/workflows/ci.yml`: `lint + model-free tests` (ubuntu, PR + push, junit
+  artifact on failure) → `strict eval (macos)` (main/dispatch only: model tier
+  `model and not laya_live`, live smoke `laya_live`, C4 gate **warn + job-summary**
+  while C4 open — flip step to hard-fail after Gate 1 closes). Least-privilege
+  `permissions: contents: read`, per-ref concurrency cancel, job timeouts.
+- Ruleset `main-protection` (id 24235972): block force-push + deletion, require
+  check `lint + model-free tests` (**non-strict** — strict would block direct
+  pushes). Semantics: a red `main` head rejects the next direct push (GH006);
+  fix path = push a short branch + PR (unit job runs on PRs; macOS job is
+  main-only by design and is not required).
+- `.github/dependabot.yml`: github-actions, monthly.
+- Freshness guard: `tests/test_schemas_export.py` — `schemas/*.json` must match
+  `uv run python -m jevcity.schemas.export` byte-for-byte.
