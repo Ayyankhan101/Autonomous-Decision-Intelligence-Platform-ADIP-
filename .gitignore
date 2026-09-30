@@ -17,3 +17,4 @@ jevcity/audit/*.db*
 # CI artifacts
 junit.xml
 evals/results/eval-jevcity-*.json
+evals/results/eval-AppleM1Pro-*.json
