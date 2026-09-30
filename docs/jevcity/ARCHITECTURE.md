@@ -116,6 +116,24 @@ emits an entry with actor/action/reason/timestamp/before-after/decision id/polic
 model versions + full Laya metadata block (§3.1.4). Overrides require operator_id + reason
 (Invariant 7). `dry_run` entries are rejected at the API (Invariant 15).
 
+**Operator identity:** `operator_id` = opaque non-empty string (no directory/authn in MVP);
+actor `system` is reserved for engine-emitted entries. **Read-only guarantee:** the only
+audit route is `GET /api/audit` — no PUT/PATCH/DELETE route exists (route set frozen at
+16, asserted in `tests/jevcity/test_audit_phase4.py`) and SQL triggers abort mutations.
+
+**Laya metadata** on both `DECISION_EMITTED` and `OVERRIDE_APPLIED` entries: checkpoint,
+router model, status, state/questions hash, questions version (`q-0.1.0`), suggested
+priority, answer confidence, latency, `guardrail_applied`, `final_decision_source`,
+`fallback_used` (status != OK), `guardrail_modified` (source == POLICY_FINALIZED;
+LAYA_PROPOSED → False, no suggestion → None).
+
+**Hash stability:** `entry_hash` is computed over the stored payload JSON minus the hash
+field itself (`payload_hash()`), so adding schema fields never invalidates old rows.
+
+**Export:** `uv run python tools/export_audit.py [--db PATH] [--out FILE]` dumps JSONL
+read-only (`mode=ro`), refusing `:memory:` and failing non-zero on a broken chain
+(`jevcity/audit/export.py`). No new API endpoint (contract frozen at 16).
+
 ## What-If
 
 Sandboxed `run_what_if`: deepcopy resource pool, fresh isolated Laya cache, no audit
@@ -131,6 +149,8 @@ sandbox incident is rolled back from the live registry on completion.
 | Seeding, clock, correlation, adversarial notes | `tests/jevcity/test_simulation.py` |
 | Allocation / contention | `tests/jevcity/test_allocation.py` |
 | Audit append-only + hash chain + dry-run block | `tests/jevcity/test_audit.py` |
+| Audit Phase 4: route freeze, original visible after override, Laya status/metadata auditable | `tests/jevcity/test_audit_phase4.py` |
+| Audit export (JSONL, chain-validated, read-only) | `tests/jevcity/test_audit_export.py` |
 | Adapter determinism/cache/fail-closed + injection resistance (Inv 16) | `tests/jevcity/test_laya_adapter.py` |
 | LIVE retry + circuit breaker | `tests/jevcity/test_resilience.py` |
 | Decision sources on LIVE path (Inv 7-adjacent) | `tests/jevcity/test_decision_source.py` |
