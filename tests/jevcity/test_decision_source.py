@@ -7,7 +7,6 @@ yields final priority HIGH under every fake (INV-5 downgrade, verified).
 """
 from __future__ import annotations
 
-import pytest
 
 from jevcity.api.app import build_engine
 from jevcity.schemas import (
