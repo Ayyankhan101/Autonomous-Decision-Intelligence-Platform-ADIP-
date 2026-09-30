@@ -55,7 +55,7 @@ jobs:
       - name: Install (frozen lockfile)
         run: uv sync --frozen
       - name: Cache checkpoint
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/huggingface/hub
           key: hf-aac6fef-laya-mlx-${{ runner.os }}
