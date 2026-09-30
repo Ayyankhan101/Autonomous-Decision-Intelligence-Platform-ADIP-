@@ -36,6 +36,8 @@ from .state_text import render_state
 DTYPE = "float16"
 LIVE_TIMEOUT_S = 10.0
 LIVE_MAX_ATTEMPTS = 2
+LIVE_BREAKER_THRESHOLD = 3
+LIVE_BREAKER_PROBE_EVERY = 5
 
 _QUESTIONS_JSON = {k: v.model_dump(mode="json") for k, v in QUESTIONS.items()}
 _LIVE_AGENT: dict[str, object] = {}
@@ -76,6 +78,8 @@ class LayaAdapter:
         self.force_status = force_status
         self.latency_ms = latency_ms
         self.live_timeout_s = live_timeout_s
+        self._live_failures = 0
+        self._live_blocked = 0
 
     @property
     def checkpoint(self) -> str:
@@ -96,6 +100,7 @@ class LayaAdapter:
             "dtype": DTYPE,
             "live_agent_loaded": "agent" in _LIVE_AGENT,
             "live_timeout_s": self.live_timeout_s,
+            "breaker_open": self._live_failures >= LIVE_BREAKER_THRESHOLD,
         }
 
     def ask(self, state: LayaState) -> NormalizedLayaResponse:
@@ -143,8 +148,21 @@ class LayaAdapter:
         state_hash: str,
         questions_hash: str,
     ) -> NormalizedLayaResponse:
-        """LIVE path: thread-timeout-guarded predict → to_raw → normalize (fail-closed)."""
+        """LIVE path: breaker → retries → thread-timeout predict → to_raw → normalize."""
+        if not self._breaker_allows():
+            return NormalizedLayaResponse.failed(
+                LayaStatus.UNAVAILABLE,
+                runtime=self.runtime,
+                checkpoint=CHECKPOINT,
+                router_model=ROUTER_MODEL,
+                device=DEVICE,
+                state_hash=state_hash,
+                questions_hash=questions_hash,
+                error_code="circuit_open",
+                latency_ms=0.0,
+            )
         result, latency_ms, error = self._live_attempts(state)
+        self._breaker_record(transport_ok=error is None)
         if error is not None:
             if isinstance(error, TimeoutError):
                 return NormalizedLayaResponse.failed(
@@ -189,6 +207,20 @@ class LayaAdapter:
             questions_hash=questions_hash,
             latency_ms=latency_ms,
         )
+
+    def _breaker_allows(self) -> bool:
+        """Call-count circuit breaker: OPEN after threshold failures, probe every Nth blocked call."""
+        if self._live_failures < LIVE_BREAKER_THRESHOLD:
+            return True
+        self._live_blocked += 1
+        return self._live_blocked % LIVE_BREAKER_PROBE_EVERY == 0
+
+    def _breaker_record(self, transport_ok: bool) -> None:
+        if transport_ok:
+            self._live_failures = 0
+            self._live_blocked = 0
+        else:
+            self._live_failures += 1
 
     def _live_attempts(self, state: LayaState) -> tuple[dict | None, float, Exception | None]:
         """Retry policy: TimeoutError retried once (LIVE_MAX_ATTEMPTS total); other errors fail fast."""
