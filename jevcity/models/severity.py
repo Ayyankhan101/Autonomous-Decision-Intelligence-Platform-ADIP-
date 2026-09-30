@@ -1,13 +1,41 @@
-"""Severity/risk prediction — rule-table baseline (plan Phase 2 allows strong baseline;
-this is the documented MVP proxy, replaced by gradient boosting later)."""
+"""Severity/risk prediction — calibrated gradient boosting (plan Phase 2).
+
+Label = documented hint mapping from `tools/gen_ml_dataset.py`; confidence =
+CalibratedClassifierCV sigmoid probability of the predicted class (§5.8)."""
 from __future__ import annotations
 
-from jevcity.schemas import ModelOutput, ModelStatus, Priority
+import time
+from pathlib import Path
+
+from jevcity.models.encode import encode, explain
+from jevcity.models.ml_data import load_dataset
+from jevcity.schemas import ModelOutput, ModelStatus
+
+DATASET = Path("datasets/jevcity/ml/dataset.jsonl")
+_CACHE: dict[str, object] = {}
+
+
+def _fitted():
+    if "severity" not in _CACHE:
+        from sklearn.calibration import CalibratedClassifierCV
+        from sklearn.ensemble import GradientBoostingClassifier
+
+        train, _ = load_dataset(DATASET)
+        features = [encode(row["features"]) for row in train]
+        labels = [row["severity"] for row in train]
+        clf = CalibratedClassifierCV(
+            GradientBoostingClassifier(n_estimators=60, max_depth=3, random_state=0),
+            method="sigmoid",
+            cv=3,
+        )
+        clf.fit(features, labels)
+        _CACHE["severity"] = clf
+    return _CACHE["severity"]
 
 
 class SeverityModel:
     name = "severity_predictor"
-    version = "sev-rule-0.1.0"
+    version = "sev-gb-1.0.0"
 
     def __init__(self, fail: ModelStatus | None = None) -> None:
         self.fail = fail
@@ -17,58 +45,19 @@ class SeverityModel:
             return ModelOutput.failed(
                 self.name, self.version, self.fail, error_code="MODEL_FAILURE"
             )
-
-        factors: list[str] = []
-        injuries = features.get("injuries_reported") or 0
-        lanes = features.get("lanes_blocked") or 0
-        hint = features.get("severity_hint")
-        weather = features.get("weather")
-        traffic = features.get("traffic_level")
-        vehicles = features.get("vehicles_involved") or 0
-
-        score = 0
-        if injuries >= 3:
-            score += 3
-            factors.append("multiple_injuries")
-        elif injuries >= 1:
-            score += 2
-            factors.append("injuries_reported")
-        if lanes >= 2:
-            score += 2
-            factors.append("lanes_blocked")
-        elif lanes == 1:
-            score += 1
-        if vehicles >= 4:
-            score += 2
-            factors.append("multiple_vehicles")
-        if hint == "severe":
-            score += 2
-            factors.append("severity_hint_severe")
-        elif hint == "moderate":
-            score += 1
-        if weather in ("rain", "snow"):
-            score += 1
-            factors.append("adverse_weather")
-        if traffic in ("high", "gridlock"):
-            score += 1
-            factors.append("heavy_traffic")
-
-        if score >= 7:
-            prediction, confidence = Priority.CRITICAL, 0.74
-        elif score >= 5:
-            prediction, confidence = Priority.HIGH, 0.71
-        elif score >= 3:
-            prediction, confidence = Priority.MEDIUM, 0.66
-        else:
-            prediction, confidence = Priority.LOW, 0.6
-        if not factors:
-            factors.append("baseline")
+        t0 = time.perf_counter()
+        clf = _fitted()
+        vector = [encode(features)]
+        probabilities = clf.predict_proba(vector)[0]
+        classes = list(clf.classes_)
+        best = max(range(len(classes)), key=lambda i: probabilities[i])
+        latency = (time.perf_counter() - t0) * 1000
         return ModelOutput(
             status=ModelStatus.OK,
             model_name=self.name,
             model_version=self.version,
-            prediction=prediction.value,
-            confidence=confidence,
-            latency_ms=12.0,
-            explanation_factors=factors,
+            prediction=str(classes[best]),
+            confidence=round(min(max(float(probabilities[best]), 0.0), 1.0), 4),
+            latency_ms=round(latency, 3),
+            explanation_factors=explain(features),
         )
