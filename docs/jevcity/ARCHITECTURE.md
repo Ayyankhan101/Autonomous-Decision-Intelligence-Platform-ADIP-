@@ -51,7 +51,40 @@ anomaly/validator as data (Invariant 16). State and questions are sha256-hashed;
 cache key = `state_hash + questions_hash + checkpoint + device + dtype` (Phase 0 item 20).
 
 `answer_confidence` derivation (ERRATA C2): top-of-distribution probability from the
-normalized response; raw upstream field unverified until Phase 3.
+normalized response; upstream `answer_confidence` verified **absent** from raw laya-mlx
+output (Phase 3 C6 live contract test) — derivation is the contract.
+
+## Laya LIVE mode (Phase 3)
+
+`LayaAdapter(mode=LIVE)` runs the real in-process `laya_mlx` agent (checkpoint
+`aac6fef/laya-typed-decisions-mlx`, float16). Call path per `ask()`:
+breaker gate → retry (TimeoutError only, `LIVE_MAX_ATTEMPTS=2`) → predict on a daemon
+thread with `LIVE_TIMEOUT_S=10.0` wall-clock → `to_raw` (C1 shape: answers carry
+choice/probabilities/noul, **no** `answer_confidence`) → `normalize` (derivation +
+state/questions hashes). Fail-closed: runtime error → `UNAVAILABLE`, overrun →
+`TIMEOUT`, unextractable raw → `INVALID_RESPONSE`, all surfaced as
+`MODEL_DEGRADED` policy-side (`FALLBACK_RULE`), never an auto-decision.
+
+Circuit breaker: `LIVE_BREAKER_THRESHOLD=3` consecutive failures opens calls
+(`error_code=circuit_open`, status `UNAVAILABLE`) with a half-open probe allowed
+every `LIVE_BREAKER_PROBE_EVERY=5`th blocked call; success resets. Lazy agent load
+(`_live_agent()` module cache) inside the timeout thread, so cold start cannot
+blow the wall clock. `health()` probe reports mode/runtime/checkpoint/router_model/
+device/dtype/live_agent_loaded/live_timeout_s/breaker_open.
+
+Guardrail sources on LIVE outcomes (one explicit source per decision,
+`LayaBlock.final_decision_source`): suggestion matches policy → `LAYA_PROPOSED`;
+modified → `POLICY_FINALIZED`; Laya unavailable → `FALLBACK_RULE`; review/low-AC
+hold or rejected input → `HUMAN_REQUIRED`. Every record stamps `policy_version`.
+
+Free text (weather/traffic_level) is control-char-stripped and clamped to
+64 chars in `build_state`; `render_state` is `key=<json>` lines, so payload
+newlines cannot spoof structure (tests/jevcity/test_laya_adapter.py).
+
+Tests: model-free live-path suite (`test_laya_adapter.py` fail-closed,
+`test_resilience.py` retry+breaker, `test_decision_source.py` sources) + live
+checkpoint smoke (`test_laya_live.py`, marks `model` + `laya_live`, CI step
+"LayA live smoke" in the macos job).
 
 ## Seeding & determinism
 
@@ -98,7 +131,10 @@ sandbox incident is rolled back from the live registry on completion.
 | Seeding, clock, correlation, adversarial notes | `tests/jevcity/test_simulation.py` |
 | Allocation / contention | `tests/jevcity/test_allocation.py` |
 | Audit append-only + hash chain + dry-run block | `tests/jevcity/test_audit.py` |
-| Adapter determinism/cache/fail-closed | `tests/jevcity/test_laya_adapter.py` |
+| Adapter determinism/cache/fail-closed + injection resistance (Inv 16) | `tests/jevcity/test_laya_adapter.py` |
+| LIVE retry + circuit breaker | `tests/jevcity/test_resilience.py` |
+| Decision sources on LIVE path (Inv 7-adjacent) | `tests/jevcity/test_decision_source.py` |
+| Live checkpoint contract smoke (C6; marks `model laya_live`) | `tests/jevcity/test_laya_live.py` |
 | What-If isolation (Inv 6/15) | `tests/jevcity/test_whatif.py` |
 | API contracts, override 422s | `tests/jevcity/test_api.py` |
 | Schema freeze | `tests/jevcity/test_schemas.py` |

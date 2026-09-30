@@ -22,7 +22,7 @@ Legend: ✅ done with evidence · 🟡 partial (evidence exists, JevCity-specifi
 | 9 | Audit entry contract: actor, action, reason, timestamp, before/after, decision ID, policy version, model versions, Laya metadata | ✅ | `jevcity/schemas/audit.py` + append-only store `jevcity/audit/log.py` |
 | 10 | Dashboard API endpoint list + polling payload agreed | ✅ | 16 endpoints in `docs/jevcity/API.md`; payload `jevcity/schemas/api.py`; JSON Schema export `schemas/*.json` |
 | 11 | Deterministic demo seed strategy documented | ✅ | `docs/jevcity/ARCHITECTURE.md` §Seeding; implemented `jevcity/simulation/seeds.py` |
-| 12 | Laya runtime integration assumption verified **or** local fallback used | 🟡 | Verified: `laya-mlx` works in-repo (BLUEPRINT, evals/, benchmarks/). **Fallback active for slice:** mock/cache adapter modes. `laya-serve`/`/v1/systemone` = unverified (ERRATA C1) — live mode = Phase 3 |
+| 12 | Laya runtime integration assumption verified **or** local fallback used | ✅ | Verified **in-process** (Phase 3): `LayaAdapter(mode=LIVE)` runs `laya_mlx` agent live — lazy load, thread-timeout, retry, breaker, health probe; live on Apple M1 Pro via `tests/jevcity/test_laya_live.py` (CI step "LayA live smoke"). HTTP sidecar (`laya-serve`) not used (ERRATA C1 addendum); mock/cache modes remain as fallback (item 19) |
 
 ## Laya items 13–22
 
@@ -32,8 +32,8 @@ Legend: ✅ done with evidence · 🟡 partial (evidence exists, JevCity-specifi
 | 14 | Checkpoint selected and cached offline | ✅ | `aac6fef/laya-typed-decisions-mlx` (BLUEPRINT §47); HF cache path in CI; demo needs no internet |
 | 15 | Latency measured on target hardware | ✅ | `benchmarks/results/latency-AppleM1Pro-*.json` — 61.6–93.6 ms / 3-question decision (M1 Pro) → all plan budgets pass (§5 demo <250 ms, §6 CPU <750 ms) |
 | 16 | Laya state builder contract approved | ✅ | `jevcity/decision_engine/laya_adapter/state_builder.py` + spec in `docs/jevcity/ARCHITECTURE.md` §State builder (compact, decision-relevant fields only, bounded text, sha256 hashing) |
-| 17 | Laya question schema approved | ✅ | `jevcity/decision_engine/laya_adapter/questions.py` — priority (choice, 4), needs_human_review (noul), recommended_resource_type (choice, 5); matches plan §3.1.1; **schema shape validated against laya-mlx API = Phase 3 task** (ERRATA/M1) |
-| 18 | Laya confidence semantics documented | 🟡 | Documented + derivation implemented (`jevcity/decision_engine/laya_adapter/normalize.py`, ERRATA C2/C3): uncalibrated until fixture-measured. **Open:** upstream `answer_confidence` field verification against laya-mlx raw output |
+| 17 | Laya question schema approved | ✅ | `jevcity/decision_engine/laya_adapter/questions.py` — priority (choice, 4), needs_human_review (noul), recommended_resource_type (choice, 5); matches plan §3.1.1; **validated live Phase 3 (C6):** real `agent.predict(render_state, QUESTIONS)` accepts the schema (`tests/jevcity/test_laya_live.py`) |
+| 18 | Laya confidence semantics documented | ✅ | Documented + derivation implemented (`jevcity/decision_engine/laya_adapter/normalize.py`, ERRATA C2/C3): uncalibrated until fixture-measured. **Verified Phase 3 (C6):** upstream `answer_confidence` absent from raw laya-mlx answers — derivation is the contract (asserted live in `test_laya_live.py`); calibration itself tracked under C4/row 21 |
 | 19 | Laya fallback behavior approved | ✅ | mock → cache → deterministic rule engine → HOLD_FOR_HUMAN (fail-closed); plan §5.4 fallback requirement |
 | 20 | Deterministic replay/cache strategy approved | ✅ | cache key `state_hash + questions_hash + checkpoint + device + dtype` (plan); implemented `jevcity/decision_engine/laya_adapter/adapter.py`; determinism proven repo-wide 100/100 (BLUEPRINT §8.5) |
 | 21 | Laya evaluation fixture set approved | ✅ | `fixtures/jevcity_decisions.jsonl` (≥50 frozen states + baseline-proposer labels, regenerable via `tools/gen_jevcity_fixtures.py`); runner `evals/run_jevcity_eval.py` gates frozen per ERRATA C4: accuracy ≥0.70, ECE ≤0.15 (model-free gate truth in `tests/jevcity/test_fixtures.py`, honesty contract in `tests/jevcity/test_eval_model.py`); measured report = `evals/results/eval-jevcity-*.json` — first measured run: **accuracy 0.5675, ECE 0.3528 → C4 not met** (gates frozen, checkpoint/label alignment = Phase-3-bound; determinism ✅, n=84) |
@@ -48,8 +48,9 @@ Legend: ✅ done with evidence · 🟡 partial (evidence exists, JevCity-specifi
 | Adapter unavailable at demo | **Managed** — mock/cache modes, item 19 |
 | Fixture gate unmet (ECE) | **Open** — item 21; interim thresholds per C4 |
 
-**Gate 1 verdict:** 🟡 not closable — items 12, 18 open (live Laya integration +
-upstream answer_confidence verification = Phase 3-bound; none block the Phase 2→3
-build under the mock adapter). Phase 2 closed item 21 (fixtures + runner shipped);
-first C4 measurement: accuracy 0.5675, ECE 0.3528 — gates frozen at 0.70/0.15,
-closing them = Phase 3 (checkpoint/label alignment).
+**Gate 1 verdict:** ✅ closable — all 22 rows ✅ (items 12, 18 closed by Phase 3 C5/C6:
+live in-process Laya verified end-to-end + upstream `answer_confidence` verified absent;
+C6 live smoke in CI macos job). Note carried forward: **C4 calibration still measured
+fail** (accuracy 0.5675 < 0.70, ECE 0.3528 > 0.15, n=84) — thresholds frozen per
+ERRATA C4, CI reports it as a warning + step summary (never green-washing), closing
+the gap = checkpoint/label alignment work tracked in row 21 + risk table above.
