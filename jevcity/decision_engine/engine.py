@@ -38,6 +38,7 @@ from jevcity.schemas.resources import IncidentRecord
 
 from .guardrail.policy import DecisionContext, decide
 from .laya_adapter.adapter import LayaAdapter
+from .laya_adapter.questions import QUESTIONS_VERSION
 from .laya_adapter.state_builder import build_state
 
 
@@ -257,18 +258,8 @@ class JevCityEngine:
                 "anomaly": self.anomaly.version,
                 "laya_checkpoint": laya.checkpoint if laya else "none",
             },
-            laya=AuditLayaMetadata(
-                laya_checkpoint=laya.checkpoint if laya else None,
-                laya_router_model=laya.router_model if laya else None,
-                laya_status=laya.status if laya else None,
-                laya_state_hash=laya.state_hash if laya else None,
-                laya_questions_hash=laya.questions_hash if laya else None,
-                laya_suggested_priority=laya.suggested_priority if laya else None,
-                laya_answer_confidence_priority=(
-                    laya.answer_confidence_priority if laya else None
-                ),
-                laya_latency_ms=laya.latency_ms if laya else None,
-                laya_guardrail_applied=laya.guardrail_applied if laya else None,
+            laya=AuditLayaMetadata.from_laya_block(
+                laya, questions_version=QUESTIONS_VERSION
             ),
             timestamp=self.simulation.clock.now,
         )
@@ -317,6 +308,9 @@ class JevCityEngine:
             decision_id=original.decision_id,
             incident_id=original.incident_id,
             policy_version=original.policy_version,
+            laya=AuditLayaMetadata.from_laya_block(
+                original.laya, questions_version=QUESTIONS_VERSION
+            ),
             timestamp=self.simulation.clock.now,
         )
         if override_record.assigned_resource_ids != original.assigned_resource_ids:

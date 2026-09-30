@@ -29,6 +29,29 @@
           "default": null,
           "title": "Laya Checkpoint"
         },
+        "laya_fallback_used": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Laya Fallback Used"
+        },
+        "laya_final_decision_source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DecisionSource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "laya_guardrail_applied": {
           "anyOf": [
             {
@@ -40,6 +63,18 @@
           ],
           "default": null,
           "title": "Laya Guardrail Applied"
+        },
+        "laya_guardrail_modified": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Laya Guardrail Modified"
         },
         "laya_latency_ms": {
           "anyOf": [
@@ -65,6 +100,18 @@
           ],
           "default": null,
           "title": "Laya Questions Hash"
+        },
+        "laya_questions_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Laya Questions Version"
         },
         "laya_router_model": {
           "anyOf": [
@@ -115,6 +162,16 @@
       },
       "title": "AuditLayaMetadata",
       "type": "object"
+    },
+    "DecisionSource": {
+      "enum": [
+        "laya_proposed",
+        "policy_finalized",
+        "fallback_rule",
+        "human_required"
+      ],
+      "title": "DecisionSource",
+      "type": "string"
     },
     "LayaStatus": {
       "enum": [
