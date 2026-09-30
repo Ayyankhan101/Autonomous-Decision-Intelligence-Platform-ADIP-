@@ -263,4 +263,5 @@ def test_health_probe_reports_runtime_readiness():
         "device": "mps",
         "dtype": DTYPE,
         "live_timeout_s": 10.0,
+        "breaker_open": False,
     }
