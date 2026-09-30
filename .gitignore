@@ -12,3 +12,4 @@ serving/audit.db*
 
 # subagent session scratch (SDD workspace)
 .superpowers/
+jevcity/audit/*.db*

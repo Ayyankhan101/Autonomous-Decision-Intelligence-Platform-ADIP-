@@ -1,0 +1,36 @@
+{
+  "accuracy": 0.5675,
+  "checkpoint": "aac6fef/laya-typed-decisions-mlx",
+  "determinism": true,
+  "ece": 0.3528,
+  "file": "fixtures/jevcity_decisions.jsonl",
+  "gates": {
+    "accuracy": 0.7,
+    "ece": 0.15
+  },
+  "gates_passed": false,
+  "latency_ms": {
+    "max": 1715.547,
+    "p50": 285.101
+  },
+  "n": 84,
+  "per_question": {
+    "needs_human_review": {
+      "accuracy": 0.2857,
+      "ece": 0.2997,
+      "n": 84
+    },
+    "priority": {
+      "accuracy": 0.6548,
+      "ece": 0.3087,
+      "n": 84
+    },
+    "recommended_resource_type": {
+      "accuracy": 0.7619,
+      "ece": 0.45,
+      "n": 84
+    }
+  },
+  "repeats": 2,
+  "schema": "jevcity.eval.v1"
+}
