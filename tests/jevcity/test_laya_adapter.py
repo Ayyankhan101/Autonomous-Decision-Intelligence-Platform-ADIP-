@@ -176,3 +176,18 @@ def test_build_state_fills_versions():
     )
     assert st.severity_model_version == "sev-gb-1.0.0"
     assert st.traffic_model_version == "traffic-gbr-1.0.0"
+
+
+def test_health_probe_reports_runtime_readiness():
+    from jevcity.decision_engine.laya_adapter.adapter import DTYPE, LayaAdapter
+    from jevcity.schemas import LayaMode
+
+    h = LayaAdapter(mode=LayaMode.MOCK).health()
+    assert h == {
+        "mode": "mock",
+        "runtime": "laya-mlx",
+        "checkpoint": "aac6fef/laya-typed-decisions-mlx",
+        "router_model": "typed-decisions",
+        "device": "mps",
+        "dtype": DTYPE,
+    }
