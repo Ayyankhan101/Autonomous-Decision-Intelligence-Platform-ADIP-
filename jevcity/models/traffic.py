@@ -49,6 +49,8 @@ class TrafficModel:
 
     def __init__(self, fail: ModelStatus | None = None) -> None:
         self.fail = fail
+        if fail is None:
+            _fitted()
 
     def predict(self, features: dict) -> ModelOutput:
         if self.fail is not None:

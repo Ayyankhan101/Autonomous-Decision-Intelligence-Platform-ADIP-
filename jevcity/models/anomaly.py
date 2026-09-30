@@ -51,6 +51,8 @@ class AnomalyDetector:
 
     def __init__(self, fail: ModelStatus | None = None) -> None:
         self.fail = fail
+        if fail is None:
+            _fitted()
 
     def predict(
         self,

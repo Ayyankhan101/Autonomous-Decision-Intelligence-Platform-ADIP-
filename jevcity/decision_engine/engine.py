@@ -11,6 +11,7 @@ from jevcity.ingestion.validate import validate_raw
 from jevcity.models.anomaly import AnomalyDetector
 from jevcity.models.severity import SeverityModel
 from jevcity.models.traffic import TrafficModel
+from jevcity.models.wrapper import AnomalyWrapper, ModelWrapper
 from jevcity.schemas import (
     AuditLayaMetadata,
     DecisionRecord,
@@ -54,9 +55,9 @@ class JevCityEngine:
         self.simulation = simulation
         self.adapter = adapter or LayaAdapter(mode=LayaMode.MOCK)
         self.audit = audit or AuditLog()
-        self.severity = severity or SeverityModel()
-        self.traffic = traffic or TrafficModel()
-        self.anomaly = anomaly or AnomalyDetector()
+        self.severity = ModelWrapper(severity or SeverityModel())
+        self.traffic = ModelWrapper(traffic or TrafficModel())
+        self.anomaly = AnomalyWrapper(anomaly or AnomalyDetector())
         self.decisions: dict[str, DecisionRecord] = {}
         self.decision_history: list[DecisionRecord] = []
         self.validation_by_event: dict[str, ValidationResult] = {}
