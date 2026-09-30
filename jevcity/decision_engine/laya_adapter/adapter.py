@@ -56,6 +56,17 @@ class LayaAdapter:
     def runtime(self) -> str:
         return RUNTIME if self.mode == LayaMode.LIVE else f"{RUNTIME}({self.mode.value})"
 
+    def health(self) -> dict[str, str]:
+        """Internal readiness probe — no API endpoint (contracts frozen at 16)."""
+        return {
+            "mode": self.mode.value,
+            "runtime": RUNTIME,
+            "checkpoint": CHECKPOINT,
+            "router_model": ROUTER_MODEL,
+            "device": DEVICE,
+            "dtype": DTYPE,
+        }
+
     def ask(self, state: LayaState) -> NormalizedLayaResponse:
         request = LayaRequest(state=state, questions=QUESTIONS)
         state_hash = hash_state(state)
