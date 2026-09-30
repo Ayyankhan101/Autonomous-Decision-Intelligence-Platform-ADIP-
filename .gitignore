@@ -13,3 +13,7 @@ serving/audit.db*
 # subagent session scratch (SDD workspace)
 .superpowers/
 jevcity/audit/*.db*
+
+# CI artifacts
+junit.xml
+evals/results/eval-jevcity-*.json
