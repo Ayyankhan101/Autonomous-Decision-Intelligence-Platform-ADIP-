@@ -56,3 +56,37 @@ def test_severity_heldout_accuracy_floor():
         if model.predict(row["features"]).prediction == row["severity"]
     )
     assert correct / len(held) >= 0.65, f"held-out accuracy {correct / len(held):.3f}"
+
+from jevcity.models.traffic import TrafficModel
+
+
+def test_traffic_trained_valid_and_deterministic():
+    model = TrafficModel()
+    features = {"lanes_blocked": 2, "traffic_level": "high", "vehicles_involved": 4,
+                "incident_type": "accident", "zone": "north", "hour": 8,
+                "time_of_day_bucket": "morning_peak", "weather": "clear",
+                "severity_hint": "moderate", "report_count": 1}
+    a = model.predict(features)
+    b = model.predict(features)
+    assert a.status is ModelStatus.OK
+    assert a.model_version == "traffic-gbr-1.0.0"
+    assert a.prediction is not None and 0.0 <= float(a.prediction) <= 1.0
+    assert a.confidence is not None and 0.0 <= a.confidence <= 1.0
+    assert (a.prediction, a.confidence) == (b.prediction, b.confidence)
+    assert a.explanation_factors
+
+
+def test_traffic_heldout_mae_floor():
+    from jevcity.models.ml_data import load_dataset
+
+    _, held = load_dataset()
+    model = TrafficModel()
+    errors = [abs(float(model.predict(r["features"]).prediction) - r["traffic_delta"])
+              for r in held]
+    mae = sum(errors) / len(errors)
+    assert mae <= 0.1, f"held-out MAE {mae:.4f}"
+
+
+def test_traffic_fail_param_preserved():
+    out = TrafficModel(fail=ModelStatus.TIMEOUT).predict({})
+    assert out.status is ModelStatus.TIMEOUT
