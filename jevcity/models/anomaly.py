@@ -1,13 +1,53 @@
-"""Anomaly/data-quality detection — split outputs (plan §3.1). Conservative on failure:
-if the anomaly model itself fails, treat data as worst-quality (fail closed, Invariant 4/12)."""
+"""Anomaly detection — supervised data-quality score + IsolationForest situational flag
+(plan Phase 2 split). Conservative on failure: model failure or hard-rejected input
+forces worst-quality data (fail closed, Invariant 4/12)."""
 from __future__ import annotations
 
+from pathlib import Path
+
+from jevcity.models.encode import dq_vector, encode
+from jevcity.models.ml_data import load_dataset
 from jevcity.schemas import AnomalyOutput, EventEnvelope, ModelStatus, ValidationResult
+
+DATASET = Path("datasets/jevcity/ml/dataset.jsonl")
+_CACHE: dict[str, object] = {}
+
+
+def _training_vectors() -> tuple[list[list[float]], list[int], list[list[float]]]:
+    train, _ = load_dataset(DATASET)
+    dq_x: list[list[float]] = []
+    dq_y: list[int] = []
+    iso_x: list[list[float]] = []
+    for row in train:
+        dq_x.append(dq_vector(
+            row["features"],
+            contradiction_count=row["contradictions"],
+            hard_error_count=row["validation"]["hard"],
+            soft_codes=row["validation"]["soft_codes"],
+            status=row["validation"]["status"],
+        ))
+        dq_y.append(row["dq_label"])
+        iso_x.append(encode(row["features"]))
+    return dq_x, dq_y, iso_x
+
+
+def _fitted():
+    if "anomaly" not in _CACHE:
+        from sklearn.ensemble import IsolationForest
+        from sklearn.linear_model import LogisticRegression
+
+        dq_x, dq_y, iso_x = _training_vectors()
+        logistic = LogisticRegression(max_iter=500, random_state=0)
+        logistic.fit(dq_x, dq_y)
+        iso = IsolationForest(contamination=0.1, random_state=0)
+        iso.fit(iso_x)
+        _CACHE["anomaly"] = (logistic, iso)
+    return _CACHE["anomaly"]
 
 
 class AnomalyDetector:
     name = "anomaly_detector"
-    version = "anom-threshold-0.1.0"
+    version = "anom-ml-1.0.0"
 
     def __init__(self, fail: ModelStatus | None = None) -> None:
         self.fail = fail
@@ -26,35 +66,31 @@ class AnomalyDetector:
                 situational_anomaly=False,
                 reasons=["anomaly_model_failure"],
             )
-
-        score = 0.05
-        reasons: list[str] = []
+        logistic, iso = _fitted()
+        vector = dq_vector(
+            features,
+            contradiction_count=len(contradictions),
+            hard_error_count=len(validation.hard_errors),
+            soft_codes=[w.code for w in validation.soft_warnings],
+            status=validation.validation_status.value,
+        )
+        score = float(logistic.predict_proba([vector])[0][1])
+        reasons = [f"dq_model_score:{score:.2f}"]
         if contradictions:
-            score += 0.55
-            reasons.extend(contradictions)
-        if validation.soft_warnings and any(
-            w.code == "missing_injury_count" for w in validation.soft_warnings
-        ):
-            score += 0.25
-            reasons.append("missing_injury_count")
-        if validation.soft_warnings and any(
-            w.code == "injected_data" for w in validation.soft_warnings
-        ):
-            score += 0.3
+            reasons.extend(sorted(set(contradictions))[:3])
+        soft_codes = {w.code for w in validation.soft_warnings}
+        if "injected_data" in soft_codes:
+            score = max(score, 0.5)
             reasons.append("injected_data")
         if validation.validation_status.value == "hard_rejected":
             score = 1.0
             reasons.append("hard_invalid_input")
-
-        vehicles = features.get("vehicles_involved") or 0
-        injuries = features.get("injuries_reported") or 0
-        situational = vehicles >= 6 or injuries >= 5
+        situational = bool(iso.predict([encode(features)])[0] == -1)
         if situational:
-            reasons.append("situational_extremes")
-
+            reasons.append("situational_isolation_forest")
         return AnomalyOutput(
             data_quality_anomaly=score >= 0.5,
             data_quality_score=min(1.0, score),
             situational_anomaly=situational,
-            reasons=sorted(set(reasons)),
+            reasons=sorted(set(reasons))[:4],
         )

@@ -90,3 +90,55 @@ def test_traffic_heldout_mae_floor():
 def test_traffic_fail_param_preserved():
     out = TrafficModel(fail=ModelStatus.TIMEOUT).predict({})
     assert out.status is ModelStatus.TIMEOUT
+
+from jevcity.models.anomaly import AnomalyDetector
+from jevcity.schemas import ValidationFinding, ValidationResult, ValidationStatus
+
+
+def _validation(status=ValidationStatus.VALID, soft=(), hard=()):
+    return ValidationResult(
+        event_id="evt-x", incident_id="inc-x", validation_status=status,
+        soft_warnings=list(soft), hard_errors=list(hard),
+    )
+
+
+def test_anomaly_dq_score_separates_injected():
+    model = AnomalyDetector()
+    clean_features = {"incident_type": "accident", "zone": "north", "hour": 9,
+                      "time_of_day_bucket": "morning_peak", "weather": "clear",
+                      "traffic_level": "moderate", "severity_hint": "minor",
+                      "vehicles_involved": 1, "injuries_reported": 0,
+                      "lanes_blocked": 1, "report_count": 1}
+    injected = ValidationFinding(severity="soft", code="injected_data", message="x")
+    out_clean = model.predict(clean_features, [], _validation(), [])
+    out_bad = model.predict(clean_features, [], _validation(soft=[injected]), [])
+    assert 0.0 <= out_clean.data_quality_score <= 1.0
+    assert out_bad.data_quality_score > out_clean.data_quality_score
+    assert out_bad.data_quality_anomaly is True
+    assert isinstance(out_bad.situational_anomaly, bool)
+    assert out_bad.reasons
+
+
+def test_anomaly_hard_rejected_forces_max_score():
+    out = AnomalyDetector().predict({}, [], _validation(status=ValidationStatus.HARD_REJECTED), [])
+    assert out.data_quality_score == 1.0
+    assert out.data_quality_anomaly is True
+
+
+def test_anomaly_fail_param_fail_closed():
+    out = AnomalyDetector(fail=ModelStatus.ERROR).predict({}, [], _validation(), [])
+    assert out.data_quality_score == 1.0
+    assert out.data_quality_anomaly is True
+    assert out.reasons == ["anomaly_model_failure"]
+
+
+def test_anomaly_deterministic():
+    model = AnomalyDetector()
+    feats = {"incident_type": "fire", "zone": "east", "hour": 14,
+             "time_of_day_bucket": "day", "weather": "fog",
+             "traffic_level": "gridlock", "severity_hint": "severe",
+             "vehicles_involved": 0, "injuries_reported": 1, "lanes_blocked": 1,
+             "report_count": 2}
+    a = model.predict(feats, [], _validation(), [])
+    b = model.predict(feats, [], _validation(), [])
+    assert a.model_dump() == b.model_dump()
