@@ -24,6 +24,7 @@ def test_selftests_pass():
         ("evals/calibrate.py", "--selftest"),
         ("evals/calibrate_dept.py", "--selftest"),
         ("evals/eval_ml.py", "--selftest"),
+        ("evals/run_jevcity_eval.py", "--selftest"),
         ("benchmarks/latency_bench.py", "--selftest"),
     ]:
         p = run(script, flag)

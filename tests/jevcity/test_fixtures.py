@@ -39,3 +39,21 @@ def test_fixture_labels_cover_all_priorities():
     assert priorities == {"LOW", "MEDIUM", "HIGH", "CRITICAL"}
     reviews = {r["expected"]["needs_human_review"] for r in rows}
     assert reviews == {True, False}
+
+
+def test_c4_gate_constants_frozen():
+    from evals.run_jevcity_eval import ACC_GATE, ECE_GATE
+
+    assert ACC_GATE == 0.70
+    assert ECE_GATE == 0.15
+
+
+def test_eval_selftest_passes():
+    import subprocess
+    import sys
+
+    repo = Path(__file__).resolve().parents[2]
+    p = subprocess.run([sys.executable, "evals/run_jevcity_eval.py", "--selftest"],
+                       cwd=repo, capture_output=True, text=True, timeout=60)
+    assert p.returncode == 0, p.stdout + p.stderr
+    assert "selftest OK" in p.stdout
