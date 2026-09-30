@@ -128,10 +128,10 @@ Shared: fixed-order encoder `jevcity/models/encode.py`, dataset `datasets/jevcit
   while C4 open — flip step to hard-fail after Gate 1 closes). Least-privilege
   `permissions: contents: read`, per-ref concurrency cancel, job timeouts.
 - Ruleset `main-protection` (id 24235972): block force-push + deletion, require
-  check `lint + model-free tests` (**non-strict** — strict would block direct
-  pushes). Semantics: a red `main` head rejects the next direct push (GH006);
-  fix path = push a short branch + PR (unit job runs on PRs; macOS job is
-  main-only by design and is not required).
+  check `lint + model-free tests` (non-strict). **Required check blocks all
+  direct pushes to `main`** (a new head cannot carry checks yet) — therefore
+  **all changes land via branch + PR** (rebase-merge keeps linear history; unit
+  job runs on PRs; macOS job is main-only by design and is not required).
 - `.github/dependabot.yml`: github-actions, monthly.
 - Freshness guard: `tests/test_schemas_export.py` — `schemas/*.json` must match
   `uv run python -m jevcity.schemas.export` byte-for-byte.
