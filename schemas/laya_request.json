@@ -81,6 +81,18 @@
           "default": null,
           "title": "Severity Confidence"
         },
+        "severity_model_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Severity Model Version"
+        },
         "severity_prediction": {
           "anyOf": [
             {
@@ -135,6 +147,18 @@
           ],
           "default": null,
           "title": "Traffic Level"
+        },
+        "traffic_model_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Traffic Model Version"
         },
         "vehicles_involved": {
           "anyOf": [

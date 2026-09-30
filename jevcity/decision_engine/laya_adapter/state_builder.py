@@ -35,6 +35,8 @@ def build_state(
             float(traffic.prediction) if traffic.status.value == "ok" else None
         ),
         traffic_confidence=traffic.confidence,
+        severity_model_version=severity.model_version,
+        traffic_model_version=traffic.model_version,
         data_quality_score=anomaly.data_quality_score,
         data_quality_reasons=anomaly.reasons,
         available_ambulances=available_ambulances,

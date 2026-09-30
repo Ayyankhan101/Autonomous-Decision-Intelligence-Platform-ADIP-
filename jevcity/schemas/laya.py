@@ -29,6 +29,8 @@ class LayaState(BaseModel):
     severity_confidence: float | None = Field(default=None, ge=0, le=1)
     traffic_congestion_delta: float | None = None
     traffic_confidence: float | None = Field(default=None, ge=0, le=1)
+    severity_model_version: str | None = None
+    traffic_model_version: str | None = None
     data_quality_score: float = Field(ge=0, le=1)
     data_quality_reasons: list[str] = Field(default_factory=list)
     available_ambulances: int = Field(ge=0)

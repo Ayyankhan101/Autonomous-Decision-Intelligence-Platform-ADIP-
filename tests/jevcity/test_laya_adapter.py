@@ -126,3 +126,53 @@ def test_questions_schema_frozen():
     assert len(QUESTIONS["priority"].criteria) == 4  # option budget (Invariant 13)
     assert len(QUESTIONS["recommended_resource_type"].criteria) == 5
     assert QUESTIONS["needs_human_review"].type == "noul"
+
+
+def test_state_carries_model_versions():
+    from jevcity.decision_engine.laya_adapter.state_text import render_state
+
+    st = _state()
+    st2 = st.model_copy(update={"severity_model_version": "sev-gb-1.0.0",
+                                "traffic_model_version": "traffic-gbr-1.0.0"})
+    text_a = render_state(st2)
+    text_b = render_state(st2)
+    assert text_a == text_b
+    assert "severity_model_version" in text_a
+    assert "sev-gb-1.0.0" in text_a
+    assert text_a.endswith("\n") is False
+    assert len(text_a) < 4096
+    assert render_state(st) != text_a
+
+
+def _primary_event():
+    from jevcity.schemas import EventEnvelope, Location, ReportedAttributes
+
+    return EventEnvelope(
+        event_id="evt-1", incident_id="inc-1", source_id="s",
+        event_type="incident_report", incident_type=IncidentType.ACCIDENT,
+        simulated_time=datetime(2026, 9, 27, 10, 0, 1, tzinfo=UTC),
+        ingest_time=datetime(2026, 9, 27, 10, 0, 1, tzinfo=UTC),
+        location=Location(zone=Zone.NORTH, lat=51.5, lon=-0.14, road_segment_id="rs-1"),
+        reported_attributes=ReportedAttributes(),
+    )
+
+
+def test_build_state_fills_versions():
+    from jevcity.decision_engine.laya_adapter.state_builder import build_state
+    from jevcity.models.severity import SeverityModel
+    from jevcity.models.traffic import TrafficModel
+    from jevcity.schemas import AnomalyOutput
+
+    st = build_state(
+        incident_id="inc-1",
+        primary=_primary_event(),
+        features={},
+        severity=SeverityModel().predict({}),
+        traffic=TrafficModel().predict({}),
+        anomaly=AnomalyOutput(data_quality_anomaly=False, data_quality_score=0.0,
+                              situational_anomaly=False),
+        available_ambulances=3,
+        active_competing_incidents=0,
+    )
+    assert st.severity_model_version == "sev-gb-1.0.0"
+    assert st.traffic_model_version == "traffic-gbr-1.0.0"
