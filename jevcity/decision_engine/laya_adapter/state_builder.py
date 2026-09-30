@@ -7,6 +7,16 @@ import json
 
 from jevcity.schemas import AnomalyOutput, EventEnvelope, LayaState, ModelOutput, Resource
 
+MAX_FREE_TEXT = 64
+
+
+def _clean_free_text(value: str | None) -> str | None:
+    """Bounded, control-char-free copy of free text (Invariant 16)."""
+    if value is None:
+        return None
+    printable = "".join(ch for ch in value if ch.isprintable())
+    return printable[:MAX_FREE_TEXT]
+
 
 def build_state(
     *,
@@ -24,8 +34,8 @@ def build_state(
         incident_type=primary.incident_type,
         zone=primary.location.zone,
         simulated_time=primary.simulated_time,
-        weather=features.get("weather"),
-        traffic_level=features.get("traffic_level"),
+        weather=_clean_free_text(features.get("weather")),
+        traffic_level=_clean_free_text(features.get("traffic_level")),
         vehicles_involved=features.get("vehicles_involved"),
         injuries_reported=features.get("injuries_reported"),
         lanes_blocked=features.get("lanes_blocked"),
