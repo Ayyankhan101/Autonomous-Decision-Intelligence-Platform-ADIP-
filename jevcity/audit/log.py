@@ -46,6 +46,13 @@ def _canonical(fields: dict[str, Any]) -> str:
     return json.dumps(fields, sort_keys=True, separators=(",", ":"), default=str)
 
 
+def payload_hash(payload: str) -> str:
+    """Hash the stored payload bytes (minus entry_hash) — schema-stable across releases."""
+    data = json.loads(payload)
+    data.pop("entry_hash", None)
+    return "sha256:" + hashlib.sha256(_canonical(data).encode()).hexdigest()
+
+
 class AuditLog:
     def __init__(self, path: str | Path = "jevcity/audit/audit.db") -> None:
         self.path = str(path)
@@ -147,12 +154,13 @@ class AuditLog:
         ).fetchall()
         prev = GENESIS
         for (payload,) in rows:
-            entry = AuditEntry.model_validate_json(payload)
-            if entry.previous_hash != prev:
+            data = json.loads(payload)
+            entry_hash = data.pop("entry_hash", None)
+            if data.get("previous_hash") != prev:
                 return False
-            if self._compute_hash(entry) != entry.entry_hash:
+            if payload_hash(payload) != entry_hash:
                 return False
-            prev = entry.entry_hash
+            prev = entry_hash
         return True
 
     def close(self) -> None:
