@@ -1,9 +1,11 @@
 """Laya adapter (plan §5.4): proposer only — no DB access, no audit writes, no resource
 assignment, no invariant overrides. Modes: mock (tests/demo), cache (deterministic replay),
-live (Phase 3 — fails closed as unavailable until wired)."""
+live (Phase 3 — in-process laya_mlx predict, thread-timeout guarded, fail-closed)."""
 from __future__ import annotations
 
 import hashlib
+import threading
+import time
 
 from jevcity.schemas import (
     ChoiceAnswer,
@@ -18,11 +20,35 @@ from jevcity.schemas import (
     ResourceType,
 )
 
-from .normalize import CHECKPOINT, DEVICE, ROUTER_MODEL, RUNTIME, hash_questions, normalize
+from .normalize import (
+    CHECKPOINT,
+    DEVICE,
+    ROUTER_MODEL,
+    RUNTIME,
+    hash_questions,
+    normalize,
+    to_raw,
+)
 from .questions import QUESTIONS
 from .state_builder import hash_state
+from .state_text import render_state
 
 DTYPE = "float16"
+LIVE_TIMEOUT_S = 10.0
+
+_QUESTIONS_JSON = {k: v.model_dump(mode="json") for k, v in QUESTIONS.items()}
+_LIVE_AGENT: dict[str, object] = {}
+
+
+def _live_agent() -> object:
+    """Load (once) and return the in-process laya_mlx agent for the frozen checkpoint."""
+    agent = _LIVE_AGENT.get("agent")
+    if agent is None:
+        import laya_mlx as laya
+
+        agent = laya.load(CHECKPOINT, dtype=DTYPE, batch_size=8)
+        _LIVE_AGENT["agent"] = agent
+    return agent
 
 _RESOURCE_BY_TYPE = {
     IncidentType.ACCIDENT: ResourceType.AMBULANCE,
@@ -40,6 +66,7 @@ class LayaAdapter:
         cache: dict[str, NormalizedLayaResponse] | None = None,
         force_status: LayaStatus | None = None,
         latency_ms: float = 38.0,
+        live_timeout_s: float = LIVE_TIMEOUT_S,
     ) -> None:
         self.mode = mode
         self.cache: dict[str, NormalizedLayaResponse] = (
@@ -47,6 +74,7 @@ class LayaAdapter:
         )
         self.force_status = force_status
         self.latency_ms = latency_ms
+        self.live_timeout_s = live_timeout_s
 
     @property
     def checkpoint(self) -> str:
@@ -56,7 +84,7 @@ class LayaAdapter:
     def runtime(self) -> str:
         return RUNTIME if self.mode == LayaMode.LIVE else f"{RUNTIME}({self.mode.value})"
 
-    def health(self) -> dict[str, str]:
+    def health(self) -> dict[str, str | bool | float]:
         """Internal readiness probe — no API endpoint (contracts frozen at 16)."""
         return {
             "mode": self.mode.value,
@@ -65,6 +93,8 @@ class LayaAdapter:
             "router_model": ROUTER_MODEL,
             "device": DEVICE,
             "dtype": DTYPE,
+            "live_agent_loaded": "agent" in _LIVE_AGENT,
+            "live_timeout_s": self.live_timeout_s,
         }
 
     def ask(self, state: LayaState) -> NormalizedLayaResponse:
@@ -87,17 +117,7 @@ class LayaAdapter:
             )
 
         if self.mode == LayaMode.LIVE:
-            return NormalizedLayaResponse.failed(
-                LayaStatus.UNAVAILABLE,
-                runtime=self.runtime,
-                checkpoint=CHECKPOINT,
-                router_model=ROUTER_MODEL,
-                device=DEVICE,
-                state_hash=state_hash,
-                questions_hash=questions_hash,
-                error_code="live_integration_phase3",
-                latency_ms=0.0,
-            )
+            return self._live_ask(request, state, state_hash, questions_hash)
 
         if self.mode == LayaMode.CACHE and key in self.cache:
             return self.cache[key]
@@ -114,6 +134,84 @@ class LayaAdapter:
         return response
 
     # --- internals ----------------------------------------------------
+
+    def _live_ask(
+        self,
+        request: LayaRequest,
+        state: LayaState,
+        state_hash: str,
+        questions_hash: str,
+    ) -> NormalizedLayaResponse:
+        """LIVE path: thread-timeout-guarded predict → to_raw → normalize (fail-closed)."""
+        try:
+            result, latency_ms = self._live_call(state)
+        except TimeoutError:
+            return NormalizedLayaResponse.failed(
+                LayaStatus.TIMEOUT,
+                runtime=self.runtime,
+                checkpoint=CHECKPOINT,
+                router_model=ROUTER_MODEL,
+                device=DEVICE,
+                state_hash=state_hash,
+                questions_hash=questions_hash,
+                error_code="live_timeout",
+                latency_ms=self.live_timeout_s * 1000.0,
+            )
+        except Exception as exc:
+            return NormalizedLayaResponse.failed(
+                LayaStatus.UNAVAILABLE,
+                runtime=self.runtime,
+                checkpoint=CHECKPOINT,
+                router_model=ROUTER_MODEL,
+                device=DEVICE,
+                state_hash=state_hash,
+                questions_hash=questions_hash,
+                error_code=f"live_error:{type(exc).__name__}",
+                latency_ms=0.0,
+            )
+        raw = to_raw(result)
+        if raw is None:
+            return NormalizedLayaResponse.failed(
+                LayaStatus.INVALID_RESPONSE,
+                runtime=self.runtime,
+                checkpoint=CHECKPOINT,
+                router_model=ROUTER_MODEL,
+                device=DEVICE,
+                state_hash=state_hash,
+                questions_hash=questions_hash,
+                error_code="raw_extract_failed",
+                latency_ms=latency_ms,
+            )
+        return normalize(
+            request,
+            raw,
+            state_hash=state_hash,
+            questions_hash=questions_hash,
+            latency_ms=latency_ms,
+        )
+
+    def _live_call(self, state: LayaState) -> tuple[dict, float]:
+        """Run laya_mlx predict on a daemon thread; raise TimeoutError on overrun."""
+        box: dict = {}
+        done = threading.Event()
+
+        def _run() -> None:
+            t0 = time.perf_counter()
+            try:
+                agent = _live_agent()
+                box["result"] = agent.predict(render_state(state), _QUESTIONS_JSON)
+                box["latency_ms"] = (time.perf_counter() - t0) * 1000.0
+            except Exception as exc:
+                box["error"] = exc
+            finally:
+                done.set()
+
+        threading.Thread(target=_run, daemon=True, name="laya-live-predict").start()
+        if not done.wait(timeout=self.live_timeout_s):
+            raise TimeoutError(f"live predict exceeded {self.live_timeout_s}s")
+        if "error" in box:
+            raise box["error"]
+        return box["result"], box["latency_ms"]
 
     @staticmethod
     def _cache_key(state_hash: str, questions_hash: str) -> str:

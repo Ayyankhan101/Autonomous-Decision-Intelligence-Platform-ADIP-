@@ -25,7 +25,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from run_eval import ece  # noqa: E402
 
-from jevcity.decision_engine.laya_adapter.normalize import CHECKPOINT, normalize  # noqa: E402
+from jevcity.decision_engine.laya_adapter.normalize import (  # noqa: E402
+    CHECKPOINT,
+    normalize,
+    to_raw,
+)
 from jevcity.decision_engine.laya_adapter.questions import QUESTIONS  # noqa: E402
 from jevcity.decision_engine.laya_adapter.state_text import render_state  # noqa: E402
 from jevcity.schemas import LayaRequest, LayaState  # noqa: E402
@@ -34,42 +38,6 @@ ACC_GATE = 0.70
 ECE_GATE = 0.15
 DTYPE = "float16"
 QUESTION_KEYS = ("priority", "needs_human_review", "recommended_resource_type")
-
-
-def to_raw(result: dict) -> dict | None:
-    answers = result.get("answers") or {}
-    try:
-        priority = answers["priority"]
-        p_dist = {str(k): float(v)
-                  for k, v in (priority.get("probabilities") or {}).items()}
-        p_choice = str(priority.get("choice") or max(p_dist, key=p_dist.get))
-        resource = answers["recommended_resource_type"]
-        r_dist = {str(k): float(v)
-                  for k, v in (resource.get("probabilities") or {}).items()}
-        r_choice = str(resource.get("choice") or max(r_dist, key=r_dist.get))
-        noul = float(answers["needs_human_review"]["noul"])
-        if not 0.0 <= noul <= 1.0:
-            return None
-        return {
-            "priority": {
-                "choice": p_choice,
-                "confidence": p_dist.get(p_choice, 0.0),
-                "answer_confidence": p_dist.get(p_choice, 0.0),
-                "distribution": p_dist,
-            },
-            "needs_human_review": {
-                "noul": noul,
-                "answer_confidence": max(noul, 1.0 - noul),
-            },
-            "recommended_resource_type": {
-                "choice": r_choice,
-                "confidence": r_dist.get(r_choice, 0.0),
-                "answer_confidence": r_dist.get(r_choice, 0.0),
-                "distribution": r_dist,
-            },
-        }
-    except (KeyError, TypeError, ValueError):
-        return None
 
 
 def score_answers(normalized: dict, expected: dict) -> dict[str, tuple[float, bool]]:

@@ -190,4 +190,6 @@ def test_health_probe_reports_runtime_readiness():
         "router_model": "typed-decisions",
         "device": "mps",
         "dtype": DTYPE,
+        "live_agent_loaded": False,
+        "live_timeout_s": 10.0,
     }
