@@ -32,6 +32,7 @@ testpaths = ["tests"]
 addopts = "-m 'not model'"
 markers = [
     "model: needs the laya-mlx checkpoint downloaded (excluded from the PR tier)",
+    "laya_live: live in-process laya_mlx smoke (macOS + checkpoint; CI LayA live smoke step)",
 ]
 
 [tool.ruff]
