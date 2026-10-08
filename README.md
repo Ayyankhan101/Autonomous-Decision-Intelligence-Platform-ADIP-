@@ -20,6 +20,11 @@ the same laya-mlx platform, per `JevCity_Implementation_Plan_Revised_v2_Laya.doc
   [`DEMO_BEATS.md`](docs/jevcity/DEMO_BEATS.md).
 - API (port **8200**): `uvicorn jevcity.api.app:app --port 8200` — 16 endpoints incl.
   simulation controls, overrides (actor+reason enforced), What-If (`dry_run`, zero live writes).
+- Command Center dashboard (`dashboard/`, React + TS + Vite): map layer, incident inspector
+  with Laya advisory vs policy split, simulation/bad-data controls, override modal, audit
+  viewer, What-If sandbox. Built assets are served by the API at `/` (when `dashboard/dist`
+  exists). Dev: `cd dashboard && pnpm install && pnpm dev` (proxies `/api` → `:8200`).
+  Build: `pnpm build`. Lint: `pnpm lint` (oxlint).
 - Tests: `tests/jevcity/` — invariant property tests, audit append-only/hash-chain, adapter
   fail-closed, API contracts. Full suite: `uv run pytest`.
 - Triage platform (`adip/`, `serving/` on port 8100) untouched underneath.
@@ -296,6 +301,10 @@ uv run python serving/loadtest.py --rounds 4          # KPI gates (exit 1 on fai
 uv run python evals/run_eval.py --file datasets/golden-set/golden-v2.0.json --strict --repeats 2
 uv run python benchmarks/latency_bench.py --batch-size 16 --repeats 50
 uv run python datasets/golden-set/validate.py --file datasets/golden-set/golden-v2.0.json --strict --expect 50
+
+uvicorn jevcity.api.app:app --port 8200              # JevCity API (serves dashboard/dist at /)
+cd dashboard && pnpm install && pnpm build           # Command Center dashboard → dashboard/dist
+pnpm --dir dashboard dev                             # dashboard dev server (proxies /api → :8200)
 ```
 
 ## Roadmap
