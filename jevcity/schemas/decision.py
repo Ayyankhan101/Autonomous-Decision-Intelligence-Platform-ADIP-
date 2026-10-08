@@ -69,6 +69,7 @@ class LayaBlock(BaseModel):
     suggested_needs_human_review: bool | None = None
     recommended_resource_type: ResourceType | None = None
     answer_confidence_priority: float | None = Field(default=None, ge=0, le=1)
+    distribution: dict[str, float] = Field(default_factory=dict)
     state_hash: str = ""
     questions_hash: str = ""
     latency_ms: float = Field(default=0, ge=0)
