@@ -141,6 +141,36 @@ append, no decision persistence, `dry_run=True` stamped on the decision. Predefi
 scenarios only (remove_one_ambulance, close_road, second_emergency); second-emergency
 sandbox incident is rolled back from the live registry on completion.
 
+## Command Center dashboard (Phase 5)
+
+React + TypeScript + Vite + Tailwind app in `dashboard/`, built to `dashboard/dist` and
+served by the API at `/` (`StaticFiles` mount, skipped when `dist` is absent; `/api/*`
+routes unaffected — route set still frozen at 16). CORS middleware allows the Vite dev
+origin (`:5173`/`:3000`, wildcard in dev). Data layer polls `/api/state`, `/api/incidents`,
+`/api/decisions`, `/api/resources`, `/api/audit` every **1.5 s**.
+
+**Views:** Command Center (5-zone map with severity-colored incident pins + fleet
+availability bars, incident inspector, simulation controls), What-If sandbox, audit trail.
+
+**Inspector split:** upstream ML triad signals → Laya advisory card (suggested priority,
+answer confidence, probability distribution bars, status `laya_*`, checkpoint, router @
+device, guardrail flag, latency, state hash) side-by-side with the deterministic policy
+card (governed priority, decision state, final decision source, matched rules, structured
+reasons); divergence banner when policy modifies Laya's suggestion. Advisory card has a
+**display-only** hide/show toggle — no frozen endpoint can switch the adapter's runtime
+mode; policy authority and audit are unaffected either way.
+
+**Required UI states:** backend unreachable (banner + header badge), simulation paused
+(header), model degraded (header `last_laya_status` badge + `MODEL_DEGRADED` state),
+audit write failed / server error (5xx classified in the API client), What-If sandbox
+expired (404 on stored-result re-fetch), contention alert (any `CONTENTION_ESCALATION`),
+bad-data hold (hard-rejected incidents / `REJECTED_INPUT` decisions).
+
+**Override + audit in UI:** Override modal enforces non-empty `operator_id` + `reason`
+(Invariant 7), posts to the existing `POST /api/overrides`; audit tab renders actor,
+action, before/after, full Laya metadata block, and entry/previous hashes (client display
+only — chain validation itself is server-side: `validate_chain` / export CLI).
+
 ## Tests map (plan §6 gates)
 
 | Gate | File |
@@ -158,6 +188,8 @@ sandbox incident is rolled back from the live registry on completion.
 | What-If isolation (Inv 6/15) | `tests/jevcity/test_whatif.py` |
 | API contracts, override 422s | `tests/jevcity/test_api.py` |
 | Schema freeze | `tests/jevcity/test_schemas.py` |
+| Phase 5 dashboard: CORS, static mount, frozen routes with dashboard, sim/override/What-If/bad-data flows | `tests/jevcity/test_dashboard_phase5.py` |
+| `LayaBlock.distribution` plumbing on LIVE path | `tests/jevcity/test_laya_distribution.py` |
 
 ## Repo coexistence
 
