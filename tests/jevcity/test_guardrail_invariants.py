@@ -309,6 +309,60 @@ def test_laya_review_suggestion_holds():
     assert "R-LAYA-HUMAN-REVIEW-SUGGESTED-01" in record.matched_rules
 
 
+# --- Plan §6 guardrail scenario battery --------------------------------
+# Six scenarios (plan Phase 6): (1) Laya CRITICAL with one supporting signal -> blocked
+# (test_inv10_laya_alone_cannot_force_critical); (2) AUTO_APPROVED low answer confidence
+# -> HOLD (test_laya_low_answer_confidence_holds); (3) Laya ignores a data-quality
+# anomaly -> guardrail overrides (below); (4) Laya recommends an unavailable resource ->
+# allocator corrects instead of false success (below); (5) Laya contradicts the rules ->
+# rules win (test_inv5_* / test_inv9_laya_invalid_fails_closed); (6) Laya proposes an
+# action from adversarial text -> policy ignores the text (test_notes_never_reach_state_or_render,
+# test_adversarial_notes_flagged_not_followed in test_simulation.py).
+
+
+def test_plan6_laya_ignores_dq_anomaly_guardrail_overrides():
+    """Scenario (3): Laya confidently suggests CRITICAL while the data-quality model
+    reports an anomaly — the guardrail holds for human review instead of auto-acting."""
+    sim_laya = LayaAdapter(mode=LayaMode.MOCK).ask(
+        _demo_state(FixedSeverity("CRITICAL", 0.95), FixedTraffic(0.9, 0.9), _ok_anomaly())
+    )
+    laya = _canned_laya(sim_laya, priority="CRITICAL", ac=0.95, review=False)
+    record = decide(
+        _ctx(
+            severity=FixedSeverity("CRITICAL", 0.95),
+            traffic=FixedTraffic(0.9, 0.9),
+            anomaly=_ok_anomaly(
+                score=0.6, dq_anomaly=True, reasons=["contradictory_reports"]
+            ),
+            laya=laya,
+        )
+    )
+    assert record.state == DecisionState.HOLD_FOR_HUMAN
+    assert record.state != DecisionState.AUTO_APPROVED
+    assert "R-DATA-QUALITY-HOLD-01" in record.matched_rules
+    assert record.laya.suggested_priority == Priority.CRITICAL
+
+
+def test_plan6_laya_unavailable_resource_allocator_escalates(engine):
+    """Scenario (4): Laya recommends a fire truck but every fire truck is offline —
+    the allocator must not report a fake successful assignment; it escalates contention."""
+    from jevcity.schemas import ResourceType, SeverityHint
+
+    engine.severity = FixedSeverity("HIGH", 0.95)
+    engine.traffic = FixedTraffic(0.7, 0.95)
+    for r in engine.simulation.pool.all():
+        if r.type == ResourceType.FIRE_TRUCK:
+            engine.simulation.pool.take_offline(r.resource_id)
+    engine.simulation.inject_incident(
+        IncidentType.FIRE, Zone.SOUTH, SeverityHint.SEVERE
+    )
+    record = engine.process_pending()[-1]
+    assert record.state == DecisionState.CONTENTION_ESCALATION
+    assert "R-CONTENTION-ESCALATE-01" in record.matched_rules
+    assert record.assigned_resource_ids == []
+    assert record.laya.recommended_resource_type == ResourceType.FIRE_TRUCK
+
+
 # --- §5.8 dual confidence contract ------------------------------------
 
 

@@ -71,6 +71,7 @@ class SimulationState:
             source_id=source_id,
             when=self.clock.now,
             notes=notes,
+            incident_id=self._next_unique_incident_id(),
         )
         raw = event.model_dump(mode="json")
         if bad_data_mode is not None:
@@ -127,6 +128,15 @@ class SimulationState:
         self._register_incident(event)
 
     # --- internals ----------------------------------------------------
+
+    def _next_unique_incident_id(self) -> str:
+        """Generator ids restart at inc-00001 on a fresh engine while replayed recordings
+        carry fixed ids — keep injected ids clear of everything already registered,
+        otherwise a live event silently merges into an unrelated recorded incident."""
+        while True:
+            candidate = self.generator.next_incident_id()
+            if candidate not in self.incidents:
+                return candidate
 
     def _register_incident(self, event: EventEnvelope) -> None:
         existing = self.incidents.get(event.incident_id)
