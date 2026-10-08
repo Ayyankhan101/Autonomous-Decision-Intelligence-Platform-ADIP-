@@ -4,7 +4,11 @@ Run: uvicorn jevcity.api.app:app --port 8200
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from jevcity.audit.log import AuditLog
 from jevcity.decision_engine.engine import JevCityEngine
@@ -52,6 +56,13 @@ def build_engine(
 def create_app(engine: JevCityEngine | None = None) -> FastAPI:
     engine = engine or build_engine()
     app = FastAPI(title="JevCity Command Center API", version="0.1.0")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     sandbox_store: dict[str, WhatIfResult] = {}
 
     def _decisions_for(incident_id: str) -> list[DecisionRecord]:
@@ -223,6 +234,10 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
         if result is None:
             raise HTTPException(404, f"unknown sandbox {sandbox_id}")
         return result
+
+    dist_dir = Path(__file__).resolve().parents[2] / "dashboard" / "dist"
+    if dist_dir.exists():
+        app.mount("/", StaticFiles(directory=str(dist_dir), html=True), name="dashboard")
 
     app.state.engine = engine
     return app
