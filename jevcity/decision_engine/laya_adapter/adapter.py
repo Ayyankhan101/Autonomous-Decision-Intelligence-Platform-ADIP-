@@ -333,3 +333,10 @@ def answer_confidence_priority(response: NormalizedLayaResponse) -> float | None
     if isinstance(answer, ChoiceAnswer):
         return answer.answer_confidence
     return None
+
+
+def priority_distribution(response: NormalizedLayaResponse) -> dict[str, float]:
+    answer = response.answers.get("priority")
+    if isinstance(answer, ChoiceAnswer):
+        return dict(answer.distribution)
+    return {}

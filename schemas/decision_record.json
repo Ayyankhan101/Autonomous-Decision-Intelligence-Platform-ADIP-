@@ -109,6 +109,13 @@
           "title": "Device",
           "type": "string"
         },
+        "distribution": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Distribution",
+          "type": "object"
+        },
         "final_decision_source": {
           "$ref": "#/$defs/DecisionSource",
           "default": "policy_finalized"

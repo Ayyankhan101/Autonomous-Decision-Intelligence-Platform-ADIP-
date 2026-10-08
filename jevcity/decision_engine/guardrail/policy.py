@@ -31,6 +31,7 @@ from jevcity.simulation.resource_pool import ResourcePool
 
 from ..laya_adapter.adapter import (
     answer_confidence_priority,
+    priority_distribution,
     recommended_resource_type,
     suggested_needs_human_review,
     suggested_priority,
@@ -302,6 +303,7 @@ def _laya_block(ctx, laya, laya_ok, sug_priority, sug_review, rec_resource, ac_p
         suggested_needs_human_review=sug_review,
         recommended_resource_type=rec_resource,
         answer_confidence_priority=ac_priority,
+        distribution=priority_distribution(laya),
         state_hash=laya.state_hash,
         questions_hash=laya.questions_hash,
         latency_ms=laya.latency_ms,
