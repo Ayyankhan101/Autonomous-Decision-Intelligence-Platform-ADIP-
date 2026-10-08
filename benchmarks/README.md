@@ -120,3 +120,14 @@ _(add rows from new runs as other hardware is measured; keep raw JSONs)_
   decision-only P95 < 60 ms was retired — unreachable over distinct inputs,
   evidence in README "Eval gates")
 - 100% deterministic answers across repeated calls
+
+## JevCity event pipeline (plan Phase 6)
+
+```bash
+uv run python benchmarks/jevcity_pipeline_bench.py --events 50            # mock Laya
+uv run python benchmarks/jevcity_pipeline_bench.py --events 20 --laya live # live MLX
+```
+
+End-to-end per-event decision latency (inject → triad → Laya → guardrail → audit)
+against the plan budgets: p95 < 250 ms (demo) / < 750 ms (CPU). Exit 1 over budget.
+Results land in `benchmarks/results/jevcity-pipeline-<arch>-<timestamp>.json`.

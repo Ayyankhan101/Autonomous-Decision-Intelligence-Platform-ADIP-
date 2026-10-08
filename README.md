@@ -17,7 +17,15 @@ the same laya-mlx platform, per `JevCity_Implementation_Plan_Revised_v2_Laya.doc
 - Docs: [`docs/jevcity/PHASE0_SIGNOFF.md`](docs/jevcity/PHASE0_SIGNOFF.md) (22-item gate),
   [`ERRATA.md`](docs/jevcity/ERRATA.md) (plan-vs-repo resolutions),
   [`ARCHITECTURE.md`](docs/jevcity/ARCHITECTURE.md), [`API.md`](docs/jevcity/API.md),
-  [`DEMO_BEATS.md`](docs/jevcity/DEMO_BEATS.md).
+  [`DEMO_BEATS.md`](docs/jevcity/DEMO_BEATS.md); Phase 6 documentation:
+  [`LAYA_MODEL_CARD.md`](docs/jevcity/LAYA_MODEL_CARD.md),
+  [`CHECKPOINT_CARD.md`](docs/jevcity/CHECKPOINT_CARD.md),
+  [`LAYA_QUESTIONS.md`](docs/jevcity/LAYA_QUESTIONS.md),
+  [`STATE_BUILDER.md`](docs/jevcity/STATE_BUILDER.md),
+  [`CONFIDENCE_CALIBRATION.md`](docs/jevcity/CONFIDENCE_CALIBRATION.md),
+  [`GUARDRAIL.md`](docs/jevcity/GUARDRAIL.md),
+  [`LAYA_FAILURE_MODES.md`](docs/jevcity/LAYA_FAILURE_MODES.md),
+  [`PROFESSIONAL_PRACTICES.md`](docs/jevcity/PROFESSIONAL_PRACTICES.md).
 - API (port **8200**): `uvicorn jevcity.api.app:app --port 8200` — 16 endpoints incl.
   simulation controls, overrides (actor+reason enforced), What-If (`dry_run`, zero live writes).
 - Command Center dashboard (`dashboard/`, React + TS + Vite): map layer, incident inspector

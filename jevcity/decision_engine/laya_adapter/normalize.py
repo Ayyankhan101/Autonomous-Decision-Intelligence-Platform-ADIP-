@@ -77,6 +77,22 @@ def to_raw(result: dict) -> dict | None:
         return None
 
 
+def _validate_distribution(
+    distribution: dict[str, float], allowed: list[str], label: str
+) -> None:
+    """Fail closed on malformed distributions (plan §6: negative probability and
+    probability-sum errors are errors, unknown option keys exceed the option budget)."""
+    unknown = set(distribution) - set(allowed)
+    if unknown:
+        raise ValueError(f"{label} distribution has unknown options: {sorted(unknown)}")
+    for key, value in distribution.items():
+        if not 0.0 <= value <= 1.0:
+            raise ValueError(f"{label} probability out of range for {key}: {value}")
+    total = sum(distribution.values())
+    if not 0.99 <= total <= 1.01:
+        raise ValueError(f"{label} probability sum out of range: {total}")
+
+
 def normalize(
     request: LayaRequest,
     raw_answers: dict,
@@ -93,6 +109,7 @@ def normalize(
         if choice not in PRIORITY_LABELS:
             raise ValueError(f"invalid priority choice: {choice}")
         distribution = {k: float(v) for k, v in priority_raw["distribution"].items()}
+        _validate_distribution(distribution, PRIORITY_LABELS, "priority")
         top = max(distribution.values())
         normalized["priority"] = ChoiceAnswer(
             choice=choice,
@@ -115,6 +132,8 @@ def normalize(
         if resource_choice not in RESOURCE_LABELS:
             raise ValueError(f"invalid resource choice: {resource_choice}")
         distribution = {k: float(v) for k, v in resource_raw.get("distribution", {}).items()}
+        if distribution:
+            _validate_distribution(distribution, RESOURCE_LABELS, "recommended_resource_type")
         top = max(distribution.values()) if distribution else float(
             resource_raw.get("confidence", 0.0)
         )

@@ -175,21 +175,25 @@ only — chain validation itself is server-side: `validate_chain` / export CLI).
 
 | Gate | File |
 |------|------|
-| Invariants 1–5, 9–12, dual-confidence | `tests/jevcity/test_guardrail_invariants.py` |
+| Invariants 1–5, 9–16, dual-confidence, plan §6 six guardrail scenarios | `tests/jevcity/test_guardrail_invariants.py` |
 | Seeding, clock, correlation, adversarial notes | `tests/jevcity/test_simulation.py` |
 | Allocation / contention | `tests/jevcity/test_allocation.py` |
 | Audit append-only + hash chain + dry-run block | `tests/jevcity/test_audit.py` |
 | Audit Phase 4: route freeze, original visible after override, Laya status/metadata auditable | `tests/jevcity/test_audit_phase4.py` |
 | Audit export (JSONL, chain-validated, read-only) | `tests/jevcity/test_audit_export.py` |
 | Adapter determinism/cache/fail-closed + injection resistance (Inv 16) | `tests/jevcity/test_laya_adapter.py` |
+| Laya response-schema/failure battery (plan §6, Inv 12/13) | `tests/jevcity/test_laya_schema_battery.py` |
 | LIVE retry + circuit breaker | `tests/jevcity/test_resilience.py` |
 | Decision sources on LIVE path (Inv 7-adjacent) | `tests/jevcity/test_decision_source.py` |
 | Live checkpoint contract smoke (C6; marks `model laya_live`) | `tests/jevcity/test_laya_live.py` |
+| E2E one-pass (replay → live event → triad → Laya → guardrail → dashboard → audit) + latency-budget degradation composite | `tests/jevcity/test_e2e_pipeline.py` |
 | What-If isolation (Inv 6/15) | `tests/jevcity/test_whatif.py` |
 | API contracts, override 422s | `tests/jevcity/test_api.py` |
 | Schema freeze | `tests/jevcity/test_schemas.py` |
 | Phase 5 dashboard: CORS, static mount, frozen routes with dashboard, sim/override/What-If/bad-data flows | `tests/jevcity/test_dashboard_phase5.py` |
 | `LayaBlock.distribution` plumbing on LIVE path | `tests/jevcity/test_laya_distribution.py` |
+| Fixture honesty (C4 gates + measured fail report) | `tests/jevcity/test_fixtures.py`, `tests/jevcity/test_eval_model.py` |
+| Event-pipeline load/latency check (bench, not pytest) | `benchmarks/jevcity_pipeline_bench.py` |
 
 ## Repo coexistence
 
