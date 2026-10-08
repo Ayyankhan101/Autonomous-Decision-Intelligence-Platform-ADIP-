@@ -25,6 +25,12 @@ jobs:
           enable-cache: true
       - name: Install (frozen lockfile)
         run: uv sync --frozen
+      - name: Dashboard build (provides dashboard/dist for the static-mount test)
+        working-directory: dashboard
+        run: |
+          npm install -g pnpm@10
+          pnpm install --frozen-lockfile
+          pnpm run build
       - name: Lint
         run: uv run ruff check .
       - name: Test (model tier deselected)
