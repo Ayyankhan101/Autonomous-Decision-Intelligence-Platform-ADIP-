@@ -173,5 +173,30 @@ class AuditLog:
             prev = entry_hash
         return True
 
+    def chain_report(self) -> dict[str, int | bool | None]:
+        """Full-chain recompute for the live dashboard verify button (demo-liveness).
+
+        Returns {ok, entry_count, broken_at} — broken_at is the 1-based position of
+        the first bad entry, None when intact.
+        """
+        rows = self._conn.execute(
+            "SELECT payload FROM audit_log ORDER BY rowid"
+        ).fetchall()
+        prev = GENESIS
+        for idx, (payload,) in enumerate(rows, start=1):
+            try:
+                data = json.loads(payload)
+                entry_hash = data.pop("entry_hash", None)
+                intact = (
+                    data.get("previous_hash") == prev
+                    and payload_hash(payload) == entry_hash
+                )
+            except (json.JSONDecodeError, AttributeError, TypeError):
+                intact = False
+            if not intact:
+                return {"ok": False, "entry_count": len(rows), "broken_at": idx}
+            prev = entry_hash
+        return {"ok": True, "entry_count": len(rows), "broken_at": None}
+
     def close(self) -> None:
         self._conn.close()

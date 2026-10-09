@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useDashboardData } from './hooks/useDashboardData';
 import { Header } from './components/Header';
+import { KpiStrip } from './components/KpiStrip';
 import { MapLayer } from './components/MapLayer';
 import { IncidentInspector } from './components/IncidentInspector';
 import { SimulationControls } from './components/SimulationControls';
 import { PolicySandbox } from './components/PolicySandbox';
 import { OverrideModal } from './components/OverrideModal';
+import { AuditChain } from './components/AuditChain';
 import { AuditTrail } from './components/AuditTrail';
 import { WhatIfSandbox } from './components/WhatIfSandbox';
 import { AlertTriangle, ShieldAlert, WifiOff } from 'lucide-react';
@@ -25,6 +27,9 @@ export function App() {
     isConnected,
     lastError,
     isRefreshing,
+    newIds,
+    latencySeries,
+    lastUpdatedAt,
     refresh,
   } = useDashboardData(1500);
 
@@ -66,6 +71,7 @@ export function App() {
         setActiveTab={setActiveTab}
         onRefresh={refresh}
         onTogglePlayPause={handleTogglePlayPause}
+        lastUpdatedAt={lastUpdatedAt}
       />
 
       {/* Connectivity Alert Banner */}
@@ -110,6 +116,15 @@ export function App() {
       <main className="flex-1 p-4 max-w-7xl w-full mx-auto space-y-4">
         {activeTab === 'command' && (
           <div className="space-y-4">
+            {/* Live KPI strip — real telemetry from the polled feed */}
+            <KpiStrip
+              state={state}
+              incidents={incidents}
+              decisions={decisions}
+              resources={resources}
+              latencySeries={latencySeries}
+            />
+
             {/* Top: Map Layer & Resource Deployment Grid */}
             <MapLayer
               incidents={incidents}
@@ -117,6 +132,7 @@ export function App() {
               resources={resources}
               selectedIncidentId={selectedIncidentId}
               onSelectIncident={(id) => setSelectedIncidentId(id)}
+              newIncidentIds={newIds.incidents}
             />
 
             {/* Bottom: Split Pane (Incident Inspection on left, Simulation Controls on right) */}
@@ -137,6 +153,7 @@ export function App() {
                   incidentCount={state?.incident_count ?? 0}
                   decisionCount={state?.decision_count ?? 0}
                   onRefresh={refresh}
+                  layaMode={state?.laya_mode ?? 'mock'}
                 />
 
                 <PolicySandbox
@@ -154,7 +171,10 @@ export function App() {
         )}
 
         {activeTab === 'audit' && (
-          <AuditTrail entries={auditEntries} />
+          <>
+            <AuditChain entries={auditEntries} newIds={newIds} />
+            <AuditTrail entries={auditEntries} newIds={newIds} />
+          </>
         )}
       </main>
 

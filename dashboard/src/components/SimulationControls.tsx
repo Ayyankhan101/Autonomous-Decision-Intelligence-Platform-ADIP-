@@ -1,6 +1,7 @@
 import type React from 'react';
 import { useState } from 'react';
 import {
+  Brain,
   Flame,
   Play,
   Pause,
@@ -23,6 +24,7 @@ interface SimulationControlsProps {
   incidentCount: number;
   decisionCount: number;
   onRefresh: () => void;
+  layaMode?: string;
 }
 
 export const SimulationControls: React.FC<SimulationControlsProps> = ({
@@ -32,6 +34,7 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
   incidentCount,
   decisionCount,
   onRefresh,
+  layaMode = 'mock',
 }) => {
   const [sSeed, setSSeed] = useState(sessionSeed);
   const [rSeed, setRSeed] = useState(scenarioSeed);
@@ -47,6 +50,11 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
 
   // Bad data injection state
   const [badDataMode, setBadDataMode] = useState<InjectionMode>('adversarial_notes');
+
+  // Laya runtime mode toggle (demo-liveness)
+  const [modeTarget, setModeTarget] = useState<'mock' | 'cache' | 'live'>(
+    layaMode as 'mock' | 'cache' | 'live',
+  );
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setMessage({ text, type });
@@ -136,6 +144,19 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
     }
   };
 
+  const handleLayaMode = async () => {
+    setIsSubmitting(true);
+    try {
+      const res = await api.setLayaMode(modeTarget);
+      showToast(`Laya adapter: ${res.previous_mode} → ${res.mode}`);
+      onRefresh();
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : String(err), 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 shadow-md flex flex-col gap-4">
       {/* Toast Alert */}
@@ -207,6 +228,51 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
               title="Scenario Seed"
             />
           </div>
+        </div>
+
+        {/* Live counters (previously fetched but never shown) */}
+        <div className="flex items-center gap-3 mt-2 text-[11px] font-mono">
+          <span className="text-slate-400">
+            Incidents: <strong className="text-amber-300">{incidentCount}</strong>
+          </span>
+          <span className="text-slate-600">•</span>
+          <span className="text-slate-400">
+            Decisions: <strong className="text-indigo-300">{decisionCount}</strong>
+          </span>
+        </div>
+      </div>
+
+      {/* Laya Runtime Mode Toggle (demo-liveness) */}
+      <div className="border-t border-slate-800/80 pt-3">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 flex items-center gap-1.5">
+          <Brain className="w-3.5 h-3.5 text-teal-400" />
+          <span>Laya Runtime</span>
+          <span className="ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-teal-300 uppercase">
+            {layaMode}
+          </span>
+        </h4>
+        <p className="text-[10px] text-slate-500 mb-2 leading-relaxed">
+          Hot-swap the LLM adapter live — inject the same incident under{' '}
+          <span className="text-slate-300">mock</span> vs{' '}
+          <span className="text-slate-300">live</span> and watch confidence change.
+        </p>
+        <div className="flex gap-2">
+          <select
+            value={modeTarget}
+            onChange={(e) => setModeTarget(e.target.value as 'mock' | 'cache' | 'live')}
+            className="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-200 focus:border-teal-500 focus:outline-none"
+          >
+            <option value="mock">Mock (deterministic)</option>
+            <option value="cache">Cache (recorded)</option>
+            <option value="live">Live (MLX checkpoint)</option>
+          </select>
+          <button
+            onClick={handleLayaMode}
+            disabled={isSubmitting || modeTarget === layaMode}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-teal-950 hover:bg-teal-900 text-teal-200 border border-teal-800/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            Switch
+          </button>
         </div>
       </div>
 

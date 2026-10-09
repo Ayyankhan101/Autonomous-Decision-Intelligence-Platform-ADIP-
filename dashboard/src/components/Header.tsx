@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useEffect, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -7,9 +8,12 @@ import {
   Compass,
   Cpu,
   FileText,
+  Leaf,
   Pause,
   RefreshCw,
+  Scale,
   Sliders,
+  Timer,
   Wifi,
   WifiOff,
 } from 'lucide-react';
@@ -23,6 +27,7 @@ interface HeaderProps {
   setActiveTab: (tab: 'command' | 'whatif' | 'audit') => void;
   onRefresh: () => void;
   onTogglePlayPause: () => void;
+  lastUpdatedAt?: number | null;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -33,7 +38,18 @@ export const Header: React.FC<HeaderProps> = ({
   setActiveTab,
   onRefresh,
   onTogglePlayPause,
+  lastUpdatedAt,
 }) => {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const agoSec =
+    lastUpdatedAt != null ? Math.max(0, Math.round((now - lastUpdatedAt) / 1000)) : null;
+
   const formatSimTime = (isoString?: string) => {
     if (!isoString) return '--:--:--';
     try {
@@ -133,8 +149,46 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         )}
 
+        {/* Policy Position Badge */}
+        {state?.policy_position && (
+          <div
+            className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono border ${
+              state.policy_position === 'EQUITY'
+                ? 'bg-violet-950/60 text-violet-300 border-violet-500/40'
+                : state.policy_position === 'ECO'
+                  ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
+                  : 'bg-sky-950/60 text-sky-300 border-sky-500/40'
+            }`}
+            title="Active policy position (runtime switchable from the Policy Sandbox card)"
+          >
+            {state.policy_position === 'EQUITY' ? (
+              <Scale className="w-3.5 h-3.5" />
+            ) : state.policy_position === 'ECO' ? (
+              <Leaf className="w-3.5 h-3.5" />
+            ) : (
+              <Timer className="w-3.5 h-3.5" />
+            )}
+            <span className="font-semibold tracking-wider">{state.policy_position}</span>
+          </div>
+        )}
+
         {/* Laya Runtime Badge */}
         {getLayaStatusBadge()}
+
+        {/* Freshness ticker */}
+        {agoSec != null && isConnected && (
+          <div
+            className="hidden lg:flex items-center gap-1 px-2 py-1 bg-slate-950/60 border border-slate-800/80 rounded-md font-mono text-[10px] text-slate-500"
+            title="Seconds since last successful poll — proof the feed is live"
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                agoSec <= 2 ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+              }`}
+            />
+            <span>upd {agoSec}s ago</span>
+          </div>
+        )}
 
         {/* Connection status */}
         <div

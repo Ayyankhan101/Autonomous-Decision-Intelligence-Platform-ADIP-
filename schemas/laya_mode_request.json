@@ -1,0 +1,25 @@
+{
+  "$defs": {
+    "LayaMode": {
+      "enum": [
+        "mock",
+        "cache",
+        "live"
+      ],
+      "title": "LayaMode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "POST /api/simulation/laya-mode \u2014 runtime mock|cache|live adapter switch.",
+  "properties": {
+    "mode": {
+      "$ref": "#/$defs/LayaMode"
+    }
+  },
+  "required": [
+    "mode"
+  ],
+  "title": "LayaModeRequest",
+  "type": "object"
+}

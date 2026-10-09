@@ -1,11 +1,14 @@
 import type {
   AuditEntry,
+  AuditVerifyResponse,
   DecisionRecord,
   ImpactPreviewResponse,
   IncidentRecord,
   IncidentResponse,
   IncidentType,
   InjectionMode,
+  LayaModeResponse,
+  LayaRunMode,
   OverrideContextCode,
   OverrideType,
   PolicyPosition,
@@ -206,6 +209,16 @@ export const api = {
     fetchJson<PolicyPositionResponse>(`${API_BASE}/policy/position`, {
       method: 'POST',
       body: JSON.stringify({ position, reoptimise_active: reoptimiseActive }),
+    }),
+
+  // --- Demo-liveness pack ---
+  auditVerify: (): Promise<AuditVerifyResponse> =>
+    fetchJson<AuditVerifyResponse>(`${API_BASE}/audit/verify`),
+
+  setLayaMode: (mode: LayaRunMode): Promise<LayaModeResponse> =>
+    fetchJson<LayaModeResponse>(`${API_BASE}/simulation/laya-mode`, {
+      method: 'POST',
+      body: JSON.stringify({ mode }),
     }),
 
   // --- What-If ---

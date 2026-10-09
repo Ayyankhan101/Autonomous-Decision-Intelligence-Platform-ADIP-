@@ -17,6 +17,7 @@ from jevcity.decision_engine.laya_adapter.adapter import LayaAdapter
 from jevcity.decision_engine.policy_position import weights_for
 from jevcity.schemas import (
     AuditListResponse,
+    AuditVerifyResponse,
     DecisionListResponse,
     DecisionRecord,
     IncidentListResponse,
@@ -24,6 +25,8 @@ from jevcity.schemas import (
     ImpactPreviewRequest,
     ImpactPreviewResponse,
     LayaMode,
+    LayaModeRequest,
+    LayaModeResponse,
     OverrideRecord,
     OverrideRequest,
     PolicyPositionRequest,
@@ -272,6 +275,23 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
             req.position, reoptimise_active=req.reoptimise_active
         )
         return PolicyPositionResponse(**report)
+
+    # --- demo-liveness pack (additive routes) --------------------------
+
+    @app.get("/api/audit/verify", response_model=AuditVerifyResponse)
+    def audit_verify() -> AuditVerifyResponse:
+        """Recompute the full SHA-256 hash chain now; never mutates state."""
+        report = engine.audit.chain_report()
+        return AuditVerifyResponse(**report)
+
+    @app.post("/api/simulation/laya-mode", response_model=LayaModeResponse)
+    def laya_mode_switch(req: LayaModeRequest) -> LayaModeResponse:
+        """Hot-swap the Laya adapter (mock|cache|live). Live loads lazily on the
+        first decision; fail-closed routing handles load errors."""
+        previous = engine.adapter.mode
+        if req.mode != previous:
+            engine.adapter = LayaAdapter(mode=req.mode)
+        return LayaModeResponse(previous_mode=previous, mode=req.mode)
 
     # --- What-If (Invariants 6, 15) ------------------------------------
 
