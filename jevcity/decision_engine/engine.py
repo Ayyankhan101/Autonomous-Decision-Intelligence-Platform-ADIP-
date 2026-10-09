@@ -24,6 +24,7 @@ from jevcity.schemas import (
     NormalizedLayaResponse,
     OverrideRecord,
     OverrideRequest,
+    OverrideType,
     Priority,
     ResourceType,
     ValidationResult,
@@ -270,6 +271,8 @@ class JevCityEngine:
         original = self.decisions.get(req.decision_id)
         if original is None:
             raise KeyError(f"unknown decision {req.decision_id}")
+        if req.override_type == OverrideType.CHANGE_PRIORITY and req.new_priority is None:
+            raise ValueError("CHANGE_PRIORITY requires new_priority")
         new_priority = req.new_priority or original.priority
         self._counter += 1
         override_record = original.model_copy(
@@ -277,7 +280,9 @@ class JevCityEngine:
                 "decision_id": f"dec-{self._counter:06d}",
                 "state": DecisionState.OVERRIDE_ACTIVE,
                 "priority": new_priority,
-                "matched_rules": original.matched_rules + ["R-OVERRIDE-01"],
+                "matched_rules": list(
+                    dict.fromkeys(original.matched_rules + ["R-OVERRIDE-01"])
+                ),
                 "reasons": original.reasons
                 + [f"Operator {req.operator_id} overrode decision "
                    f"({req.override_type.value}): {req.reason}"],

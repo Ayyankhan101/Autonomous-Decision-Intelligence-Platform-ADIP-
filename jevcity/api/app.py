@@ -5,8 +5,9 @@ Run: uvicorn jevcity.api.app:app --port 8200
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -134,25 +135,29 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
         return ResourceListResponse(resources=engine.simulation.pool.all())
 
     @app.get("/api/audit", response_model=AuditListResponse)
-    def list_audit(limit: int = 100) -> AuditListResponse:
+    def list_audit(
+        limit: Annotated[int, Query(ge=1, le=1000)] = 100,
+    ) -> AuditListResponse:
         return AuditListResponse(entries=engine.audit.entries(limit=limit))
 
     # --- simulation controls -------------------------------------------
 
     @app.post("/api/simulation/start", response_model=SimulationActionResponse)
     def sim_start(req: SimulationStartRequest) -> SimulationActionResponse:
+        records = None
+        if req.recording is not None:
+            try:
+                records = load_recording(req.recording)
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
         engine.simulation.start(req.session_seed, req.scenario_seed)
         engine.adapter = LayaAdapter(mode=engine.adapter.mode)
         engine.decisions.clear()
         engine.decision_history.clear()
         engine.validation_by_event.clear()
         engine._processed = 0
-        if req.recording is None:
+        if records is None:
             return SimulationActionResponse()
-        try:
-            records = load_recording(req.recording)
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
         stream(engine.simulation, records, speed=req.speed, sleeper=lambda _s: None)
         out = engine.process_pending()
         return SimulationActionResponse(
@@ -163,6 +168,13 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
     @app.post("/api/simulation/pause", response_model=SimulationActionResponse)
     def sim_pause() -> SimulationActionResponse:
         engine.simulation.pause()
+        return SimulationActionResponse()
+
+    @app.post("/api/simulation/resume", response_model=SimulationActionResponse)
+    def sim_resume() -> SimulationActionResponse:
+        """Continue the current session without reseeding or clearing state
+        (start() resets; this does not — fixes pause/resume data loss)."""
+        engine.simulation.resume()
         return SimulationActionResponse()
 
     @app.post("/api/simulation/reset", response_model=SimulationActionResponse)
@@ -192,7 +204,10 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
 
     @app.post("/api/simulation/bad-data", response_model=SimulationActionResponse)
     def sim_bad_data(req: SimulationBadDataRequest) -> SimulationActionResponse:
-        incident_id = engine.simulation.inject_bad_data(req.mode, req.target_incident_id)
+        try:
+            incident_id = engine.simulation.inject_bad_data(req.mode, req.target_incident_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc).strip("'\"")) from exc
         records = engine.process_pending()
         return SimulationActionResponse(
             incident_id=incident_id, decision_ids=[r.decision_id for r in records]
@@ -213,7 +228,9 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
         try:
             record = engine.apply_override(req)
         except KeyError as exc:
-            raise HTTPException(404, str(exc)) from exc
+            raise HTTPException(404, str(exc).strip("'\"")) from exc
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
         assert record.override is not None
         return record.override
 

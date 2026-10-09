@@ -20,6 +20,8 @@ interface SimulationControlsProps {
   running: boolean;
   sessionSeed: number;
   scenarioSeed: number;
+  incidentCount: number;
+  decisionCount: number;
   onRefresh: () => void;
 }
 
@@ -27,6 +29,8 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
   running,
   sessionSeed,
   scenarioSeed,
+  incidentCount,
+  decisionCount,
   onRefresh,
 }) => {
   const [sSeed, setSSeed] = useState(sessionSeed);
@@ -49,12 +53,17 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
     setTimeout(() => setMessage(null), 4000);
   };
 
+  const hasSessionData = incidentCount > 0 || decisionCount > 0;
+
   const handleTogglePlayPause = async () => {
     setIsSubmitting(true);
     try {
       if (running) {
         await api.pauseSimulation();
         showToast('Simulation paused');
+      } else if (hasSessionData) {
+        await api.resumeSimulation();
+        showToast('Simulation resumed');
       } else {
         await api.startSimulation({ session_seed: sSeed, scenario_seed: rSeed });
         showToast('Simulation started');
@@ -165,7 +174,9 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
             }`}
           >
             {running ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            <span>{running ? 'Pause Sim' : 'Start Sim'}</span>
+            <span>
+              {running ? 'Pause Sim' : hasSessionData ? 'Resume Sim' : 'Start Sim'}
+            </span>
           </button>
 
           <button

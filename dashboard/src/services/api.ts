@@ -96,6 +96,11 @@ export const api = {
       method: 'POST',
     }),
 
+  resumeSimulation: (): Promise<SimulationActionResponse> =>
+    fetchJson<SimulationActionResponse>(`${API_BASE}/simulation/resume`, {
+      method: 'POST',
+    }),
+
   resetSimulation: (session_seed = 42, scenario_seed = 7): Promise<SimulationActionResponse> =>
     fetchJson<SimulationActionResponse>(`${API_BASE}/simulation/reset`, {
       method: 'POST',

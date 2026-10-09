@@ -190,3 +190,141 @@ def test_restart_with_recording_leaves_no_stale_decisions():
     ids = r.json()["decision_ids"]
     state = client.get("/api/state").json()
     assert state["decision_count"] == len(ids)
+
+
+def test_bad_data_unknown_target_returns_404(client):
+    client.post("/api/simulation/start", json={"session_seed": 42, "scenario_seed": 7})
+    client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "accident", "zone": "north", "severity": "severe"},
+    )
+    before = client.get("/api/state").json()
+    r = client.post(
+        "/api/simulation/bad-data",
+        json={"mode": "out_of_range", "target_incident_id": "inc-424242"},
+    )
+    assert r.status_code == 404
+    after = client.get("/api/state").json()
+    assert after["incident_count"] == before["incident_count"]
+    assert after["decision_count"] == before["decision_count"]
+
+
+def test_bad_recording_start_does_not_wipe_state(client):
+    client.post("/api/simulation/start", json={"session_seed": 42, "scenario_seed": 7})
+    client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "accident", "zone": "north", "severity": "severe"},
+    )
+    before = client.get("/api/state").json()
+    assert before["incident_count"] == 1 and before["decision_count"] == 1
+    r = client.post(
+        "/api/simulation/start",
+        json={"session_seed": 42, "scenario_seed": 7, "recording": "ghost.jsonl"},
+    )
+    assert r.status_code == 422
+    after = client.get("/api/state").json()
+    assert after["incident_count"] == 1
+    assert after["decision_count"] == 1
+    assert client.get("/api/decisions").json()["decisions"]
+
+
+def test_audit_limit_is_bounded(client):
+    assert client.get("/api/audit?limit=0").status_code == 422
+    assert client.get("/api/audit?limit=-1").status_code == 422
+    assert client.get("/api/audit?limit=1001").status_code == 422
+    assert client.get("/api/audit?limit=1000").status_code == 200
+    assert client.get("/api/audit?limit=1").status_code == 200
+
+
+def test_change_priority_requires_new_priority(client):
+    client.post("/api/simulation/start", json={"session_seed": 42, "scenario_seed": 7})
+    client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "accident", "zone": "north", "severity": "severe"},
+    )
+    decision_id = client.get("/api/decisions").json()["decisions"][-1]["decision_id"]
+    r = client.post(
+        "/api/overrides",
+        json={"operator_id": "op-1", "decision_id": decision_id,
+              "override_type": "CHANGE_PRIORITY", "reason": "no target priority"},
+    )
+    assert r.status_code == 422
+    # unknown decision still 404 (checked before the missing-priority rule)
+    r = client.post(
+        "/api/overrides",
+        json={"operator_id": "op-1", "decision_id": "nope",
+              "override_type": "CHANGE_PRIORITY", "reason": "x"},
+    )
+    assert r.status_code == 404
+    # valid payload still works
+    r = client.post(
+        "/api/overrides",
+        json={"operator_id": "op-1", "decision_id": decision_id,
+              "override_type": "CHANGE_PRIORITY", "reason": "legit",
+              "new_priority": "CRITICAL"},
+    )
+    assert r.status_code == 200
+
+
+def test_resume_does_not_wipe_session(client):
+    client.post("/api/simulation/start", json={"session_seed": 42, "scenario_seed": 7})
+    client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "accident", "zone": "north", "severity": "severe"},
+    )
+    before = client.get("/api/state").json()
+    assert before["running"] is True
+    assert client.post("/api/simulation/pause").status_code == 200
+    assert client.get("/api/state").json()["running"] is False
+    r = client.post("/api/simulation/resume")
+    assert r.status_code == 200
+    after = client.get("/api/state").json()
+    assert after["running"] is True
+    assert after["incident_count"] == before["incident_count"] == 1
+    assert after["decision_count"] == before["decision_count"] == 1
+    assert after["session_seed"] == before["session_seed"]
+
+
+def test_multi_report_contradiction_routes_to_human_review(client):
+    """Plan invariant 10: contradictory reports exist -> human review."""
+    client.post("/api/simulation/start", json={"session_seed": 42, "scenario_seed": 7})
+    r = client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "fire", "zone": "south", "severity": "severe",
+              "multi_report": True},
+    )
+    assert r.status_code == 200
+    dec = client.get(f"/api/decisions/{r.json()['decision_ids'][0]}").json()
+    assert dec["state"] == "HOLD_FOR_HUMAN"
+    assert "R-DATA-QUALITY-HOLD-01" in dec["matched_rules"]
+    assert "R-LOW-CONFIDENCE-HOLD-01" in dec["matched_rules"]
+    assert any("conflicting" in reason or "contradict" in reason for reason in dec["reasons"])
+    assert dec["overall_confidence"] < 0.6
+
+
+def test_chained_overrides_dedupe_rule_ids(client):
+    client.post("/api/simulation/start", json={"session_seed": 42, "scenario_seed": 7})
+    r = client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "accident", "zone": "north", "severity": "severe"},
+    )
+    dec_id = r.json()["decision_ids"][0]
+    for i, override_type in enumerate(
+        ("CHANGE_PRIORITY", "ASSIGN_RESOURCES", "MARK_DATA_UNTRUSTED", "ESCALATE_TO_HUMAN")
+    ):
+        body = {
+            "decision_id": dec_id,
+            "override_type": override_type,
+            "operator_id": f"op-{i}",
+            "reason": f"chained override {i}",
+        }
+        if override_type == "CHANGE_PRIORITY":
+            body["new_priority"] = "CRITICAL"
+        resp = client.post("/api/overrides", json=body)
+        assert resp.status_code == 200
+        latest = [
+            d for d in client.get("/api/decisions").json()["decisions"]
+            if d["incident_id"] == r.json()["incident_id"]
+        ][-1]
+        dec_id = latest["decision_id"]
+        assert latest["matched_rules"].count("R-OVERRIDE-01") == 1
