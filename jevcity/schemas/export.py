@@ -21,6 +21,8 @@ MODELS = {
     "override_request": "OverrideRequest",
     "impact_preview_request": "ImpactPreviewRequest",
     "impact_preview_response": "ImpactPreviewResponse",
+    "policy_position_request": "PolicyPositionRequest",
+    "policy_position_response": "PolicyPositionResponse",
     "what_if_request": "WhatIfRequest",
     "what_if_result": "WhatIfResult",
 }

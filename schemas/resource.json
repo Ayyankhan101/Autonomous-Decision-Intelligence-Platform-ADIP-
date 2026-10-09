@@ -47,6 +47,14 @@
       "default": null,
       "title": "Assigned Incident Id"
     },
+    "eco_score": {
+      "default": 0.0,
+      "description": "Eco-optimisation fitness (1 = electric/zero-emission response vehicle, 0 = highest-emission). Used only when the policy position is ECO.",
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Eco Score",
+      "type": "number"
+    },
     "resource_id": {
       "title": "Resource Id",
       "type": "string"

@@ -140,6 +140,14 @@
           "title": "Matched Rules",
           "type": "array"
         },
+        "objective_weights": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Objective weights active when this decision was generated (response_time / equity / emissions); enhancement 2 audit-trace completeness.",
+          "title": "Objective Weights",
+          "type": "object"
+        },
         "overall_confidence": {
           "anyOf": [
             {
@@ -169,6 +177,10 @@
           "default": "city-priority-policy",
           "title": "Policy Id",
           "type": "string"
+        },
+        "policy_position": {
+          "$ref": "#/$defs/PolicyPosition",
+          "default": "RESPONSE_TIME"
         },
         "policy_version": {
           "default": "0.1.0",
@@ -562,6 +574,15 @@
         "OVERRIDE_AUTOMATION_HOLD"
       ],
       "title": "OverrideType",
+      "type": "string"
+    },
+    "PolicyPosition": {
+      "enum": [
+        "RESPONSE_TIME",
+        "EQUITY",
+        "ECO"
+      ],
+      "title": "PolicyPosition",
       "type": "string"
     },
     "Priority": {

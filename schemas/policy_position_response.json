@@ -1,0 +1,49 @@
+{
+  "$defs": {
+    "PolicyPosition": {
+      "enum": [
+        "RESPONSE_TIME",
+        "EQUITY",
+        "ECO"
+      ],
+      "title": "PolicyPosition",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "affected_decisions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Affected Decisions",
+      "type": "array"
+    },
+    "objective_weights": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Objective Weights",
+      "type": "object"
+    },
+    "position": {
+      "$ref": "#/$defs/PolicyPosition"
+    },
+    "previous_position": {
+      "$ref": "#/$defs/PolicyPosition"
+    },
+    "reoptimised": {
+      "minimum": 0,
+      "title": "Reoptimised",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "previous_position",
+    "position",
+    "objective_weights",
+    "reoptimised"
+  ],
+  "title": "PolicyPositionResponse",
+  "type": "object"
+}

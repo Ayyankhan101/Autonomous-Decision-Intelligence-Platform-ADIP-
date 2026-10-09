@@ -1,0 +1,30 @@
+{
+  "$defs": {
+    "PolicyPosition": {
+      "enum": [
+        "RESPONSE_TIME",
+        "EQUITY",
+        "ECO"
+      ],
+      "title": "PolicyPosition",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "POST /api/policy/position \u2014 runtime three-position policy selector (E2).",
+  "properties": {
+    "position": {
+      "$ref": "#/$defs/PolicyPosition"
+    },
+    "reoptimise_active": {
+      "default": false,
+      "title": "Reoptimise Active",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "position"
+  ],
+  "title": "PolicyPositionRequest",
+  "type": "object"
+}

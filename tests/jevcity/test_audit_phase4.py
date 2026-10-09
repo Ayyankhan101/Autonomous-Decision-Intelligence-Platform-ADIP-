@@ -43,6 +43,8 @@ FROZEN_ROUTES = {
     ("POST", "/api/overrides"),
     # Additive extension (enhancement 4): read-only override impact preview.
     ("POST", "/api/overrides/impact"),
+    # Additive extension (enhancement 2): runtime policy position switch.
+    ("POST", "/api/policy/position"),
     ("POST", "/api/what-if/run"),
 }
 

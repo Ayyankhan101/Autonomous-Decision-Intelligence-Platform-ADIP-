@@ -25,6 +25,7 @@ from jevcity.schemas import (
     OverrideRecord,
     OverrideRequest,
     OverrideType,
+    PolicyPosition,
     Priority,
     ResourceType,
     ValidationResult,
@@ -42,6 +43,7 @@ from .guardrail.policy import DecisionContext, decide
 from .laya_adapter.adapter import LayaAdapter
 from .laya_adapter.questions import QUESTIONS_VERSION
 from .laya_adapter.state_builder import build_state
+from .policy_position import weights_for
 
 
 class JevCityEngine:
@@ -64,6 +66,7 @@ class JevCityEngine:
         self.decisions: dict[str, DecisionRecord] = {}
         self.decision_history: list[DecisionRecord] = []
         self.validation_by_event: dict[str, ValidationResult] = {}
+        self.policy_position: PolicyPosition = PolicyPosition.RESPONSE_TIME
         self._processed = 0
         self._counter = 0
 
@@ -145,6 +148,7 @@ class JevCityEngine:
         pool,
         adapter: LayaAdapter,
         dry_run: bool = False,
+        policy_position: PolicyPosition | None = None,
     ) -> DecisionRecord:
         """Pure decision computation against `pool` (live or sandbox). No persistence."""
         incident = self.simulation.incidents[incident_id]
@@ -211,6 +215,11 @@ class JevCityEngine:
                 active_competing_incidents=competing,
                 laya_mode=adapter.mode,
                 decision_id=f"dec-{self._counter:06d}",
+                policy_position=(
+                    policy_position
+                    if policy_position is not None
+                    else self.policy_position
+                ),
             )
         )
         return record.model_copy(update={"dry_run": dry_run})
@@ -378,6 +387,123 @@ class JevCityEngine:
                 self.simulation.pool.assign(pick.resource_id, record.incident_id)
                 assigned.append(pick.resource_id)
         return assigned
+
+    # --- policy sandbox (enhancement 2) --------------------------------
+
+    def switch_policy(
+        self,
+        position: PolicyPosition,
+        *,
+        reoptimise_active: bool = False,
+    ) -> dict[str, object]:
+        """Runtime three-position policy switch (enhancement 2).
+
+        Returns a switch report: previous/new position, objective weights, the latest
+        decision ids of open incidents whose (priority, assigned units) would differ
+        under the new position, and how many open incidents were re-optimised.
+        Mid-scenario switches apply to new decisions only unless the operator
+        explicitly passes reoptimise_active=True.
+        """
+        previous = self.policy_position
+        weights = weights_for(position)
+        if position == previous:
+            return {
+                "previous_position": previous,
+                "position": position,
+                "objective_weights": weights,
+                "affected_decisions": [],
+                "reoptimised": 0,
+            }
+
+        open_incidents = [
+            inc
+            for inc in self.simulation.incidents.values()
+            if inc.lifecycle != IncidentLifecycle.RESOLVED
+            and inc.validation_status != ValidationStatus.HARD_REJECTED
+            and self.simulation.reports_for(inc.incident_id)
+        ]
+
+        affected: list[str] = []
+        saved_counter = self._counter
+        for inc in open_incidents:
+            latest = self._latest_decision(inc.incident_id)
+            if latest is None:
+                continue
+            # equal-footing sandbox: start from a pool where this incident's own
+            # units are free, so both positions pick from the full candidate set
+            base = copy.deepcopy(self.simulation.pool)
+            for rid in latest.assigned_resource_ids:
+                res = base.get(rid)
+                if res is not None and res.assigned_incident_id == inc.incident_id:
+                    base.release(rid)
+            prev_rec = self.decide_for(
+                inc.incident_id,
+                pool=copy.deepcopy(base),
+                adapter=self.adapter,
+                dry_run=True,
+                policy_position=previous,
+            )
+            new_rec = self.decide_for(
+                inc.incident_id,
+                pool=copy.deepcopy(base),
+                adapter=self.adapter,
+                dry_run=True,
+                policy_position=position,
+            )
+            differs = (
+                prev_rec.priority != new_rec.priority
+                or prev_rec.assigned_resource_ids != new_rec.assigned_resource_ids
+            )
+            if differs:
+                affected.append(latest.decision_id)
+        self._counter = saved_counter
+        self.policy_position = position
+
+        reoptimised = 0
+        if reoptimise_active:
+            for inc in open_incidents:
+                latest = self._latest_decision(inc.incident_id)
+                if latest is None:
+                    continue
+                for rid in latest.assigned_resource_ids:
+                    res = self.simulation.pool.get(rid)
+                    if res is not None and res.assigned_incident_id == inc.incident_id:
+                        self.simulation.pool.release(rid)
+                validation = self._validation_for(
+                    inc.incident_id, self.simulation.reports_for(inc.incident_id)
+                )
+                record = self.decide_for(
+                    inc.incident_id,
+                    pool=self.simulation.pool,
+                    adapter=self.adapter,
+                    dry_run=False,
+                )
+                self._persist(record, inc, validation)
+                reoptimised += 1
+
+        self.audit.append(
+            actor="operator",
+            action="POLICY_POSITION_SWITCHED",
+            reason=(
+                f"{previous.value} -> {position.value}; "
+                f"affected_decisions={len(affected)}; reoptimised={reoptimised}"
+            ),
+            before_state=previous.value,
+            after_state=position.value,
+        )
+        return {
+            "previous_position": previous,
+            "position": position,
+            "objective_weights": weights,
+            "affected_decisions": affected,
+            "reoptimised": reoptimised,
+        }
+
+    def _latest_decision(self, incident_id: str) -> DecisionRecord | None:
+        for record in reversed(self.decision_history):
+            if record.incident_id == incident_id:
+                return record
+        return None
 
     # --- What-If (Invariants 6, 15) -------------------------------------
 

@@ -1,5 +1,9 @@
 """Greedy resource allocation (plan §5.7): priority/confidence/impact already decided;
-allocator picks best available — and admits contention instead of pretending it succeeded."""
+allocator picks best available — and admits contention instead of pretending it succeeded.
+
+Policy position (enhancement 2): RESPONSE_TIME (and EQUITY, whose lever is priority)
+keep the baseline local-first pick; ECO picks the candidate with the highest eco_score.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -7,6 +11,7 @@ from dataclasses import dataclass, field
 from jevcity.schemas import (
     DecisionRecord,
     IncidentType,
+    PolicyPosition,
     Priority,
     ResourceType,
 )
@@ -51,6 +56,7 @@ def allocate_for_incident(
     incident_type: IncidentType,
     priority: Priority,
     recommended: list[ResourceType],
+    policy_position: PolicyPosition = PolicyPosition.RESPONSE_TIME,
 ) -> AllocationResult:
     types = recommended or FALLBACK_RESOURCE.get(incident_type, [])
     result = AllocationResult(requested_types=list(types))
@@ -70,8 +76,12 @@ def allocate_for_incident(
         ]
         if not candidates:
             continue
-        same_zone = [r for r in candidates if r.zone == zone]
-        pick = sorted(same_zone or candidates, key=lambda r: r.resource_id)[0]
+        if policy_position == PolicyPosition.ECO:
+            # Eco-optimisation: electric-first among all candidate units.
+            pick = sorted(candidates, key=lambda r: (-r.eco_score, r.resource_id))[0]
+        else:
+            same_zone = [r for r in candidates if r.zone == zone]
+            pick = sorted(same_zone or candidates, key=lambda r: r.resource_id)[0]
         pool.assign(pick.resource_id, incident_id)
         result.assigned_ids.append(pick.resource_id)
         result.available_ids = [

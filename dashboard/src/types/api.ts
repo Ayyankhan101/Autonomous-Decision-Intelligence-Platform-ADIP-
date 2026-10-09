@@ -72,6 +72,16 @@ export type WhatIfScenario =
   | 'close_road'
   | 'second_emergency';
 
+export type PolicyPosition = 'RESPONSE_TIME' | 'EQUITY' | 'ECO';
+
+export interface PolicyPositionResponse {
+  previous_position: PolicyPosition;
+  position: PolicyPosition;
+  objective_weights: Record<string, number>;
+  affected_decisions: string[];
+  reoptimised: number;
+}
+
 export interface StatePayload {
   simulated_time: string;
   running: boolean;
@@ -83,6 +93,8 @@ export interface StatePayload {
   available_resources: Record<ResourceType, number>;
   laya_mode: string;
   last_laya_status?: string | null;
+  policy_position?: PolicyPosition;
+  objective_weights?: Record<string, number>;
 }
 
 export interface Resource {
@@ -225,6 +237,8 @@ export interface DecisionRecord {
   priority: Priority;
   policy_id: string;
   policy_version: string;
+  policy_position?: PolicyPosition;
+  objective_weights?: Record<string, number>;
   matched_rules: string[];
   signals: Signals;
   laya?: LayaBlock | null;

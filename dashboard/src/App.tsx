@@ -4,6 +4,7 @@ import { Header } from './components/Header';
 import { MapLayer } from './components/MapLayer';
 import { IncidentInspector } from './components/IncidentInspector';
 import { SimulationControls } from './components/SimulationControls';
+import { PolicySandbox } from './components/PolicySandbox';
 import { OverrideModal } from './components/OverrideModal';
 import { AuditTrail } from './components/AuditTrail';
 import { WhatIfSandbox } from './components/WhatIfSandbox';
@@ -128,13 +129,19 @@ export function App() {
                 />
               </div>
 
-              <div className="lg:col-span-1">
+              <div className="lg:col-span-1 space-y-4">
                 <SimulationControls
                   running={state?.running ?? false}
                   sessionSeed={state?.session_seed ?? 42}
                   scenarioSeed={state?.scenario_seed ?? 7}
                   incidentCount={state?.incident_count ?? 0}
                   decisionCount={state?.decision_count ?? 0}
+                  onRefresh={refresh}
+                />
+
+                <PolicySandbox
+                  position={state?.policy_position ?? 'RESPONSE_TIME'}
+                  objectiveWeights={state?.objective_weights}
                   onRefresh={refresh}
                 />
               </div>
