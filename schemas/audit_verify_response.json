@@ -1,0 +1,34 @@
+{
+  "additionalProperties": false,
+  "description": "GET /api/audit/verify \u2014 live hash-chain recompute (demo-liveness pack).",
+  "properties": {
+    "broken_at": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "1-based position of the first bad entry; None when intact.",
+      "title": "Broken At"
+    },
+    "entry_count": {
+      "minimum": 0,
+      "title": "Entry Count",
+      "type": "integer"
+    },
+    "ok": {
+      "title": "Ok",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "ok",
+    "entry_count"
+  ],
+  "title": "AuditVerifyResponse",
+  "type": "object"
+}

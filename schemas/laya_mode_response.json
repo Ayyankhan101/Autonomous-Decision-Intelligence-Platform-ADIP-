@@ -1,0 +1,28 @@
+{
+  "$defs": {
+    "LayaMode": {
+      "enum": [
+        "mock",
+        "cache",
+        "live"
+      ],
+      "title": "LayaMode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "mode": {
+      "$ref": "#/$defs/LayaMode"
+    },
+    "previous_mode": {
+      "$ref": "#/$defs/LayaMode"
+    }
+  },
+  "required": [
+    "previous_mode",
+    "mode"
+  ],
+  "title": "LayaModeResponse",
+  "type": "object"
+}

@@ -4,9 +4,13 @@ import type {
   AuditEntry,
   DecisionRecord,
   IncidentRecord,
+  LatencyPoint,
+  NewIds,
   Resource,
   StatePayload,
 } from '../types/api';
+
+const LATENCY_RING_MAX = 30;
 
 export function useDashboardData(pollIntervalMs = 1500) {
   const [state, setState] = useState<StatePayload | null>(null);
@@ -18,6 +22,19 @@ export function useDashboardData(pollIntervalMs = 1500) {
   const [isConnected, setIsConnected] = useState<boolean>(true);
   const [lastError, setLastError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [newIds, setNewIds] = useState<NewIds>({
+    decisions: [],
+    incidents: [],
+    audit: [],
+  });
+  const [latencySeries, setLatencySeries] = useState<LatencyPoint[]>([]);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
+
+  const prevIdsRef = useRef<{
+    decisions: Set<string>;
+    incidents: Set<string>;
+    audit: Set<string>;
+  }>({ decisions: new Set(), incidents: new Set(), audit: new Set() });
 
   const fetchAll = useCallback(async () => {
     try {
@@ -36,14 +53,47 @@ export function useDashboardData(pollIntervalMs = 1500) {
       setAuditEntries(auditRes);
       setIsConnected(true);
       setLastError(null);
+      setLastUpdatedAt(Date.now());
+
+      // NEW-row flash: set-diff against previous poll (skip first poll: no baseline)
+      const prev = prevIdsRef.current;
+      const hasBaseline = prev.decisions.size > 0 || prev.incidents.size > 0;
+      const incIds = new Set(incsRes.map((i) => i.incident_id));
+      const decIds = new Set(decsRes.map((d) => d.decision_id));
+      const auditIds = new Set(auditRes.map((a) => a.entry_id));
+      if (hasBaseline) {
+        setNewIds({
+          decisions: [...decIds].filter((id) => !prev.decisions.has(id)),
+          incidents: [...incIds].filter((id) => !prev.incidents.has(id)),
+          audit: [...auditIds].filter((id) => !prev.audit.has(id)),
+        });
+      }
+      prevIdsRef.current = {
+        decisions: decIds,
+        incidents: incIds,
+        audit: auditIds,
+      };
+
+      // Laya latency ring buffer (real per-decision latency_ms; no wall-clock)
+      const latencies = decsRes
+        .slice(-20)
+        .map((d) => d.laya?.latency_ms)
+        .filter((v): v is number => typeof v === 'number' && v >= 0);
+      if (latencies.length > 0) {
+        const avg = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+        setLatencySeries((prevSeries) => [
+          ...prevSeries.slice(-(LATENCY_RING_MAX - 1)),
+          { t: Date.now(), v: avg },
+        ]);
+      }
 
       // Auto-select first incident if none selected or previous disappeared
       if (incsRes.length > 0) {
-        setSelectedIncidentId((prev) => {
-          if (!prev || !incsRes.some((i) => i.incident_id === prev)) {
+        setSelectedIncidentId((prevSel) => {
+          if (!prevSel || !incsRes.some((i) => i.incident_id === prevSel)) {
             return incsRes[incsRes.length - 1].incident_id;
           }
-          return prev;
+          return prevSel;
         });
       }
     } catch (err: unknown) {
@@ -97,6 +147,9 @@ export function useDashboardData(pollIntervalMs = 1500) {
     isConnected,
     lastError,
     isRefreshing,
+    newIds,
+    latencySeries,
+    lastUpdatedAt,
     refresh: manualRefresh,
   };
 }

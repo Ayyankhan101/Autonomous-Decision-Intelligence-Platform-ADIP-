@@ -11,6 +11,7 @@ from .enums import (
     ImpactTier,
     IncidentType,
     InjectionMode,
+    LayaMode,
     OverrideContextCode,
     OverrideReasonCode,
     OverrideType,
@@ -74,6 +75,34 @@ class AuditListResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     entries: list[AuditEntry]
+
+
+class AuditVerifyResponse(BaseModel):
+    """GET /api/audit/verify — live hash-chain recompute (demo-liveness pack)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    ok: bool
+    entry_count: int = Field(ge=0)
+    broken_at: int | None = Field(
+        default=None,
+        description="1-based position of the first bad entry; None when intact.",
+    )
+
+
+class LayaModeRequest(BaseModel):
+    """POST /api/simulation/laya-mode — runtime mock|cache|live adapter switch."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    mode: LayaMode
+
+
+class LayaModeResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    previous_mode: LayaMode
+    mode: LayaMode
 
 
 class SimulationStartRequest(BaseModel):

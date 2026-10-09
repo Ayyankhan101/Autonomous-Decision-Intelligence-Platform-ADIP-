@@ -74,6 +74,30 @@ export type WhatIfScenario =
 
 export type PolicyPosition = 'RESPONSE_TIME' | 'EQUITY' | 'ECO';
 
+export type LayaRunMode = 'mock' | 'cache' | 'live';
+
+export interface AuditVerifyResponse {
+  ok: boolean;
+  entry_count: number;
+  broken_at?: number | null;
+}
+
+export interface LayaModeResponse {
+  previous_mode: LayaRunMode;
+  mode: LayaRunMode;
+}
+
+export interface NewIds {
+  decisions: string[];
+  incidents: string[];
+  audit: string[];
+}
+
+export interface LatencyPoint {
+  t: number;
+  v: number;
+}
+
 export interface PolicyPositionResponse {
   previous_position: PolicyPosition;
   position: PolicyPosition;

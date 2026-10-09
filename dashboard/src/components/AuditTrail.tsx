@@ -9,13 +9,14 @@ import {
   Search,
   User,
 } from 'lucide-react';
-import type { AuditEntry } from '../types/api';
+import type { AuditEntry, NewIds } from '../types/api';
 
 interface AuditTrailProps {
   entries: AuditEntry[];
+  newIds?: NewIds;
 }
 
-export const AuditTrail: React.FC<AuditTrailProps> = ({ entries }) => {
+export const AuditTrail: React.FC<AuditTrailProps> = ({ entries, newIds }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -81,11 +82,16 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ entries }) => {
           filteredEntries.map((entry) => {
             const isExpanded = expandedId === entry.entry_id;
             const isOverride = entry.action === 'OVERRIDE_APPLIED';
+            const isNew = newIds?.audit.includes(entry.entry_id) ?? false;
 
             return (
               <div
                 key={entry.entry_id}
-                className="bg-slate-950/70 border border-slate-800/80 rounded-lg overflow-hidden transition-all hover:border-slate-700"
+                className={`bg-slate-950/70 border rounded-lg overflow-hidden transition-all hover:border-slate-700 ${
+                  isNew
+                    ? 'border-cyan-400/60 ring-1 ring-cyan-400/30 shadow-[0_0_8px_rgba(34,211,238,0.2)]'
+                    : 'border-slate-800/80'
+                }`}
               >
                 {/* Entry Summary Row */}
                 <div

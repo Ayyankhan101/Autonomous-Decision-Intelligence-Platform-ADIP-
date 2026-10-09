@@ -45,6 +45,9 @@ FROZEN_ROUTES = {
     ("POST", "/api/overrides/impact"),
     # Additive extension (enhancement 2): runtime policy position switch.
     ("POST", "/api/policy/position"),
+    # Additive extension (demo-liveness): live hash-chain verify + mode toggle.
+    ("GET", "/api/audit/verify"),
+    ("POST", "/api/simulation/laya-mode"),
     ("POST", "/api/what-if/run"),
 }
 
