@@ -203,6 +203,80 @@
       "title": "LayaStatus",
       "type": "string"
     },
+    "LineageBlock": {
+      "additionalProperties": false,
+      "description": "Structured decision lineage: evidence scores -> decisive policy clause (enhancement 3).",
+      "properties": {
+        "clause_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clause Id"
+        },
+        "expression": {
+          "minLength": 1,
+          "title": "Expression",
+          "type": "string"
+        },
+        "terms": {
+          "items": {
+            "$ref": "#/$defs/LineageTerm"
+          },
+          "minItems": 1,
+          "title": "Terms",
+          "type": "array"
+        }
+      },
+      "required": [
+        "terms",
+        "expression"
+      ],
+      "title": "LineageBlock",
+      "type": "object"
+    },
+    "LineageTerm": {
+      "additionalProperties": false,
+      "description": "One normalised evidence contribution (enhancement 3: all terms on a common 0-1 scale).",
+      "properties": {
+        "direction": {
+          "enum": [
+            "positive",
+            "negative",
+            "neutral"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "score",
+        "direction",
+        "source"
+      ],
+      "title": "LineageTerm",
+      "type": "object"
+    },
     "ModelStatus": {
       "enum": [
         "ok",
@@ -213,9 +287,30 @@
       "title": "ModelStatus",
       "type": "string"
     },
+    "OverrideReasonCode": {
+      "enum": [
+        "POLICY_CLAUSE",
+        "POLICY_GAP",
+        "EXTERNAL_CONTEXT"
+      ],
+      "title": "OverrideReasonCode",
+      "type": "string"
+    },
     "OverrideRecord": {
       "additionalProperties": false,
       "properties": {
+        "cited_clause": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cited Clause"
+        },
         "operator_id": {
           "title": "Operator Id",
           "type": "string"
@@ -232,6 +327,17 @@
         "reason": {
           "title": "Reason",
           "type": "string"
+        },
+        "reason_code": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OverrideReasonCode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "timestamp": {
           "format": "date-time",
@@ -453,6 +559,17 @@
       ],
       "default": null,
       "title": "Laya Answer Confidence"
+    },
+    "lineage": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LineageBlock"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "matched_rules": {
       "items": {

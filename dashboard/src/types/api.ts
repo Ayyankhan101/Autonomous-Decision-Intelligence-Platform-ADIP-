@@ -176,6 +176,23 @@ export interface OverrideRecord {
   timestamp: string;
   previous_state: DecisionState;
   previous_priority: Priority;
+  cited_clause?: string | null;
+  reason_code?: OverrideReasonCode | null;
+}
+
+export type OverrideReasonCode = 'POLICY_CLAUSE' | 'POLICY_GAP' | 'EXTERNAL_CONTEXT';
+
+export interface LineageTerm {
+  label: string;
+  score: number;
+  direction: 'positive' | 'negative' | 'neutral';
+  source: string;
+}
+
+export interface LineageBlock {
+  terms: LineageTerm[];
+  clause_id?: string | null;
+  expression: string;
 }
 
 export interface DecisionRecord {
@@ -197,6 +214,7 @@ export interface DecisionRecord {
   decision_time_simulated: string;
   dry_run: boolean;
   override?: OverrideRecord | null;
+  lineage?: LineageBlock | null;
 }
 
 export interface AuditLayaMetadata {

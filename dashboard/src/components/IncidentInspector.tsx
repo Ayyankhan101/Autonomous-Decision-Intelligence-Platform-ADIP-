@@ -506,6 +506,63 @@ export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
         </div>
       </div>
 
+      {/* Decision Lineage (enhancement 3) */}
+      {decision && decision.lineage && (
+        <div className="bg-slate-950/70 border border-cyan-900/50 rounded-lg p-3">
+          <div className="flex items-center gap-1.5 mb-2">
+            <FileCheck className="w-3.5 h-3.5 text-cyan-400" />
+            <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-300">
+              Decision Lineage
+            </h4>
+            {decision.lineage.clause_id && (
+              <span className="ml-auto px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-950 text-cyan-300 border border-cyan-800/60">
+                {decision.lineage.clause_id}
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            {decision.lineage.terms.map((term) => (
+              <div key={term.label} className="flex items-center gap-2">
+                <span className="text-[11px] font-mono text-slate-400 w-36 shrink-0">
+                  {term.label}
+                </span>
+                <div className="flex-1 h-2 bg-slate-900 rounded overflow-hidden">
+                  <div
+                    className={`h-full rounded ${
+                      term.direction === 'positive'
+                        ? 'bg-emerald-500/70'
+                        : term.direction === 'negative'
+                          ? 'bg-red-500/70'
+                          : 'bg-slate-600/70'
+                    }`}
+                    style={{ width: `${Math.round(term.score * 100)}%` }}
+                  />
+                </div>
+                <span className="text-[10px] font-mono text-slate-500 w-16 text-right">
+                  {term.score.toFixed(2)}
+                </span>
+                <span
+                  className={`text-[10px] font-mono w-14 text-right ${
+                    term.direction === 'positive'
+                      ? 'text-emerald-400'
+                      : term.direction === 'negative'
+                        ? 'text-red-400'
+                        : 'text-slate-500'
+                  }`}
+                >
+                  {term.direction}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-2 pt-2 border-t border-slate-800/80 text-[10px] font-mono text-slate-400 break-words">
+            {decision.lineage.expression}
+          </div>
+        </div>
+      )}
+
       {/* Matched Rules & Structured Rationale */}
       {decision && (
         <div className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-3">

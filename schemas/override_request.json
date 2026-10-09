@@ -1,5 +1,14 @@
 {
   "$defs": {
+    "OverrideReasonCode": {
+      "enum": [
+        "POLICY_CLAUSE",
+        "POLICY_GAP",
+        "EXTERNAL_CONTEXT"
+      ],
+      "title": "OverrideReasonCode",
+      "type": "string"
+    },
     "OverrideType": {
       "enum": [
         "CHANGE_PRIORITY",
@@ -24,8 +33,21 @@
     }
   },
   "additionalProperties": false,
-  "description": "Invariant 7: operator_id and reason are required (min_length=1).",
+  "description": "Invariant 7: operator_id and reason are required (min_length=1).\n\nEnhancement 3 (hyper-explainable audit): when present, cited_clause names the policy\nclause the operator overrode (or a gap marker) and reason_code classifies the\nattribution. Both optional at the API for backward compatibility; the dashboard\nenforces selection before submit.",
   "properties": {
+    "cited_clause": {
+      "anyOf": [
+        {
+          "maxLength": 120,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Cited Clause"
+    },
     "decision_id": {
       "minLength": 1,
       "title": "Decision Id",
@@ -54,6 +76,17 @@
       "minLength": 1,
       "title": "Reason",
       "type": "string"
+    },
+    "reason_code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/OverrideReasonCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     }
   },
   "required": [

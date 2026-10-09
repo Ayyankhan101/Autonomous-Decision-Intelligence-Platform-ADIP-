@@ -36,6 +36,7 @@ from ..laya_adapter.adapter import (
     suggested_needs_human_review,
     suggested_priority,
 )
+from ..lineage import build_lineage
 from .allocate import allocate_for_incident
 from .confidence import (
     LAYA_ANSWER_CONFIDENCE_GATE,
@@ -330,6 +331,14 @@ def _finalize(
         "matched_rules": list(dict.fromkeys(rules)),
         "reasons": list(dict.fromkeys(reasons)),
         "overall_confidence": overall if overall is not None else base.overall_confidence,
+        "lineage": build_lineage(
+            base.signals,
+            rules,
+            laya=base.laya,
+            final_priority=priority,
+            assigned_resource_ids=allocation.assigned_ids if allocation is not None else None,
+            contention=allocation.contention if allocation is not None else False,
+        ),
     }
     if base.laya is not None:
         update["laya"] = base.laya.model_copy(update={"final_decision_source": source})

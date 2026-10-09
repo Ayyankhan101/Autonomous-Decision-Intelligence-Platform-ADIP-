@@ -184,6 +184,15 @@
       "title": "LayaStatus",
       "type": "string"
     },
+    "OverrideReasonCode": {
+      "enum": [
+        "POLICY_CLAUSE",
+        "POLICY_GAP",
+        "EXTERNAL_CONTEXT"
+      ],
+      "title": "OverrideReasonCode",
+      "type": "string"
+    },
     "Priority": {
       "enum": [
         "LOW",
@@ -231,6 +240,18 @@
       ],
       "default": null,
       "title": "Before State"
+    },
+    "cited_clause": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Cited Clause"
     },
     "decision_id": {
       "anyOf": [
@@ -302,6 +323,17 @@
       "maxLength": 2000,
       "title": "Reason",
       "type": "string"
+    },
+    "reason_code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/OverrideReasonCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "timestamp": {
       "format": "date-time",
