@@ -6,7 +6,14 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from .decision import LayaBlock
-from .enums import DecisionSource, LayaStatus, OverrideReasonCode, Priority
+from .enums import (
+    DecisionSource,
+    ImpactTier,
+    LayaStatus,
+    OverrideContextCode,
+    OverrideReasonCode,
+    Priority,
+)
 
 
 class AuditLayaMetadata(BaseModel):
@@ -73,5 +80,8 @@ class AuditEntry(BaseModel):
     laya: AuditLayaMetadata = Field(default_factory=AuditLayaMetadata)
     cited_clause: str | None = None
     reason_code: OverrideReasonCode | None = None
+    impact_tier: ImpactTier | None = None
+    context_code: OverrideContextCode | None = None
+    break_glass: bool = False
     previous_hash: str = Field(min_length=1)
     entry_hash: str = Field(min_length=1)

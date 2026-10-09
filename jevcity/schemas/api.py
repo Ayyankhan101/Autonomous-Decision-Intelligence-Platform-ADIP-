@@ -8,8 +8,10 @@ from pydantic import BaseModel, ConfigDict, Field
 from .audit import AuditEntry
 from .decision import DecisionRecord
 from .enums import (
+    ImpactTier,
     IncidentType,
     InjectionMode,
+    OverrideContextCode,
     OverrideReasonCode,
     OverrideType,
     Priority,
@@ -122,6 +124,12 @@ class OverrideRequest(BaseModel):
     clause the operator overrode (or a gap marker) and reason_code classifies the
     attribution. Both optional at the API for backward compatibility; the dashboard
     enforces selection before submit.
+
+    Enhancement 4 (zero-trust override friction): the server classifies every override
+    into an impact tier (LOW / HIGH / BREAK_GLASS). HIGH-tier overrides require
+    impact_ack=true and a context_code; life-safety priority raises are BREAK_GLASS and
+    require break_glass=true (flagged for post-event review). LOW-tier overrides need no
+    extra fields.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -133,6 +141,31 @@ class OverrideRequest(BaseModel):
     new_priority: Priority | None = None
     cited_clause: str | None = Field(default=None, max_length=120)
     reason_code: OverrideReasonCode | None = None
+    impact_ack: bool = False
+    context_code: OverrideContextCode | None = None
+    break_glass: bool = False
+
+
+class ImpactPreviewRequest(BaseModel):
+    """POST /api/overrides/impact — dry risk preview; never mutates state or audit."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    decision_id: str
+    override_type: OverrideType
+    new_priority: Priority | None = None
+
+
+class ImpactPreviewResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    decision_id: str
+    tier: ImpactTier
+    warning: str
+    requires_ack: bool
+    requires_context_code: bool
+    requires_break_glass: bool
+    projected: dict[str, str | int | bool] = Field(default_factory=dict)
 
 
 class WhatIfRequest(BaseModel):

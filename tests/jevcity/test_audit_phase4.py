@@ -41,6 +41,8 @@ FROZEN_ROUTES = {
     ("POST", "/api/simulation/bad-data"),
     ("POST", "/api/simulation/second-emergency"),
     ("POST", "/api/overrides"),
+    # Additive extension (enhancement 4): read-only override impact preview.
+    ("POST", "/api/overrides/impact"),
     ("POST", "/api/what-if/run"),
 }
 

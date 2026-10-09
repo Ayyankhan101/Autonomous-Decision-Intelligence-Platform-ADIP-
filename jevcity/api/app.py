@@ -20,6 +20,8 @@ from jevcity.schemas import (
     DecisionRecord,
     IncidentListResponse,
     IncidentResponse,
+    ImpactPreviewRequest,
+    ImpactPreviewResponse,
     LayaMode,
     OverrideRecord,
     OverrideRequest,
@@ -233,6 +235,27 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
             raise HTTPException(422, str(exc)) from exc
         assert record.override is not None
         return record.override
+
+    @app.post(
+        "/api/overrides/impact", response_model=ImpactPreviewResponse
+    )
+    def override_impact(req: ImpactPreviewRequest) -> ImpactPreviewResponse:
+        """Additive endpoint (enhancement 4): dry risk preview; never mutates state."""
+        try:
+            assessment = engine.assess_override(
+                req.decision_id, req.override_type, req.new_priority
+            )
+        except KeyError as exc:
+            raise HTTPException(404, str(exc).strip("'\"")) from exc
+        return ImpactPreviewResponse(
+            decision_id=req.decision_id,
+            tier=assessment.tier,
+            warning=assessment.warning,
+            requires_ack=assessment.requires_ack,
+            requires_context_code=assessment.requires_context_code,
+            requires_break_glass=assessment.requires_break_glass,
+            projected=assessment.projected,
+        )
 
     # --- What-If (Invariants 6, 15) ------------------------------------
 

@@ -37,6 +37,7 @@ from jevcity.schemas import (
 from jevcity.simulation.state import SimulationState
 from jevcity.schemas.resources import IncidentRecord
 
+from . import friction
 from .guardrail.policy import DecisionContext, decide
 from .laya_adapter.adapter import LayaAdapter
 from .laya_adapter.questions import QUESTIONS_VERSION
@@ -271,6 +272,32 @@ class JevCityEngine:
 
     # --- overrides (Invariant 7) ----------------------------------------
 
+    def assess_override(
+        self,
+        decision_id: str,
+        override_type: OverrideType,
+        new_priority: Priority | None,
+    ) -> friction.FrictionAssessment:
+        """Rule-based impact preview (enhancement 4). Read-only: no state/audit writes."""
+        decision = self.decisions.get(decision_id)
+        if decision is None:
+            raise KeyError(f"unknown decision {decision_id}")
+        incident = self.simulation.incidents[decision.incident_id]
+        if decision.recommended_resources:
+            available = min(
+                self.simulation.pool.available_count(t)
+                for t in decision.recommended_resources
+            )
+        else:
+            available = self.simulation.pool.available_count()
+        return friction.assess(
+            decision,
+            override_type,
+            new_priority,
+            incident,
+            available_recommended=available,
+        )
+
     def apply_override(self, req: OverrideRequest) -> DecisionRecord:
         original = self.decisions.get(req.decision_id)
         if original is None:
@@ -278,6 +305,10 @@ class JevCityEngine:
         if req.override_type == OverrideType.CHANGE_PRIORITY and req.new_priority is None:
             raise ValueError("CHANGE_PRIORITY requires new_priority")
         new_priority = req.new_priority or original.priority
+        assessment = self.assess_override(
+            req.decision_id, req.override_type, req.new_priority
+        )
+        friction.enforce(assessment, req)
         self._counter += 1
         override_record = original.model_copy(
             update={
@@ -299,6 +330,9 @@ class JevCityEngine:
                     previous_priority=original.priority,
                     cited_clause=req.cited_clause,
                     reason_code=req.reason_code,
+                    impact_tier=assessment.tier,
+                    context_code=req.context_code,
+                    break_glass=req.break_glass,
                 ),
                 "assigned_resource_ids": (
                     list(original.assigned_resource_ids)
@@ -325,6 +359,9 @@ class JevCityEngine:
             timestamp=self.simulation.clock.now,
             cited_clause=req.cited_clause,
             reason_code=req.reason_code.value if req.reason_code else None,
+            impact_tier=assessment.tier.value,
+            context_code=req.context_code.value if req.context_code else None,
+            break_glass=req.break_glass,
         )
         if override_record.assigned_resource_ids != original.assigned_resource_ids:
             incident.assigned_resource_ids = list(

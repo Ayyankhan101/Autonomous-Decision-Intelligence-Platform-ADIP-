@@ -128,6 +128,9 @@ def test_audit_entry_carries_attribution(client):
             "reason": "duplicate report from trusted operator",
             "cited_clause": "POLICY_GAP",
             "reason_code": "POLICY_GAP",
+            # DISMISS releasing assigned units = HIGH tier (enhancement 4)
+            "impact_ack": True,
+            "context_code": "OTHER",
         },
     )
     assert resp.status_code == 200
@@ -135,6 +138,8 @@ def test_audit_entry_carries_attribution(client):
     assert entry["action"] == "OVERRIDE_APPLIED"
     assert entry["cited_clause"] == "POLICY_GAP"
     assert entry["reason_code"] == "POLICY_GAP"
+    assert entry["impact_tier"] == "HIGH"
+    assert entry["context_code"] == "OTHER"
     assert entry["previous_hash"] != entry["entry_hash"]
 
 

@@ -1,0 +1,66 @@
+{
+  "$defs": {
+    "ImpactTier": {
+      "enum": [
+        "LOW",
+        "HIGH",
+        "BREAK_GLASS"
+      ],
+      "title": "ImpactTier",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "decision_id": {
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "projected": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "boolean"
+          }
+        ]
+      },
+      "title": "Projected",
+      "type": "object"
+    },
+    "requires_ack": {
+      "title": "Requires Ack",
+      "type": "boolean"
+    },
+    "requires_break_glass": {
+      "title": "Requires Break Glass",
+      "type": "boolean"
+    },
+    "requires_context_code": {
+      "title": "Requires Context Code",
+      "type": "boolean"
+    },
+    "tier": {
+      "$ref": "#/$defs/ImpactTier"
+    },
+    "warning": {
+      "title": "Warning",
+      "type": "string"
+    }
+  },
+  "required": [
+    "decision_id",
+    "tier",
+    "warning",
+    "requires_ack",
+    "requires_context_code",
+    "requires_break_glass"
+  ],
+  "title": "ImpactPreviewResponse",
+  "type": "object"
+}

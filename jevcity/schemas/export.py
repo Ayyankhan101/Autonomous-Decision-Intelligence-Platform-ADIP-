@@ -19,6 +19,8 @@ MODELS = {
     "audit_entry": "AuditEntry",
     "state_payload": "StatePayload",
     "override_request": "OverrideRequest",
+    "impact_preview_request": "ImpactPreviewRequest",
+    "impact_preview_response": "ImpactPreviewResponse",
     "what_if_request": "WhatIfRequest",
     "what_if_result": "WhatIfResult",
 }

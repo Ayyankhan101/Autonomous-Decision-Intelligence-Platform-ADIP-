@@ -13,8 +13,10 @@ from pydantic import BaseModel, ConfigDict, Field
 from .enums import (
     DecisionSource,
     DecisionState,
+    ImpactTier,
     LayaStatus,
     ModelStatus,
+    OverrideContextCode,
     OverrideReasonCode,
     OverrideType,
     Priority,
@@ -111,6 +113,9 @@ class OverrideRecord(BaseModel):
     previous_priority: Priority
     cited_clause: str | None = None
     reason_code: OverrideReasonCode | None = None
+    impact_tier: ImpactTier | None = None
+    context_code: OverrideContextCode | None = None
+    break_glass: bool = False
 
 
 class DecisionRecord(BaseModel):
