@@ -1,0 +1,54 @@
+{
+  "$defs": {
+    "OverrideType": {
+      "enum": [
+        "CHANGE_PRIORITY",
+        "ASSIGN_RESOURCES",
+        "DISMISS_INCIDENT",
+        "ESCALATE_TO_HUMAN",
+        "MARK_DATA_UNTRUSTED",
+        "OVERRIDE_AUTOMATION_HOLD"
+      ],
+      "title": "OverrideType",
+      "type": "string"
+    },
+    "Priority": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "Priority",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "POST /api/overrides/impact \u2014 dry risk preview; never mutates state or audit.",
+  "properties": {
+    "decision_id": {
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "new_priority": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Priority"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "override_type": {
+      "$ref": "#/$defs/OverrideType"
+    }
+  },
+  "required": [
+    "decision_id",
+    "override_type"
+  ],
+  "title": "ImpactPreviewRequest",
+  "type": "object"
+}

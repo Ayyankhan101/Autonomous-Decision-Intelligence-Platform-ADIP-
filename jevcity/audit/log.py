@@ -91,6 +91,9 @@ class AuditLog:
         dry_run: bool = False,
         cited_clause: str | None = None,
         reason_code: str | None = None,
+        impact_tier: str | None = None,
+        context_code: str | None = None,
+        break_glass: bool = False,
     ) -> AuditEntry:
         if dry_run:
             raise ValueError("dry_run entries must never reach the live audit (Invariant 15)")
@@ -110,6 +113,9 @@ class AuditLog:
             laya=laya or AuditLayaMetadata(),
             cited_clause=cited_clause,
             reason_code=reason_code,
+            impact_tier=impact_tier,
+            context_code=context_code,
+            break_glass=break_glass,
             previous_hash=self.last_hash,
             entry_hash="sha256:pending",
         )

@@ -108,6 +108,21 @@ class OverrideReasonCode(StrEnum):
     EXTERNAL_CONTEXT = "EXTERNAL_CONTEXT"
 
 
+class ImpactTier(StrEnum):
+    LOW = "LOW"
+    HIGH = "HIGH"
+    BREAK_GLASS = "BREAK_GLASS"
+
+
+class OverrideContextCode(StrEnum):
+    SCENE_REPORT = "SCENE_REPORT"
+    COMMAND_ORDER = "COMMAND_ORDER"
+    ROAD_CONDITION = "ROAD_CONDITION"
+    SENSOR_FAILURE = "SENSOR_FAILURE"
+    EXTERNAL_AGENCY = "EXTERNAL_AGENCY"
+    OTHER = "OTHER"
+
+
 class InjectionMode(StrEnum):
     MISSING_FIELDS = "missing_fields"
     OUT_OF_RANGE = "out_of_range"

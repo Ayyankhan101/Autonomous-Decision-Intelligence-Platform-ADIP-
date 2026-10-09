@@ -178,9 +178,32 @@ export interface OverrideRecord {
   previous_priority: Priority;
   cited_clause?: string | null;
   reason_code?: OverrideReasonCode | null;
+  impact_tier?: ImpactTier | null;
+  context_code?: OverrideContextCode | null;
+  break_glass?: boolean;
 }
 
 export type OverrideReasonCode = 'POLICY_CLAUSE' | 'POLICY_GAP' | 'EXTERNAL_CONTEXT';
+
+export type ImpactTier = 'LOW' | 'HIGH' | 'BREAK_GLASS';
+
+export type OverrideContextCode =
+  | 'SCENE_REPORT'
+  | 'COMMAND_ORDER'
+  | 'ROAD_CONDITION'
+  | 'SENSOR_FAILURE'
+  | 'EXTERNAL_AGENCY'
+  | 'OTHER';
+
+export interface ImpactPreviewResponse {
+  decision_id: string;
+  tier: ImpactTier;
+  warning: string;
+  requires_ack: boolean;
+  requires_context_code: boolean;
+  requires_break_glass: boolean;
+  projected: Record<string, string | number | boolean>;
+}
 
 export interface LineageTerm {
   label: string;
@@ -247,6 +270,11 @@ export interface AuditEntry {
   model_versions: Record<string, string>;
   dry_run: boolean;
   laya: AuditLayaMetadata;
+  cited_clause?: string | null;
+  reason_code?: OverrideReasonCode | null;
+  impact_tier?: ImpactTier | null;
+  context_code?: OverrideContextCode | null;
+  break_glass?: boolean;
   previous_hash: string;
   entry_hash: string;
 }

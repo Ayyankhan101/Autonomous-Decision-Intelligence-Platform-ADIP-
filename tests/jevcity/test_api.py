@@ -72,15 +72,17 @@ def test_full_simulation_flow(client):
     )
     assert bad2.status_code == 422
 
-    # valid override
+    # valid override (life-safety priority raise = BREAK_GLASS tier, enhancement 4)
     ok = client.post(
         "/api/overrides",
         json={"operator_id": "op-1", "decision_id": decision_id,
               "override_type": "CHANGE_PRIORITY", "reason": "confirmed by field",
-              "new_priority": "CRITICAL"},
+              "new_priority": "CRITICAL", "break_glass": True},
     )
     assert ok.status_code == 200
     assert ok.json()["operator_id"] == "op-1"
+    assert ok.json()["impact_tier"] == "BREAK_GLASS"
+    assert ok.json()["break_glass"] is True
 
     # original decision still visible (append-only history)
     history = client.get("/api/decisions").json()["decisions"]
@@ -256,12 +258,12 @@ def test_change_priority_requires_new_priority(client):
               "override_type": "CHANGE_PRIORITY", "reason": "x"},
     )
     assert r.status_code == 404
-    # valid payload still works
+    # valid payload still works (life-safety raise requires break_glass, enhancement 4)
     r = client.post(
         "/api/overrides",
         json={"operator_id": "op-1", "decision_id": decision_id,
               "override_type": "CHANGE_PRIORITY", "reason": "legit",
-              "new_priority": "CRITICAL"},
+              "new_priority": "CRITICAL", "break_glass": True},
     )
     assert r.status_code == 200
 
@@ -320,6 +322,7 @@ def test_chained_overrides_dedupe_rule_ids(client):
         }
         if override_type == "CHANGE_PRIORITY":
             body["new_priority"] = "CRITICAL"
+            body["break_glass"] = True  # life-safety raise = BREAK_GLASS tier
         resp = client.post("/api/overrides", json=body)
         assert resp.status_code == 200
         latest = [

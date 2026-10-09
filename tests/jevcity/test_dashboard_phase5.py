@@ -102,9 +102,12 @@ def test_dashboard_simulation_controls_flow():
             "override_type": OverrideType.CHANGE_PRIORITY.value,
             "reason": "field observer confirms toxic plume hazard",
             "new_priority": Priority.CRITICAL.value,
+            # life-safety priority raise = BREAK_GLASS tier (enhancement 4)
+            "break_glass": True,
         },
     )
     assert r_ovr.status_code == 200
+    assert r_ovr.json()["impact_tier"] == "BREAK_GLASS"
     ovr_record = r_ovr.json()
     assert ovr_record["operator_id"] == "op-commander-09"
     assert ovr_record["previous_priority"] == dec_record["priority"]

@@ -173,6 +173,15 @@
       "title": "DecisionSource",
       "type": "string"
     },
+    "ImpactTier": {
+      "enum": [
+        "LOW",
+        "HIGH",
+        "BREAK_GLASS"
+      ],
+      "title": "ImpactTier",
+      "type": "string"
+    },
     "LayaStatus": {
       "enum": [
         "ok",
@@ -182,6 +191,18 @@
         "unavailable"
       ],
       "title": "LayaStatus",
+      "type": "string"
+    },
+    "OverrideContextCode": {
+      "enum": [
+        "SCENE_REPORT",
+        "COMMAND_ORDER",
+        "ROAD_CONDITION",
+        "SENSOR_FAILURE",
+        "EXTERNAL_AGENCY",
+        "OTHER"
+      ],
+      "title": "OverrideContextCode",
       "type": "string"
     },
     "OverrideReasonCode": {
@@ -241,6 +262,11 @@
       "default": null,
       "title": "Before State"
     },
+    "break_glass": {
+      "default": false,
+      "title": "Break Glass",
+      "type": "boolean"
+    },
     "cited_clause": {
       "anyOf": [
         {
@@ -252,6 +278,17 @@
       ],
       "default": null,
       "title": "Cited Clause"
+    },
+    "context_code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/OverrideContextCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "decision_id": {
       "anyOf": [
@@ -278,6 +315,17 @@
     "entry_id": {
       "title": "Entry Id",
       "type": "string"
+    },
+    "impact_tier": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ImpactTier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "incident_id": {
       "anyOf": [

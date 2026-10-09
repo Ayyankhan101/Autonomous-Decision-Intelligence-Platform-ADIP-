@@ -1,7 +1,8 @@
 import type React from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AlertTriangle,
+  Flame,
   Lock,
   UserCheck,
   X,
@@ -9,6 +10,8 @@ import {
 import { api } from '../services/api';
 import type {
   DecisionRecord,
+  ImpactPreviewResponse,
+  OverrideContextCode,
   OverrideType,
   Priority,
 } from '../types/api';
@@ -19,6 +22,15 @@ interface OverrideModalProps {
   onClose: () => void;
   onSuccess: () => void;
 }
+
+const CONTEXT_CODE_LABELS: Record<OverrideContextCode, string> = {
+  SCENE_REPORT: 'On-scene report / field observer',
+  COMMAND_ORDER: 'Command order from superior',
+  ROAD_CONDITION: 'Road condition not in model (e.g. unmapped blockage)',
+  SENSOR_FAILURE: 'Sensor failure / stale telemetry',
+  EXTERNAL_AGENCY: 'External agency coordination (fire/police liaison)',
+  OTHER: 'Other external context',
+};
 
 export const OverrideModal: React.FC<OverrideModalProps> = ({
   decision,
@@ -33,6 +45,41 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
   const [basis, setBasis] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [impact, setImpact] = useState<ImpactPreviewResponse | null>(null);
+  const [impactAck, setImpactAck] = useState(false);
+  const [contextCode, setContextCode] = useState<OverrideContextCode | ''>('');
+  const [breakGlass, setBreakGlass] = useState(false);
+
+  // enhancement 4: live risk preview — read-only dry run before submit
+  useEffect(() => {
+    if (!isOpen) return;
+    let stale = false;
+    api
+      .impactPreview({
+        decision_id: decision.decision_id,
+        override_type: overrideType,
+        new_priority: overrideType === 'CHANGE_PRIORITY' ? newPriority : null,
+      })
+      .then((res) => {
+        if (!stale) setImpact(res);
+      })
+      .catch(() => {
+        if (!stale) setImpact(null);
+      });
+    return () => {
+      stale = true;
+    };
+  }, [isOpen, decision.decision_id, overrideType, newPriority]);
+
+  const tier = impact?.tier ?? null;
+  // reset acknowledgments when the risk tier changes (render-phase adjustment)
+  const [prevTier, setPrevTier] = useState<string | null>(tier);
+  if (prevTier !== tier) {
+    setPrevTier(tier);
+    setImpactAck(false);
+    setContextCode('');
+    setBreakGlass(false);
+  }
 
   if (!isOpen) return null;
 
@@ -50,6 +97,18 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
     }
     if (!reason.trim()) {
       setErrorMsg('Justification reason is required (Invariant 7)');
+      return;
+    }
+    if (tier === 'BREAK_GLASS' && !breakGlass) {
+      setErrorMsg(
+        'BREAK-GLASS life-safety override requires explicit emergency acknowledgment (enhancement 4)',
+      );
+      return;
+    }
+    if (tier === 'HIGH' && (!impactAck || !contextCode)) {
+      setErrorMsg(
+        'HIGH-risk override requires impact acknowledgment and a context code (enhancement 4)',
+      );
       return;
     }
 
@@ -74,6 +133,9 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
           : basis === 'POLICY_GAP'
             ? 'POLICY_GAP'
             : 'EXTERNAL_CONTEXT',
+        impact_ack: impactAck,
+        context_code: contextCode || null,
+        break_glass: breakGlass,
       });
 
       onSuccess();
@@ -204,6 +266,105 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
               Cited clause and reason code are written to the immutable audit log.
             </span>
           </div>
+
+          {/* Impact preview (enhancement 4: zero-trust friction) */}
+          {impact && (
+            <div
+              className={`p-2.5 rounded-lg border space-y-2 ${
+                impact.tier === 'BREAK_GLASS'
+                  ? 'bg-red-950/70 border-red-500/60'
+                  : impact.tier === 'HIGH'
+                    ? 'bg-amber-950/60 border-amber-500/50'
+                    : 'bg-slate-950/60 border-slate-800'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {impact.tier === 'BREAK_GLASS' ? (
+                  <Flame className="w-4 h-4 shrink-0 text-red-400" />
+                ) : (
+                  <AlertTriangle
+                    className={`w-4 h-4 shrink-0 ${
+                      impact.tier === 'HIGH' ? 'text-amber-400' : 'text-slate-500'
+                    }`}
+                  />
+                )}
+                <span
+                  className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border uppercase tracking-wide ${
+                    impact.tier === 'BREAK_GLASS'
+                      ? 'bg-red-900/80 text-red-300 border-red-500/60'
+                      : impact.tier === 'HIGH'
+                        ? 'bg-amber-900/70 text-amber-300 border-amber-500/50'
+                        : 'bg-slate-900 text-slate-400 border-slate-700'
+                  }`}
+                >
+                  {impact.tier} RISK
+                </span>
+              </div>
+              <p
+                className={`text-[11px] font-mono leading-snug ${
+                  impact.tier === 'BREAK_GLASS'
+                    ? 'text-red-200'
+                    : impact.tier === 'HIGH'
+                      ? 'text-amber-200'
+                      : 'text-slate-400'
+                }`}
+              >
+                {impact.warning}
+              </p>
+
+              {impact.requires_context_code && (
+                <div>
+                  <label className="text-[11px] font-semibold text-amber-300 block mb-1">
+                    External Context Code <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={contextCode}
+                    onChange={(e) => setContextCode(e.target.value as OverrideContextCode | '')}
+                    className="w-full bg-slate-950 border border-amber-500/40 rounded-lg px-2.5 py-2 text-slate-200 font-mono focus:border-amber-500 focus:outline-none"
+                  >
+                    <option value="">Select the external context justifying this override…</option>
+                    {(
+                      Object.entries(CONTEXT_CODE_LABELS) as [OverrideContextCode, string][]
+                    ).map(([code, label]) => (
+                      <option key={code} value={code}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {impact.requires_ack && (
+                <label className="flex items-start gap-2 text-[11px] font-mono cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={impactAck}
+                    onChange={(e) => setImpactAck(e.target.checked)}
+                    className="mt-0.5 shrink-0 accent-amber-500"
+                  />
+                  <span className="text-amber-200">
+                    I acknowledge the projected impact of this override (stored in the
+                    immutable audit log with my operator identity).
+                  </span>
+                </label>
+              )}
+
+              {impact.requires_break_glass && (
+                <label className="flex items-start gap-2 text-[11px] font-mono cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={breakGlass}
+                    onChange={(e) => setBreakGlass(e.target.checked)}
+                    className="mt-0.5 shrink-0 accent-red-500"
+                  />
+                  <span className="text-red-200 font-bold">
+                    BREAK-GLASS: life-safety override — authorize immediate action, accept
+                    mandatory post-event review (flagged in audit).
+                  </span>
+                </label>
+              )}
+            </div>
+          )}
 
           {/* Justification Reason */}
           <div>

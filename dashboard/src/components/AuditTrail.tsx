@@ -116,6 +116,17 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ entries }) => {
                         {entry.action}
                       </span>
 
+                      {entry.break_glass && (
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border uppercase tracking-wide bg-red-950 text-red-300 border-red-500/60">
+                          BREAK-GLASS
+                        </span>
+                      )}
+                      {!entry.break_glass && entry.impact_tier === 'HIGH' && (
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border uppercase tracking-wide bg-amber-950 text-amber-300 border-amber-500/50">
+                          IMPACT HIGH
+                        </span>
+                      )}
+
                       <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
                         <User className="w-3 h-3 text-slate-500" />
                         <strong className="text-slate-300">{entry.actor}</strong>
@@ -169,6 +180,37 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ entries }) => {
                         <span className="text-slate-200">{entry.policy_version || 'N/A'}</span>
                       </div>
                     </div>
+
+                    {/* Attribution & impact (enhancements 3+4) */}
+                    {(entry.cited_clause || entry.impact_tier || entry.context_code) && (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                        <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                          <span className="text-slate-500 block">Override Basis:</span>
+                          <span className="text-slate-200">
+                            {entry.cited_clause || 'N/A'}
+                            {entry.reason_code ? ` · ${entry.reason_code}` : ''}
+                          </span>
+                        </div>
+                        <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                          <span className="text-slate-500 block">Impact Tier:</span>
+                          <span
+                            className={
+                              entry.break_glass
+                                ? 'text-red-300 font-bold'
+                                : entry.impact_tier === 'HIGH'
+                                  ? 'text-amber-300 font-bold'
+                                  : 'text-slate-200'
+                            }
+                          >
+                            {entry.impact_tier || 'N/A'}
+                          </span>
+                        </div>
+                        <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                          <span className="text-slate-500 block">Context Code:</span>
+                          <span className="text-slate-200">{entry.context_code || 'N/A'}</span>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Laya Metadata Block */}
                     {entry.laya && entry.laya.laya_checkpoint && (

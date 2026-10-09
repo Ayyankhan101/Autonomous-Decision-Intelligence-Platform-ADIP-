@@ -84,6 +84,15 @@
       "title": "DecisionState",
       "type": "string"
     },
+    "ImpactTier": {
+      "enum": [
+        "LOW",
+        "HIGH",
+        "BREAK_GLASS"
+      ],
+      "title": "ImpactTier",
+      "type": "string"
+    },
     "LayaBlock": {
       "additionalProperties": false,
       "properties": {
@@ -287,6 +296,18 @@
       "title": "ModelStatus",
       "type": "string"
     },
+    "OverrideContextCode": {
+      "enum": [
+        "SCENE_REPORT",
+        "COMMAND_ORDER",
+        "ROAD_CONDITION",
+        "SENSOR_FAILURE",
+        "EXTERNAL_AGENCY",
+        "OTHER"
+      ],
+      "title": "OverrideContextCode",
+      "type": "string"
+    },
     "OverrideReasonCode": {
       "enum": [
         "POLICY_CLAUSE",
@@ -299,6 +320,11 @@
     "OverrideRecord": {
       "additionalProperties": false,
       "properties": {
+        "break_glass": {
+          "default": false,
+          "title": "Break Glass",
+          "type": "boolean"
+        },
         "cited_clause": {
           "anyOf": [
             {
@@ -310,6 +336,28 @@
           ],
           "default": null,
           "title": "Cited Clause"
+        },
+        "context_code": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OverrideContextCode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "impact_tier": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImpactTier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "operator_id": {
           "title": "Operator Id",

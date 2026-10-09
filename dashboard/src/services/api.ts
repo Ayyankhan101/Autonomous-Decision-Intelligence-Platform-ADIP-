@@ -1,10 +1,12 @@
 import type {
   AuditEntry,
   DecisionRecord,
+  ImpactPreviewResponse,
   IncidentRecord,
   IncidentResponse,
   IncidentType,
   InjectionMode,
+  OverrideContextCode,
   OverrideType,
   Priority,
   Resource,
@@ -160,6 +162,9 @@ export const api = {
     new_priority?: Priority | null;
     cited_clause?: string | null;
     reason_code?: 'POLICY_CLAUSE' | 'POLICY_GAP' | 'EXTERNAL_CONTEXT' | null;
+    impact_ack?: boolean;
+    context_code?: OverrideContextCode | null;
+    break_glass?: boolean;
   }) =>
     fetchJson(`${API_BASE}/overrides`, {
       method: 'POST',
@@ -171,6 +176,23 @@ export const api = {
         new_priority: params.new_priority || null,
         cited_clause: params.cited_clause ?? null,
         reason_code: params.reason_code ?? null,
+        impact_ack: params.impact_ack ?? false,
+        context_code: params.context_code ?? null,
+        break_glass: params.break_glass ?? false,
+      }),
+    }),
+
+  impactPreview: (params: {
+    decision_id: string;
+    override_type: OverrideType;
+    new_priority?: Priority | null;
+  }): Promise<ImpactPreviewResponse> =>
+    fetchJson<ImpactPreviewResponse>(`${API_BASE}/overrides/impact`, {
+      method: 'POST',
+      body: JSON.stringify({
+        decision_id: params.decision_id,
+        override_type: params.override_type,
+        new_priority: params.new_priority || null,
       }),
     }),
 

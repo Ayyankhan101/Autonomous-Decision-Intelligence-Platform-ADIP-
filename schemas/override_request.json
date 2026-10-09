@@ -1,5 +1,17 @@
 {
   "$defs": {
+    "OverrideContextCode": {
+      "enum": [
+        "SCENE_REPORT",
+        "COMMAND_ORDER",
+        "ROAD_CONDITION",
+        "SENSOR_FAILURE",
+        "EXTERNAL_AGENCY",
+        "OTHER"
+      ],
+      "title": "OverrideContextCode",
+      "type": "string"
+    },
     "OverrideReasonCode": {
       "enum": [
         "POLICY_CLAUSE",
@@ -33,8 +45,13 @@
     }
   },
   "additionalProperties": false,
-  "description": "Invariant 7: operator_id and reason are required (min_length=1).\n\nEnhancement 3 (hyper-explainable audit): when present, cited_clause names the policy\nclause the operator overrode (or a gap marker) and reason_code classifies the\nattribution. Both optional at the API for backward compatibility; the dashboard\nenforces selection before submit.",
+  "description": "Invariant 7: operator_id and reason are required (min_length=1).\n\nEnhancement 3 (hyper-explainable audit): when present, cited_clause names the policy\nclause the operator overrode (or a gap marker) and reason_code classifies the\nattribution. Both optional at the API for backward compatibility; the dashboard\nenforces selection before submit.\n\nEnhancement 4 (zero-trust override friction): the server classifies every override\ninto an impact tier (LOW / HIGH / BREAK_GLASS). HIGH-tier overrides require\nimpact_ack=true and a context_code; life-safety priority raises are BREAK_GLASS and\nrequire break_glass=true (flagged for post-event review). LOW-tier overrides need no\nextra fields.",
   "properties": {
+    "break_glass": {
+      "default": false,
+      "title": "Break Glass",
+      "type": "boolean"
+    },
     "cited_clause": {
       "anyOf": [
         {
@@ -48,10 +65,26 @@
       "default": null,
       "title": "Cited Clause"
     },
+    "context_code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/OverrideContextCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "decision_id": {
       "minLength": 1,
       "title": "Decision Id",
       "type": "string"
+    },
+    "impact_ack": {
+      "default": false,
+      "title": "Impact Ack",
+      "type": "boolean"
     },
     "new_priority": {
       "anyOf": [
