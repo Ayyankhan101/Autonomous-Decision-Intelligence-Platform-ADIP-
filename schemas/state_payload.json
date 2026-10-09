@@ -1,5 +1,14 @@
 {
   "$defs": {
+    "PolicyPosition": {
+      "enum": [
+        "RESPONSE_TIME",
+        "EQUITY",
+        "ECO"
+      ],
+      "title": "PolicyPosition",
+      "type": "string"
+    },
     "ResourceType": {
       "enum": [
         "ambulance",
@@ -51,10 +60,21 @@
       "title": "Laya Mode",
       "type": "string"
     },
+    "objective_weights": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Objective Weights",
+      "type": "object"
+    },
     "open_incident_count": {
       "minimum": 0,
       "title": "Open Incident Count",
       "type": "integer"
+    },
+    "policy_position": {
+      "$ref": "#/$defs/PolicyPosition",
+      "default": "RESPONSE_TIME"
     },
     "running": {
       "title": "Running",

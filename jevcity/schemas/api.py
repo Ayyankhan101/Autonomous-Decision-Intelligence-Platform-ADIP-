@@ -14,6 +14,7 @@ from .enums import (
     OverrideContextCode,
     OverrideReasonCode,
     OverrideType,
+    PolicyPosition,
     Priority,
     ResourceType,
     SeverityHint,
@@ -39,6 +40,8 @@ class StatePayload(BaseModel):
     available_resources: dict[ResourceType, int]
     laya_mode: str
     last_laya_status: str | None = None
+    policy_position: PolicyPosition = PolicyPosition.RESPONSE_TIME
+    objective_weights: dict[str, float] = Field(default_factory=dict)
 
 
 class IncidentResponse(BaseModel):
@@ -173,6 +176,25 @@ class WhatIfRequest(BaseModel):
 
     scenario: WhatIfScenario
     session_seed: int | None = None
+
+
+class PolicyPositionRequest(BaseModel):
+    """POST /api/policy/position — runtime three-position policy selector (E2)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    position: PolicyPosition
+    reoptimise_active: bool = False
+
+
+class PolicyPositionResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    previous_position: PolicyPosition
+    position: PolicyPosition
+    objective_weights: dict[str, float]
+    affected_decisions: list[str] = Field(default_factory=list)
+    reoptimised: int = Field(ge=0)
 
 
 class SimulationActionResponse(BaseModel):

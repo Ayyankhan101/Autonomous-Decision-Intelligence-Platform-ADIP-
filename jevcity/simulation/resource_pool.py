@@ -3,31 +3,35 @@ from __future__ import annotations
 
 from jevcity.schemas import Resource, ResourceType, ResourceStatus, Zone
 
-_DEFAULT_FLEET: list[tuple[str, ResourceType, Zone]] = [
-    ("amb-01", ResourceType.AMBULANCE, Zone.NORTH),
-    ("amb-02", ResourceType.AMBULANCE, Zone.SOUTH),
-    ("amb-03", ResourceType.AMBULANCE, Zone.EAST),
-    ("amb-04", ResourceType.AMBULANCE, Zone.WEST),
-    ("amb-05", ResourceType.AMBULANCE, Zone.CENTRAL),
-    ("fire-01", ResourceType.FIRE_TRUCK, Zone.NORTH),
-    ("fire-02", ResourceType.FIRE_TRUCK, Zone.SOUTH),
-    ("fire-03", ResourceType.FIRE_TRUCK, Zone.CENTRAL),
-    ("pol-01", ResourceType.POLICE_UNIT, Zone.NORTH),
-    ("pol-02", ResourceType.POLICE_UNIT, Zone.SOUTH),
-    ("pol-03", ResourceType.POLICE_UNIT, Zone.EAST),
-    ("pol-04", ResourceType.POLICE_UNIT, Zone.WEST),
-    ("pol-05", ResourceType.POLICE_UNIT, Zone.CENTRAL),
-    ("fld-01", ResourceType.FLOOD_RESPONSE_UNIT, Zone.EAST),
-    ("fld-02", ResourceType.FLOOD_RESPONSE_UNIT, Zone.WEST),
-    ("tmu-01", ResourceType.TRAFFIC_MANAGEMENT_UNIT, Zone.CENTRAL),
-    ("tmu-02", ResourceType.TRAFFIC_MANAGEMENT_UNIT, Zone.NORTH),
+# (resource_id, type, zone, eco_score) — eco_score ∈ [0, 1]: 1 = electric/zero-emission
+# response vehicle, 0 = highest-emission. Consumed only under the ECO policy position
+# (enhancement 2).
+_DEFAULT_FLEET: list[tuple[str, ResourceType, Zone, float]] = [
+    ("amb-01", ResourceType.AMBULANCE, Zone.NORTH, 0.9),
+    ("amb-02", ResourceType.AMBULANCE, Zone.SOUTH, 0.1),
+    ("amb-03", ResourceType.AMBULANCE, Zone.EAST, 0.7),
+    ("amb-04", ResourceType.AMBULANCE, Zone.WEST, 0.2),
+    ("amb-05", ResourceType.AMBULANCE, Zone.CENTRAL, 0.8),
+    ("fire-01", ResourceType.FIRE_TRUCK, Zone.NORTH, 0.9),
+    ("fire-02", ResourceType.FIRE_TRUCK, Zone.SOUTH, 0.3),
+    ("fire-03", ResourceType.FIRE_TRUCK, Zone.CENTRAL, 0.6),
+    ("pol-01", ResourceType.POLICE_UNIT, Zone.NORTH, 0.8),
+    ("pol-02", ResourceType.POLICE_UNIT, Zone.SOUTH, 0.2),
+    ("pol-03", ResourceType.POLICE_UNIT, Zone.EAST, 0.7),
+    ("pol-04", ResourceType.POLICE_UNIT, Zone.WEST, 0.1),
+    ("pol-05", ResourceType.POLICE_UNIT, Zone.CENTRAL, 0.9),
+    ("fld-01", ResourceType.FLOOD_RESPONSE_UNIT, Zone.EAST, 0.75),
+    ("fld-02", ResourceType.FLOOD_RESPONSE_UNIT, Zone.WEST, 0.4),
+    ("tmu-01", ResourceType.TRAFFIC_MANAGEMENT_UNIT, Zone.CENTRAL, 0.85),
+    ("tmu-02", ResourceType.TRAFFIC_MANAGEMENT_UNIT, Zone.NORTH, 0.3),
 ]
 
 
 class ResourcePool:
     def __init__(self, resources: list[Resource] | None = None) -> None:
         fleet = resources if resources is not None else [
-            Resource(resource_id=rid, type=t, zone=z) for rid, t, z in _DEFAULT_FLEET
+            Resource(resource_id=rid, type=t, zone=z, eco_score=eco)
+            for rid, t, z, eco in _DEFAULT_FLEET
         ]
         self._by_id: dict[str, Resource] = {r.resource_id: r for r in fleet}
 

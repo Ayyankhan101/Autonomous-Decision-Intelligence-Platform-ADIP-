@@ -3,10 +3,13 @@
 Base: `http://localhost:8200` · run: `uvicorn jevcity.api.app:app --port 8200`
 JSON Schema exports (dashboard contract): `schemas/*.json` via `python -m jevcity.schemas.export`.
 
-The 16 plan-frozen endpoints below are unchanged; two **additive** endpoints
+The 16 plan-frozen endpoints below are unchanged; three **additive** endpoints
 were added: `POST /api/simulation/resume` (because `start()` resets state —
-without it, pause → resume silently wiped the session) and
-`POST /api/overrides/impact` (enhancement 4: read-only override risk preview).
+without it, pause → resume silently wiped the session),
+`POST /api/overrides/impact` (enhancement 4: read-only override risk preview), and
+`POST /api/policy/position` (enhancement 2: runtime three-position policy selector
+RESPONSE_TIME/EQUITY/ECO — new decisions follow the new position unless
+`reoptimise_active=true` re-runs open incidents).
 
 ## Reads
 
@@ -40,6 +43,7 @@ All control responses: `SimulationActionResponse {ok, incident_id, decision_ids}
 |--------|------|-------|
 | POST | `/api/overrides` | `OverrideRequest` — `operator_id` and `reason` required (**422** if empty, Invariant 7). Additive optional fields (enhancement 3): `cited_clause` (clause id or gap marker), `reason_code` (`POLICY_CLAUSE\|POLICY_GAP\|EXTERNAL_CONTEXT`) — both stored on the override record and the audit entry; API stays backward-compatible, dashboard enforces selection. Enhancement 4 friction: server classifies each override into `impact_tier` (`LOW\|HIGH\|BREAK_GLASS`); `HIGH` requires `impact_ack=true` + `context_code`, life-safety priority raises are `BREAK_GLASS` and require `break_glass=true` (each missing → **422**); `LOW` needs no extra fields. Tier, `context_code`, `break_glass` stored on record + audit entry |
 | POST | `/api/overrides/impact` | `ImpactPreviewRequest` → `ImpactPreviewResponse` — dry run, never mutates state/audit; returns `tier`, human-readable `warning` with projected impact (zone, priority delta, available recommended units), and `requires_*` flags the UI turns into controls (**404** unknown decision) |
+| POST | `/api/policy/position` | `PolicyPositionRequest {position: RESPONSE_TIME\|EQUITY\|ECO, reoptimise_active: bool}` → `PolicyPositionResponse {previous_position, position, objective_weights, affected_decisions, reoptimised}` — enhancement 2 policy sandbox. Switch applies to new decisions only unless `reoptimise_active=true` (then open incidents are re-decided and their units released/reassigned); writes `POLICY_POSITION_SWITCHED` audit entry |
 | POST | `/api/what-if/run` | `WhatIfRequest {scenario: remove_one_ambulance\|close_road\|second_emergency}` → `WhatIfResult` |
 | GET | `/api/what-if/{sandbox_id}/result` | stored sandbox result |
 

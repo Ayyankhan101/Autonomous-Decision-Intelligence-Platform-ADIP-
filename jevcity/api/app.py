@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from jevcity.audit.log import AuditLog
 from jevcity.decision_engine.engine import JevCityEngine
 from jevcity.decision_engine.laya_adapter.adapter import LayaAdapter
+from jevcity.decision_engine.policy_position import weights_for
 from jevcity.schemas import (
     AuditListResponse,
     DecisionListResponse,
@@ -25,6 +26,8 @@ from jevcity.schemas import (
     LayaMode,
     OverrideRecord,
     OverrideRequest,
+    PolicyPositionRequest,
+    PolicyPositionResponse,
     ResourceListResponse,
     SecondEmergencyRequest,
     SimulationActionResponse,
@@ -95,6 +98,8 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
                 if engine.decision_history and engine.decision_history[-1].laya
                 else None
             ),
+            policy_position=engine.policy_position,
+            objective_weights=weights_for(engine.policy_position),
         )
 
     @app.get("/api/incidents", response_model=IncidentListResponse)
@@ -256,6 +261,17 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
             requires_break_glass=assessment.requires_break_glass,
             projected=assessment.projected,
         )
+
+    # --- policy sandbox (enhancement 2, additive route) ----------------
+
+    @app.post("/api/policy/position", response_model=PolicyPositionResponse)
+    def policy_position_switch(req: PolicyPositionRequest) -> PolicyPositionResponse:
+        """Switch the runtime policy position; changes apply to new decisions only
+        unless reoptimise_active=True re-runs open incidents."""
+        report = engine.switch_policy(
+            req.position, reoptimise_active=req.reoptimise_active
+        )
+        return PolicyPositionResponse(**report)
 
     # --- What-If (Invariants 6, 15) ------------------------------------
 

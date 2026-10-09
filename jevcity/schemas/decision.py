@@ -19,6 +19,7 @@ from .enums import (
     OverrideContextCode,
     OverrideReasonCode,
     OverrideType,
+    PolicyPosition,
     Priority,
     ResourceType,
 )
@@ -127,6 +128,12 @@ class DecisionRecord(BaseModel):
     priority: Priority
     policy_id: str = POLICY_ID
     policy_version: str = POLICY_VERSION
+    policy_position: PolicyPosition = PolicyPosition.RESPONSE_TIME
+    objective_weights: dict[str, float] = Field(
+        default_factory=dict,
+        description="Objective weights active when this decision was generated "
+        "(response_time / equity / emissions); enhancement 2 audit-trace completeness.",
+    )
     matched_rules: list[str] = Field(default_factory=list)
     signals: Signals
     laya: LayaBlock | None = None

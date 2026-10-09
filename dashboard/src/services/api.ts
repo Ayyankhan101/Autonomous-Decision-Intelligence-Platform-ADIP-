@@ -8,6 +8,8 @@ import type {
   InjectionMode,
   OverrideContextCode,
   OverrideType,
+  PolicyPosition,
+  PolicyPositionResponse,
   Priority,
   Resource,
   SimulationActionResponse,
@@ -194,6 +196,16 @@ export const api = {
         override_type: params.override_type,
         new_priority: params.new_priority || null,
       }),
+    }),
+
+  // --- Policy Sandbox (enhancement 2) ---
+  policyPosition: (
+    position: PolicyPosition,
+    reoptimiseActive = false,
+  ): Promise<PolicyPositionResponse> =>
+    fetchJson<PolicyPositionResponse>(`${API_BASE}/policy/position`, {
+      method: 'POST',
+      body: JSON.stringify({ position, reoptimise_active: reoptimiseActive }),
     }),
 
   // --- What-If ---

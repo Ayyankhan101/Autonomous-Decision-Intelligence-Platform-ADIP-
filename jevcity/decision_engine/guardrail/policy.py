@@ -19,6 +19,7 @@ from jevcity.schemas import (
     ModelOutput,
     ModelStatus,
     NormalizedLayaResponse,
+    PolicyPosition,
     Priority,
     SeveritySignal,
     Signals,
@@ -37,6 +38,7 @@ from ..laya_adapter.adapter import (
     suggested_priority,
 )
 from ..lineage import build_lineage
+from ..policy_position import UNDERSERVED_ZONES, equity_step_up, weights_for
 from .allocate import allocate_for_incident
 from .confidence import (
     LAYA_ANSWER_CONFIDENCE_GATE,
@@ -57,6 +59,8 @@ R_LAYA_FALLBACK = "R-LAYA-FALLBACK-POLICY-ONLY-01"
 R_LAYA_DEGRADED = "R-LAYA-MODEL-DEGRADED-01"
 R_CONTENTION = "R-CONTENTION-ESCALATE-01"
 R_AUTO = "R-AUTO-APPROVE-01"
+R_EQUITY = "R-EQUITY-UNSERVED-01"
+R_ECO = "R-ECO-ELECTRIC-FIRST-01"
 
 CRITICAL_TRAFFIC_THRESHOLD = 0.6
 
@@ -75,6 +79,7 @@ class DecisionContext:
     active_competing_incidents: int = 0
     laya_mode: LayaMode = LayaMode.MOCK
     decision_id: str = "dec-000000"
+    policy_position: PolicyPosition = PolicyPosition.RESPONSE_TIME
 
 
 def decide(ctx: DecisionContext) -> DecisionRecord:
@@ -172,6 +177,20 @@ def decide(ctx: DecisionContext) -> DecisionRecord:
             "Data-quality anomaly detected: " + ", ".join(ctx.anomaly.reasons) + ".",
         ))
 
+    # --- equity position (enhancement 2): underserved-zone step-up -----
+    if (
+        ctx.policy_position == PolicyPosition.EQUITY
+        and ctx.incident.zone in UNDERSERVED_ZONES
+    ):
+        raised = equity_step_up(priority)
+        if raised != priority:
+            priority = raised
+            rules.append(R_EQUITY)
+            reasons.append(
+                "Equity policy: priority raised one step for underserved zone "
+                f"{ctx.incident.zone.value}."
+            )
+
     # --- confidence gates (§5.8) --------------------------------------
     if overall < OVERALL_GATE:
         hold_rules.append((
@@ -212,7 +231,13 @@ def decide(ctx: DecisionContext) -> DecisionRecord:
         incident_type=ctx.incident.incident_type,
         priority=priority,
         recommended=recommended,
+        policy_position=ctx.policy_position,
     )
+    if ctx.policy_position == PolicyPosition.ECO:
+        rules.append(R_ECO)
+        reasons.append(
+            "Eco policy: allocation picks the candidate with the highest eco_score."
+        )
     if allocation.contention:
         rules.append(R_CONTENTION)
         reasons.append(
@@ -289,6 +314,8 @@ def _record(
         recommended_resources=[rec_resource] if rec_resource else [],
         reasons=list(reasons),
         decision_time_simulated=ctx.now,
+        policy_position=ctx.policy_position,
+        objective_weights=weights_for(ctx.policy_position),
     )
 
 

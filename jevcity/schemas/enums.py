@@ -108,6 +108,12 @@ class OverrideReasonCode(StrEnum):
     EXTERNAL_CONTEXT = "EXTERNAL_CONTEXT"
 
 
+class PolicyPosition(StrEnum):
+    RESPONSE_TIME = "RESPONSE_TIME"
+    EQUITY = "EQUITY"
+    ECO = "ECO"
+
+
 class ImpactTier(StrEnum):
     LOW = "LOW"
     HIGH = "HIGH"
