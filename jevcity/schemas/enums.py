@@ -102,6 +102,12 @@ class OverrideType(StrEnum):
     OVERRIDE_AUTOMATION_HOLD = "OVERRIDE_AUTOMATION_HOLD"
 
 
+class OverrideReasonCode(StrEnum):
+    POLICY_CLAUSE = "POLICY_CLAUSE"
+    POLICY_GAP = "POLICY_GAP"
+    EXTERNAL_CONTEXT = "EXTERNAL_CONTEXT"
+
+
 class InjectionMode(StrEnum):
     MISSING_FIELDS = "missing_fields"
     OUT_OF_RANGE = "out_of_range"

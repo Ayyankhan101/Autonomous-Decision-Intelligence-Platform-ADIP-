@@ -15,7 +15,7 @@ without it, pause → resume silently wiped the session (data-loss bug).
 | GET | `/api/incidents` | `IncidentListResponse` |
 | GET | `/api/incidents/{incident_id}` | `IncidentResponse` (incident + validation + latest decision) |
 | GET | `/api/decisions` | `DecisionListResponse` |
-| GET | `/api/decisions/{decision_id}` | `DecisionRecord` |
+| GET | `/api/decisions/{decision_id}` | `DecisionRecord` (includes optional `lineage` block — evidence terms, decisive clause, expression; enhancement 3) |
 | GET | `/api/resources` | `ResourceListResponse` |
 | GET | `/api/audit?limit=100` | `AuditListResponse` |
 
@@ -37,7 +37,7 @@ All control responses: `SimulationActionResponse {ok, incident_id, decision_ids}
 
 | Method | Path | Notes |
 |--------|------|-------|
-| POST | `/api/overrides` | `OverrideRequest` — `operator_id` and `reason` required (**422** if empty, Invariant 7) |
+| POST | `/api/overrides` | `OverrideRequest` — `operator_id` and `reason` required (**422** if empty, Invariant 7). Additive optional fields (enhancement 3): `cited_clause` (clause id or gap marker), `reason_code` (`POLICY_CLAUSE\|POLICY_GAP\|EXTERNAL_CONTEXT`) — both stored on the override record and the audit entry; API stays backward-compatible, dashboard enforces selection |
 | POST | `/api/what-if/run` | `WhatIfRequest {scenario: remove_one_ambulance\|close_road\|second_emergency}` → `WhatIfResult` |
 | GET | `/api/what-if/{sandbox_id}/result` | stored sandbox result |
 

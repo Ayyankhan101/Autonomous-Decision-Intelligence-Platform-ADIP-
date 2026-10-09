@@ -30,6 +30,7 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
   const [overrideType, setOverrideType] = useState<OverrideType>('CHANGE_PRIORITY');
   const [newPriority, setNewPriority] = useState<Priority>('CRITICAL');
   const [reason, setReason] = useState('');
+  const [basis, setBasis] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -41,6 +42,12 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
       setErrorMsg('Operator ID is required (Invariant 7)');
       return;
     }
+    if (!basis) {
+      setErrorMsg(
+        'Override basis is required: cite the policy clause you are overriding, or mark a policy gap / external context',
+      );
+      return;
+    }
     if (!reason.trim()) {
       setErrorMsg('Justification reason is required (Invariant 7)');
       return;
@@ -49,6 +56,11 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
     setIsSubmitting(true);
     setErrorMsg(null);
 
+    const isClause =
+      basis !== 'POLICY_GAP' &&
+      basis !== 'EXTERNAL_CONTEXT' &&
+      decision.matched_rules.includes(basis);
+
     try {
       await api.applyOverride({
         operator_id: operatorId.trim(),
@@ -56,6 +68,12 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
         override_type: overrideType,
         reason: reason.trim(),
         new_priority: newPriority || null,
+        cited_clause: isClause ? basis : null,
+        reason_code: isClause
+          ? 'POLICY_CLAUSE'
+          : basis === 'POLICY_GAP'
+            ? 'POLICY_GAP'
+            : 'EXTERNAL_CONTEXT',
       });
 
       onSuccess();
@@ -160,6 +178,31 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
                 <option value="LOW">LOW</option>
               </select>
             </div>
+          </div>
+
+          {/* Override Basis (enhancement 3: clause attribution) */}
+          <div>
+            <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+              Override Basis <span className="text-red-400">*</span>
+            </label>
+            <select
+              required
+              value={basis}
+              onChange={(e) => setBasis(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-200 font-mono focus:border-indigo-500 focus:outline-none"
+            >
+              <option value="">Select the clause you are overriding…</option>
+              {decision.matched_rules.map((rule) => (
+                <option key={rule} value={rule}>
+                  Cite clause: {rule}
+                </option>
+              ))}
+              <option value="POLICY_GAP">Policy gap / incomplete policy</option>
+              <option value="EXTERNAL_CONTEXT">External context not in policy</option>
+            </select>
+            <span className="text-[10px] text-slate-500 mt-0.5 block">
+              Cited clause and reason code are written to the immutable audit log.
+            </span>
           </div>
 
           {/* Justification Reason */}

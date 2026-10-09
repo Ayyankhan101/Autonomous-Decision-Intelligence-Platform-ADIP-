@@ -6,6 +6,7 @@ suggestion. Never silently overwrite one with the other.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,6 +15,7 @@ from .enums import (
     DecisionState,
     LayaStatus,
     ModelStatus,
+    OverrideReasonCode,
     OverrideType,
     Priority,
     ResourceType,
@@ -58,6 +60,27 @@ class Signals(BaseModel):
     anomaly: AnomalyOutput | None = None
 
 
+class LineageTerm(BaseModel):
+    """One normalised evidence contribution (enhancement 3: all terms on a common 0-1 scale)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    label: str
+    score: float = Field(ge=0, le=1)
+    direction: Literal["positive", "negative", "neutral"]
+    source: str
+
+
+class LineageBlock(BaseModel):
+    """Structured decision lineage: evidence scores -> decisive policy clause (enhancement 3)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    terms: list[LineageTerm] = Field(min_length=1)
+    clause_id: str | None = None
+    expression: str = Field(min_length=1)
+
+
 class LayaBlock(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -86,6 +109,8 @@ class OverrideRecord(BaseModel):
     timestamp: datetime
     previous_state: DecisionState
     previous_priority: Priority
+    cited_clause: str | None = None
+    reason_code: OverrideReasonCode | None = None
 
 
 class DecisionRecord(BaseModel):
@@ -109,3 +134,4 @@ class DecisionRecord(BaseModel):
     decision_time_simulated: datetime
     dry_run: bool = False
     override: OverrideRecord | None = None
+    lineage: LineageBlock | None = None

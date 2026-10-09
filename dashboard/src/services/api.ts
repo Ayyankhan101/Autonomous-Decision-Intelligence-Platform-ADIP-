@@ -158,6 +158,8 @@ export const api = {
     override_type: OverrideType;
     reason: string;
     new_priority?: Priority | null;
+    cited_clause?: string | null;
+    reason_code?: 'POLICY_CLAUSE' | 'POLICY_GAP' | 'EXTERNAL_CONTEXT' | null;
   }) =>
     fetchJson(`${API_BASE}/overrides`, {
       method: 'POST',
@@ -167,6 +169,8 @@ export const api = {
         override_type: params.override_type,
         reason: params.reason,
         new_priority: params.new_priority || null,
+        cited_clause: params.cited_clause ?? null,
+        reason_code: params.reason_code ?? null,
       }),
     }),
 

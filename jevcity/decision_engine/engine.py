@@ -110,27 +110,31 @@ class JevCityEngine:
         """Invariant 1: hard-invalid input never reaches models or Laya."""
         from jevcity.schemas import DataQualitySignal, SeveritySignal, Signals, TrafficSignal
 
+        from .lineage import build_lineage
+
         self._counter += 1
+        signals = Signals(
+            severity=SeveritySignal(status=ModelStatus.INVALID_INPUT),
+            traffic=TrafficSignal(status=ModelStatus.INVALID_INPUT),
+            data_quality=DataQualitySignal(
+                data_quality_score=1.0, anomaly=True,
+                reasons=["hard_invalid_input"],
+            ),
+        )
         return DecisionRecord(
             decision_id=f"dec-{self._counter:06d}",
             incident_id=incident.incident_id,
             state=DecisionState.REJECTED_INPUT,
             priority=Priority.LOW,
             matched_rules=["R-INPUT-REJECT-01"],
-            signals=Signals(
-                severity=SeveritySignal(status=ModelStatus.INVALID_INPUT),
-                traffic=TrafficSignal(status=ModelStatus.INVALID_INPUT),
-                data_quality=DataQualitySignal(
-                    data_quality_score=1.0, anomaly=True,
-                    reasons=["hard_invalid_input"],
-                ),
-            ),
+            signals=signals,
             laya=None,
             reasons=[
                 "Hard-invalid input rejected; automated priority suppressed.",
                 "; ".join(f.message for f in validation.hard_errors[:5]),
             ],
             decision_time_simulated=self.simulation.clock.now,
+            lineage=build_lineage(signals, ["R-INPUT-REJECT-01"]),
         )
 
     def decide_for(
@@ -293,6 +297,8 @@ class JevCityEngine:
                     timestamp=self.simulation.clock.now,
                     previous_state=original.state,
                     previous_priority=original.priority,
+                    cited_clause=req.cited_clause,
+                    reason_code=req.reason_code,
                 ),
                 "assigned_resource_ids": (
                     list(original.assigned_resource_ids)
@@ -317,6 +323,8 @@ class JevCityEngine:
                 original.laya, questions_version=QUESTIONS_VERSION
             ),
             timestamp=self.simulation.clock.now,
+            cited_clause=req.cited_clause,
+            reason_code=req.reason_code.value if req.reason_code else None,
         )
         if override_record.assigned_resource_ids != original.assigned_resource_ids:
             incident.assigned_resource_ids = list(

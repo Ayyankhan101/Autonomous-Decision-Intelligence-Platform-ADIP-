@@ -10,6 +10,7 @@ from .decision import DecisionRecord
 from .enums import (
     IncidentType,
     InjectionMode,
+    OverrideReasonCode,
     OverrideType,
     Priority,
     ResourceType,
@@ -115,7 +116,13 @@ class SecondEmergencyRequest(BaseModel):
 
 
 class OverrideRequest(BaseModel):
-    """Invariant 7: operator_id and reason are required (min_length=1)."""
+    """Invariant 7: operator_id and reason are required (min_length=1).
+
+    Enhancement 3 (hyper-explainable audit): when present, cited_clause names the policy
+    clause the operator overrode (or a gap marker) and reason_code classifies the
+    attribution. Both optional at the API for backward compatibility; the dashboard
+    enforces selection before submit.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -124,6 +131,8 @@ class OverrideRequest(BaseModel):
     override_type: OverrideType
     reason: str = Field(min_length=1)
     new_priority: Priority | None = None
+    cited_clause: str | None = Field(default=None, max_length=120)
+    reason_code: OverrideReasonCode | None = None
 
 
 class WhatIfRequest(BaseModel):

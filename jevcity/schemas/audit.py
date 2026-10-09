@@ -6,7 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from .decision import LayaBlock
-from .enums import DecisionSource, LayaStatus, Priority
+from .enums import DecisionSource, LayaStatus, OverrideReasonCode, Priority
 
 
 class AuditLayaMetadata(BaseModel):
@@ -71,5 +71,7 @@ class AuditEntry(BaseModel):
     model_versions: dict[str, str] = Field(default_factory=dict)
     dry_run: bool = False
     laya: AuditLayaMetadata = Field(default_factory=AuditLayaMetadata)
+    cited_clause: str | None = None
+    reason_code: OverrideReasonCode | None = None
     previous_hash: str = Field(min_length=1)
     entry_hash: str = Field(min_length=1)

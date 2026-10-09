@@ -89,6 +89,8 @@ class AuditLog:
         laya: AuditLayaMetadata | None = None,
         timestamp: datetime | None = None,
         dry_run: bool = False,
+        cited_clause: str | None = None,
+        reason_code: str | None = None,
     ) -> AuditEntry:
         if dry_run:
             raise ValueError("dry_run entries must never reach the live audit (Invariant 15)")
@@ -106,6 +108,8 @@ class AuditLog:
             policy_version=policy_version,
             model_versions=model_versions or {},
             laya=laya or AuditLayaMetadata(),
+            cited_clause=cited_clause,
+            reason_code=reason_code,
             previous_hash=self.last_hash,
             entry_hash="sha256:pending",
         )
