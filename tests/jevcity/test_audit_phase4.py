@@ -33,6 +33,9 @@ FROZEN_ROUTES = {
     ("GET", "/api/what-if/{sandbox_id}/result"),
     ("POST", "/api/simulation/start"),
     ("POST", "/api/simulation/pause"),
+    # Additive extension (plan §5.13 fixes pause/resume data loss); the 16
+    # frozen endpoints above are unchanged. start() resets — resume() does not.
+    ("POST", "/api/simulation/resume"),
     ("POST", "/api/simulation/reset"),
     ("POST", "/api/simulation/incident"),
     ("POST", "/api/simulation/bad-data"),

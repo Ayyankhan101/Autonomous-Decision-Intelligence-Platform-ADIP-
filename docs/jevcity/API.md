@@ -3,6 +3,10 @@
 Base: `http://localhost:8200` · run: `uvicorn jevcity.api.app:app --port 8200`
 JSON Schema exports (dashboard contract): `schemas/*.json` via `python -m jevcity.schemas.export`.
 
+The 16 plan-frozen endpoints below are unchanged; one **additive** endpoint
+(`POST /api/simulation/resume`) was added because `start()` resets state —
+without it, pause → resume silently wiped the session (data-loss bug).
+
 ## Reads
 
 | Method | Path | Response model |
@@ -21,6 +25,7 @@ JSON Schema exports (dashboard contract): `schemas/*.json` via `python -m jevcit
 |--------|------|------|
 | POST | `/api/simulation/start` | `{session_seed, scenario_seed, recording?, speed?}` — `recording` = JSONL filename under `datasets/jevcity/` streams the recording through the live pipeline (sync; `speed` reserved for live pacing) |
 | POST | `/api/simulation/pause` | — |
+| POST | `/api/simulation/resume` | — continue current session **without** reseed/clear (`start` resets — additive extension fixing pause/resume data loss) |
 | POST | `/api/simulation/reset` | `{session_seed, scenario_seed}` |
 | POST | `/api/simulation/incident` | `{incident_type, zone, severity?, source_id?, notes?, multi_report?}` |
 | POST | `/api/simulation/bad-data` | `{mode: missing_fields\|out_of_range\|conflicting_reports\|adversarial_notes, target_incident_id?}` |

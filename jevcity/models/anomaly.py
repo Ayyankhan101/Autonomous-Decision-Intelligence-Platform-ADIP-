@@ -80,6 +80,9 @@ class AnomalyDetector:
         reasons = [f"dq_model_score:{score:.2f}"]
         if contradictions:
             reasons.extend(sorted(set(contradictions))[:3])
+            # Plan: contradictory reports reduce confidence and route to human
+            # review — force anomaly flag regardless of fitted weights.
+            score = max(score, 0.5)
         soft_codes = {w.code for w in validation.soft_warnings}
         if "injected_data" in soft_codes:
             score = max(score, 0.5)

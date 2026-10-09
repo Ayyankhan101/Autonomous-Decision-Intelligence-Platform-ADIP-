@@ -30,10 +30,15 @@ export function App() {
   const [activeTab, setActiveTab] = useState<'command' | 'whatif' | 'audit'>('command');
   const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
 
-  const contentionCount = decisions.filter((d) => d.state === 'CONTENTION_ESCALATION').length;
-  const badDataCount =
-    incidents.filter((i) => i.validation_status === 'hard_rejected').length +
-    decisions.filter((d) => d.state === 'REJECTED_INPUT').length;
+  const contentionCount = new Set(
+    decisions.filter((d) => d.state === 'CONTENTION_ESCALATION').map((d) => d.incident_id),
+  ).size;
+  const badDataCount = new Set(
+    [
+      ...incidents.filter((i) => i.validation_status === 'hard_rejected').map((i) => i.incident_id),
+      ...decisions.filter((d) => d.state === 'REJECTED_INPUT').map((d) => d.incident_id),
+    ],
+  ).size;
 
   const handleTogglePlayPause = async () => {
     if (!state) return;
@@ -41,10 +46,7 @@ export function App() {
       if (state.running) {
         await api.pauseSimulation();
       } else {
-        await api.startSimulation({
-          session_seed: state.session_seed,
-          scenario_seed: state.scenario_seed,
-        });
+        await api.resumeSimulation();
       }
       refresh();
     } catch {
@@ -131,6 +133,8 @@ export function App() {
                   running={state?.running ?? false}
                   sessionSeed={state?.session_seed ?? 42}
                   scenarioSeed={state?.scenario_seed ?? 7}
+                  incidentCount={state?.incident_count ?? 0}
+                  decisionCount={state?.decision_count ?? 0}
                   onRefresh={refresh}
                 />
               </div>
