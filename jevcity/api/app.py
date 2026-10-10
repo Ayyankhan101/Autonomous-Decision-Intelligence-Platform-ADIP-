@@ -42,12 +42,22 @@ from jevcity.schemas import (
     StatePayload,
     SybilFloodRequest,
     SybilFloodResponse,
+    UploadRequest,
+    UploadResponse,
+    FactsResponse,
+    VisionAttachRequest,
+    VisionAttachResponse,
+    VisionMode,
+    VisionModeRequest,
+    VisionModeResponse,
     WhatIfRequest,
     WhatIfResult,
 )
 from jevcity.simulation.replay import load_recording, stream
 from jevcity.simulation.seeds import SeedConfig
 from jevcity.simulation.state import SimulationState
+from vision.analyzer import VisionAnalyzer
+from vision.store import ImageStore, decode_b64, sniff_mime
 
 
 def build_engine(
@@ -77,6 +87,8 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
     )
     SANDBOX_STORE_MAX = 50
     sandbox_store: dict[str, WhatIfResult] = {}
+    vision_analyzer = VisionAnalyzer(mode=VisionMode.MOCK)
+    image_store = ImageStore(Path("datasets/vision/images"))
 
     def _decisions_for(incident_id: str) -> list[DecisionRecord]:
         return [d for d in engine.decision_history if d.incident_id == incident_id]
@@ -334,6 +346,53 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
         if result is None:
             raise HTTPException(404, f"unknown sandbox {sandbox_id}")
         return result
+
+    # --- Vision evidence (additive beyond the frozen 16) ----------------
+
+    @app.post("/api/images", response_model=UploadResponse)
+    def upload_image(req: UploadRequest) -> UploadResponse:
+        try:
+            data = decode_b64(req.image_b64)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
+        mime = sniff_mime(data)
+        if mime is None:
+            raise HTTPException(status_code=422,
+                                detail="unrecognized image format (PNG/JPEG/WebP only)")
+        image_id = image_store.put(data, mime)
+        facts = vision_analyzer.analyze(data, image_path=image_store.path(image_id))
+        image_store.set_facts(image_id, facts)
+        return UploadResponse(image_id=image_id, mime=mime, facts=facts)
+
+    @app.get("/api/images/{image_id}/facts", response_model=FactsResponse)
+    def get_image_facts(image_id: str) -> FactsResponse:
+        meta = image_store.meta(image_id)
+        if meta is None:
+            raise HTTPException(status_code=404, detail="image_id not found")
+        return FactsResponse(image_id=image_id, facts=meta.facts)
+
+    @app.post("/api/incidents/{incident_id}/images",
+              response_model=VisionAttachResponse)
+    def attach_image_to_incident(incident_id: str, req: VisionAttachRequest
+                                 ) -> VisionAttachResponse:
+        meta = image_store.meta(req.image_id)
+        if meta is None:
+            raise HTTPException(status_code=404, detail="image_id not found")
+        facts = meta.facts or vision_analyzer.analyze(
+            image_store.get_bytes(req.image_id) or b"",
+            image_path=image_store.path(req.image_id),
+        )
+        try:
+            attachment = engine.attach_image(incident_id, facts)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="incident_id not found") from exc
+        return VisionAttachResponse(incident_id=incident_id, vision=attachment)
+
+    @app.post("/api/vision/mode", response_model=VisionModeResponse)
+    def vision_mode_switch(req: VisionModeRequest) -> VisionModeResponse:
+        previous = vision_analyzer.mode
+        vision_analyzer.mode = req.mode
+        return VisionModeResponse(previous_mode=previous, mode=req.mode)
 
     dist_dir = Path(__file__).resolve().parents[2] / "dashboard" / "dist"
     if dist_dir.exists():

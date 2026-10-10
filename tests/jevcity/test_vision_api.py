@@ -97,3 +97,83 @@ def test_attach_unknown_incident_raises_key_error():
         raise AssertionError("expected KeyError")
     except KeyError:
         pass
+
+
+# --- API routes (Task 7) -------------------------------------------------
+
+import base64
+from pathlib import Path
+
+from fastapi.testclient import TestClient
+
+from jevcity.api.app import build_engine, create_app
+
+PNG_B64 = base64.b64encode(Path("fixtures/vision/scene.png").read_bytes()).decode()
+
+
+def _started_client():
+    engine = build_engine()
+    client = TestClient(create_app(engine))
+    client.post("/api/simulation/start", json={"session_seed": 42, "scenario_seed": 7})
+    return engine, client
+
+
+def test_upload_extract_and_facts_get():
+    _, client = _started_client()
+    r = client.post("/api/images", json={"image_b64": PNG_B64})
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body["image_id"]) == 64
+    assert body["mime"] == "image/png"
+    assert body["facts"]["status"] == "ok"
+
+    r2 = client.get(f"/api/images/{body['image_id']}/facts")
+    assert r2.status_code == 200
+    assert r2.json()["facts"]["image_sha256"] == body["image_id"]
+
+
+def test_upload_422_battery():
+    _, client = _started_client()
+    bad = [
+        {"image_b64": ""},                                         # empty
+        {"image_b64": base64.b64encode(b"not an image").decode()},  # bad magic
+        {"image_b64": "!!!not-base64!!!"},                          # bad encoding
+        {"image_b64": PNG_B64, "extra": 1},                        # extra=forbid
+    ]
+    for payload in bad:
+        r = client.post("/api/images", json=payload)
+        assert r.status_code == 422, payload
+
+
+def test_attach_to_incident_and_404s():
+    _, client = _started_client()
+    img = client.post("/api/images", json={"image_b64": PNG_B64}).json()
+    inc = client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "accident", "zone": "north", "severity": "minor"},
+    ).json()
+    incident_id = inc["incident_id"]
+
+    r = client.post(f"/api/incidents/{incident_id}/images",
+                    json={"image_id": img["image_id"]})
+    assert r.status_code == 200
+    assert r.json()["vision"]["facts"]["scene"]
+    got = client.get(f"/api/incidents/{incident_id}").json()
+    assert got["incident"]["vision"]["image_id"] == img["image_id"]
+
+    # 404s
+    assert client.get("/api/images/" + "0" * 64 + "/facts").status_code == 404
+    assert client.post("/api/incidents/inc-nope/images",
+                       json={"image_id": img["image_id"]}).status_code == 404
+    assert client.post(f"/api/incidents/{incident_id}/images",
+                       json={"image_id": "0" * 64}).status_code == 404
+
+
+def test_vision_mode_switch_mirrors_laya_mode():
+    _, client = _started_client()
+    r = client.post("/api/vision/mode", json={"mode": "cache"})
+    assert r.status_code == 200
+    assert r.json() == {"previous_mode": "mock", "mode": "cache"}
+    assert client.post("/api/vision/mode", json={"mode": "quantum"}).status_code == 422
+    assert client.post("/api/vision/mode",
+                       json={"mode": "live", "extra": 1}).status_code == 422
