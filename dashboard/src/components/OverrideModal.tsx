@@ -126,7 +126,7 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
         decision_id: decision.decision_id,
         override_type: overrideType,
         reason: reason.trim(),
-        new_priority: newPriority || null,
+        new_priority: overrideType === 'CHANGE_PRIORITY' ? newPriority : null,
         cited_clause: isClause ? basis : null,
         reason_code: isClause
           ? 'POLICY_CLAUSE'
