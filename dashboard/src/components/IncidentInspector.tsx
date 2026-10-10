@@ -17,6 +17,7 @@ import type {
   IncidentRecord,
   Priority,
 } from '../types/api';
+import { VisionEvidence } from './VisionEvidence';
 
 interface IncidentInspectorProps {
   incident: IncidentRecord | null;
@@ -128,6 +129,9 @@ export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
               <span className="text-slate-500">Notes:</span> {incident.notes}
             </div>
           )}
+
+          {/* Vision evidence (evidence, not authority) */}
+          <VisionEvidence incidentId={incident.incident_id} vision={incident.vision} />
         </div>
 
         {/* Human Override Trigger */}

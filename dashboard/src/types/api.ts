@@ -142,6 +142,57 @@ export interface IncidentRecord {
   report_count: number;
   assigned_resource_ids: string[];
   notes?: string | null;
+  severity_hint?: 'minor' | 'moderate' | 'severe' | null;
+  vision?: VisionAttachment | null;
+}
+
+export type VisionStatus = 'ok' | 'unavailable' | 'invalid_response';
+export type SceneType =
+  | 'accident'
+  | 'fire'
+  | 'flood'
+  | 'traffic'
+  | 'other'
+  | 'unknown';
+export type DamageSeverity = 'low' | 'medium' | 'high' | 'unknown';
+
+export interface VisionFacts {
+  image_sha256: string;
+  scene: SceneType;
+  objects: string[];
+  damage_severity: DamageSeverity;
+  injuries_visible: boolean | null;
+  confidence: Record<string, number>;
+  model_id: string;
+  model_version: string;
+  mode: 'mock' | 'cache' | 'live';
+  latency_ms: number;
+  status: VisionStatus;
+  error_code?: string | null;
+}
+
+export interface ValidationFinding {
+  severity: 'hard' | 'soft';
+  code: string;
+  message: string;
+}
+
+export interface VisionAttachment {
+  image_id: string;
+  facts: VisionFacts;
+  soft_findings: ValidationFinding[];
+  latest_decision_id?: string | null;
+}
+
+export interface UploadResponse {
+  image_id: string;
+  mime: string;
+  facts: VisionFacts;
+}
+
+export interface VisionAttachResponse {
+  incident_id: string;
+  vision: VisionAttachment;
 }
 
 export interface ModelOutput {
