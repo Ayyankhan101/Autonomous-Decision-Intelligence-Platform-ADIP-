@@ -9,14 +9,17 @@ from .schema import (
     VisionMode,
     VisionStatus,
 )
+from .store import ImageStore, sniff_mime
 
 __all__ = [
     "DamageSeverity",
     "FactsResponse",
+    "ImageStore",
     "SceneType",
     "UploadRequest",
     "UploadResponse",
     "VisionFacts",
     "VisionMode",
     "VisionStatus",
+    "sniff_mime",
 ]
