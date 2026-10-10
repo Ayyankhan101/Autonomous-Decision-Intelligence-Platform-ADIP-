@@ -69,9 +69,14 @@ What-If results always carry `dry_run=true, audit_written=false, live_state_muta
   "open_incident_count": 3,
   "available_resources": {"ambulance": 5, "fire_truck": 3, "...": 0},
   "laya_mode": "mock",
-  "last_laya_status": "ok"
+  "last_laya_status": "ok",
+  "audit_write_failed": false
 }
 ```
+
+`audit_write_failed` (optional, default `false`): turns `true` while the append-only
+audit log rejects a write (engine catches the error instead of 500-ing); the dashboard
+shows the AUDIT WRITE FAILED banner. Cleared by the next successful write or `/api/simulation/reset`.
 
 ## Errors
 

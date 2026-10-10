@@ -69,6 +69,7 @@ class JevCityEngine:
         self.decision_history: list[DecisionRecord] = []
         self.validation_by_event: dict[str, ValidationResult] = {}
         self.policy_position: PolicyPosition = PolicyPosition.RESPONSE_TIME
+        self.audit_write_failed: bool = False
         self._processed = 0
         self._counter = 0
 
@@ -262,27 +263,34 @@ class JevCityEngine:
         incident: IncidentRecord,
         validation: ValidationResult,
     ) -> None:
+        """Audit failure must not crash the live path — flag it so the state payload
+        surfaces an audit-write-failed banner (phase-5 UI state) instead of a 500."""
         laya = record.laya
-        self.audit.append(
-            actor="system",
-            action="DECISION_EMITTED",
-            reason="; ".join(record.reasons)[:1900],
-            before_state=incident.lifecycle.value,
-            after_state=record.state.value,
-            decision_id=record.decision_id,
-            incident_id=record.incident_id,
-            policy_version=record.policy_version,
-            model_versions={
-                "severity": self.severity.version,
-                "traffic": self.traffic.version,
-                "anomaly": self.anomaly.version,
-                "laya_checkpoint": laya.checkpoint if laya else "none",
-            },
-            laya=AuditLayaMetadata.from_laya_block(
-                laya, questions_version=QUESTIONS_VERSION
-            ),
-            timestamp=self.simulation.clock.now,
-        )
+        try:
+            self.audit.append(
+                actor="system",
+                action="DECISION_EMITTED",
+                reason="; ".join(record.reasons)[:1900],
+                before_state=incident.lifecycle.value,
+                after_state=record.state.value,
+                decision_id=record.decision_id,
+                incident_id=record.incident_id,
+                policy_version=record.policy_version,
+                model_versions={
+                    "severity": self.severity.version,
+                    "traffic": self.traffic.version,
+                    "anomaly": self.anomaly.version,
+                    "laya_checkpoint": laya.checkpoint if laya else "none",
+                },
+                laya=AuditLayaMetadata.from_laya_block(
+                    laya, questions_version=QUESTIONS_VERSION
+                ),
+                timestamp=self.simulation.clock.now,
+            )
+        except Exception:
+            self.audit_write_failed = True
+        else:
+            self.audit_write_failed = False
 
     # --- overrides (Invariant 7) ----------------------------------------
 

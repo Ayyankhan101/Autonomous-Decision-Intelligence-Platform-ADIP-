@@ -119,6 +119,7 @@ export interface StatePayload {
   last_laya_status?: string | null;
   policy_position?: PolicyPosition;
   objective_weights?: Record<string, number>;
+  audit_write_failed?: boolean;
 }
 
 export interface Resource {

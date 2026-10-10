@@ -43,6 +43,11 @@ class StatePayload(BaseModel):
     last_laya_status: str | None = None
     policy_position: PolicyPosition = PolicyPosition.RESPONSE_TIME
     objective_weights: dict[str, float] = Field(default_factory=dict)
+    audit_write_failed: bool = Field(
+        default=False,
+        description="True while the append-only audit log rejects writes; the dashboard "
+        "shows a banner because the trail may be incomplete (phase-5 UI state).",
+    )
 
 
 class IncidentResponse(BaseModel):
