@@ -30,6 +30,15 @@ MODELS = {
     "policy_position_response": "PolicyPositionResponse",
     "what_if_request": "WhatIfRequest",
     "what_if_result": "WhatIfResult",
+    "vision_facts": "VisionFacts",
+    "upload_request": "UploadRequest",
+    "upload_response": "UploadResponse",
+    "facts_response": "FactsResponse",
+    "vision_attachment": "VisionAttachment",
+    "vision_attach_request": "VisionAttachRequest",
+    "vision_attach_response": "VisionAttachResponse",
+    "vision_mode_request": "VisionModeRequest",
+    "vision_mode_response": "VisionModeResponse",
 }
 
 

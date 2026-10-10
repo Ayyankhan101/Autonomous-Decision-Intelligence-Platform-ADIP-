@@ -1,0 +1,30 @@
+{
+  "additionalProperties": false,
+  "description": "Shared JSON-base64 upload body (POST /api/images and POST /images).",
+  "properties": {
+    "filename": {
+      "anyOf": [
+        {
+          "maxLength": 255,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Filename"
+    },
+    "image_b64": {
+      "maxLength": 7000000,
+      "minLength": 1,
+      "title": "Image B64",
+      "type": "string"
+    }
+  },
+  "required": [
+    "image_b64"
+  ],
+  "title": "UploadRequest",
+  "type": "object"
+}

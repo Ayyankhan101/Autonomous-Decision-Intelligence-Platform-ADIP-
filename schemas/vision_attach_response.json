@@ -10,28 +10,6 @@
       "title": "DamageSeverity",
       "type": "string"
     },
-    "IncidentLifecycle": {
-      "enum": [
-        "detected",
-        "validated",
-        "prioritized",
-        "resource_assigned",
-        "active",
-        "resolved"
-      ],
-      "title": "IncidentLifecycle",
-      "type": "string"
-    },
-    "IncidentType": {
-      "enum": [
-        "accident",
-        "fire",
-        "flood",
-        "traffic_spike"
-      ],
-      "title": "IncidentType",
-      "type": "string"
-    },
     "SceneType": {
       "enum": [
         "accident",
@@ -42,15 +20,6 @@
         "unknown"
       ],
       "title": "SceneType",
-      "type": "string"
-    },
-    "SeverityHint": {
-      "enum": [
-        "minor",
-        "moderate",
-        "severe"
-      ],
-      "title": "SeverityHint",
       "type": "string"
     },
     "ValidationFinding": {
@@ -77,15 +46,6 @@
       ],
       "title": "ValidationFinding",
       "type": "object"
-    },
-    "ValidationStatus": {
-      "enum": [
-        "valid",
-        "soft_flagged",
-        "hard_rejected"
-      ],
-      "title": "ValidationStatus",
-      "type": "string"
     },
     "VisionAttachment": {
       "additionalProperties": false,
@@ -228,115 +188,22 @@
       ],
       "title": "VisionStatus",
       "type": "string"
-    },
-    "Zone": {
-      "enum": [
-        "north",
-        "south",
-        "east",
-        "west",
-        "central"
-      ],
-      "title": "Zone",
-      "type": "string"
     }
   },
   "additionalProperties": false,
   "properties": {
-    "assigned_resource_ids": {
-      "items": {
-        "type": "string"
-      },
-      "title": "Assigned Resource Ids",
-      "type": "array"
-    },
-    "first_seen_simulated": {
-      "format": "date-time",
-      "title": "First Seen Simulated",
-      "type": "string"
-    },
     "incident_id": {
       "title": "Incident Id",
       "type": "string"
     },
-    "incident_type": {
-      "$ref": "#/$defs/IncidentType"
-    },
-    "latest_simulated": {
-      "format": "date-time",
-      "title": "Latest Simulated",
-      "type": "string"
-    },
-    "lifecycle": {
-      "$ref": "#/$defs/IncidentLifecycle",
-      "default": "detected"
-    },
-    "notes": {
-      "anyOf": [
-        {
-          "maxLength": 500,
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "description": "Free-text notes carried from the originating report (display-only; never enters the Laya state, Invariant 16).",
-      "title": "Notes"
-    },
-    "report_count": {
-      "default": 0,
-      "minimum": 0,
-      "title": "Report Count",
-      "type": "integer"
-    },
-    "severity_hint": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/SeverityHint"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "description": "Severity hint carried from the first registered report (used by vision soft-flag comparison; display/audit only)."
-    },
-    "source_ids": {
-      "items": {
-        "type": "string"
-      },
-      "title": "Source Ids",
-      "type": "array"
-    },
-    "validation_status": {
-      "$ref": "#/$defs/ValidationStatus",
-      "default": "valid"
-    },
     "vision": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/VisionAttachment"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "description": "Vision evidence attached post-decision (display + soft flags only; never writes severity)."
-    },
-    "zone": {
-      "$ref": "#/$defs/Zone"
+      "$ref": "#/$defs/VisionAttachment"
     }
   },
   "required": [
     "incident_id",
-    "incident_type",
-    "zone",
-    "first_seen_simulated",
-    "latest_simulated"
+    "vision"
   ],
-  "title": "IncidentRecord",
+  "title": "VisionAttachResponse",
   "type": "object"
 }

@@ -1,0 +1,14 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "image_id": {
+      "title": "Image Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "image_id"
+  ],
+  "title": "VisionAttachRequest",
+  "type": "object"
+}

@@ -1,0 +1,153 @@
+{
+  "$defs": {
+    "DamageSeverity": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "unknown"
+      ],
+      "title": "DamageSeverity",
+      "type": "string"
+    },
+    "SceneType": {
+      "enum": [
+        "accident",
+        "fire",
+        "flood",
+        "traffic",
+        "other",
+        "unknown"
+      ],
+      "title": "SceneType",
+      "type": "string"
+    },
+    "VisionFacts": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Confidence",
+          "type": "object"
+        },
+        "damage_severity": {
+          "$ref": "#/$defs/DamageSeverity",
+          "default": "unknown"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Code"
+        },
+        "image_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Image Sha256",
+          "type": "string"
+        },
+        "injuries_visible": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Injuries Visible"
+        },
+        "latency_ms": {
+          "minimum": 0,
+          "title": "Latency Ms",
+          "type": "number"
+        },
+        "mode": {
+          "$ref": "#/$defs/VisionMode"
+        },
+        "model_id": {
+          "title": "Model Id",
+          "type": "string"
+        },
+        "model_version": {
+          "title": "Model Version",
+          "type": "string"
+        },
+        "objects": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Objects",
+          "type": "array"
+        },
+        "scene": {
+          "$ref": "#/$defs/SceneType",
+          "default": "unknown"
+        },
+        "status": {
+          "$ref": "#/$defs/VisionStatus",
+          "default": "ok"
+        }
+      },
+      "required": [
+        "image_sha256",
+        "model_id",
+        "model_version",
+        "mode",
+        "latency_ms"
+      ],
+      "title": "VisionFacts",
+      "type": "object"
+    },
+    "VisionMode": {
+      "enum": [
+        "mock",
+        "cache",
+        "live"
+      ],
+      "title": "VisionMode",
+      "type": "string"
+    },
+    "VisionStatus": {
+      "enum": [
+        "ok",
+        "unavailable",
+        "invalid_response"
+      ],
+      "title": "VisionStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "facts": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VisionFacts"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "image_id": {
+      "title": "Image Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "image_id"
+  ],
+  "title": "FactsResponse",
+  "type": "object"
+}
