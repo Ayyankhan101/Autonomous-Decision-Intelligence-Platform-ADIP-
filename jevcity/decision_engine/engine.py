@@ -340,6 +340,9 @@ class JevCityEngine:
         new_priority: Priority | None,
     ) -> friction.FrictionAssessment:
         """Rule-based impact preview (enhancement 4). Read-only: no state/audit writes."""
+        if override_type != OverrideType.CHANGE_PRIORITY:
+            # stray new_priority on other override types is not a priority raise
+            new_priority = None
         decision = self.decisions.get(decision_id)
         if decision is None:
             raise KeyError(f"unknown decision {decision_id}")
@@ -365,9 +368,14 @@ class JevCityEngine:
             raise KeyError(f"unknown decision {req.decision_id}")
         if req.override_type == OverrideType.CHANGE_PRIORITY and req.new_priority is None:
             raise ValueError("CHANGE_PRIORITY requires new_priority")
-        new_priority = req.new_priority or original.priority
+        # new_priority is meaningful only for CHANGE_PRIORITY: a stray value on any
+        # other override type must not be graded as a priority raise (preview parity).
+        effective_new = (
+            req.new_priority if req.override_type == OverrideType.CHANGE_PRIORITY else None
+        )
+        new_priority = effective_new or original.priority
         assessment = self.assess_override(
-            req.decision_id, req.override_type, req.new_priority
+            req.decision_id, req.override_type, effective_new
         )
         friction.enforce(assessment, req)
         self._counter += 1
@@ -542,6 +550,7 @@ class JevCityEngine:
             ),
             before_state=previous.value,
             after_state=position.value,
+            timestamp=self.simulation.clock.now,
         )
         return {
             "previous_position": previous,

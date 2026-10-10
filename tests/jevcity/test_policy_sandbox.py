@@ -127,6 +127,9 @@ def test_switch_report_and_audit(client, engine):
     switch_entries = [a for a in audit if a["action"] == "POLICY_POSITION_SWITCHED"]
     assert len(switch_entries) == 1
     assert "RESPONSE_TIME -> ECO" in switch_entries[0]["reason"]
+    # audit stamps come from the simulation clock, never host wall time
+    # (ARCHITECTURE.md: no host wall-clock anywhere)
+    assert switch_entries[0]["timestamp"].startswith("2026-09-27T10:")
 
     state = client.get("/api/state").json()
     assert state["policy_position"] == "ECO"

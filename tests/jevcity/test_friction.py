@@ -131,6 +131,43 @@ def test_dismiss_with_assigned_units_is_high(client):
     assert "releases" in r.json()["warning"]
 
 
+def test_stray_new_priority_on_non_change_type_is_ignored(client):
+    """A CRITICAL new_priority sent with DISMISS must not grade as a priority raise.
+
+    Regression: the dashboard's override modal sent its default CRITICAL priority
+    for every override type, so a HIGH-tier DISMISS on a life-safety incident was
+    rejected 422 BREAK_GLASS by apply while the impact preview said HIGH.
+    """
+    _start(client)
+    body = _inject(client, incident_type="fire", zone="south", severity="severe")
+    did = body["decision_ids"][0]
+    r = client.post(
+        "/api/overrides/impact",
+        json={"decision_id": did, "override_type": "DISMISS_INCIDENT",
+              "new_priority": "CRITICAL"},
+    )
+    assert r.status_code == 200
+    assert r.json()["tier"] == "HIGH"
+    assert r.json()["requires_break_glass"] is False
+
+    r2 = client.post(
+        "/api/overrides",
+        json={"operator_id": "op-1", "decision_id": did,
+              "override_type": "DISMISS_INCIDENT", "reason": "scene cleared",
+              "new_priority": "CRITICAL", "impact_ack": True,
+              "context_code": OverrideContextCode.SCENE_REPORT.value},
+    )
+    assert r2.status_code == 200
+    assert r2.json()["impact_tier"] == "HIGH"
+    assert r2.json()["break_glass"] is False
+    active = [
+        d for d in client.get("/api/decisions").json()["decisions"]
+        if d["state"] == "OVERRIDE_ACTIVE"
+    ]
+    assert len(active) == 1
+    assert active[0]["priority"] == r2.json()["previous_priority"]
+
+
 def test_low_tier_override_needs_no_extra_fields(client):
     _start(client)
     body = _inject(client, incident_type="flood", zone="east", severity="moderate")
