@@ -550,6 +550,16 @@ def _live_snapshot(engine) -> dict:
         "veracity": dict(engine.trust.veracity),
         "availability": dict(engine.trust.availability),
         "audit": engine.audit.chain_report()["entry_count"],
+        "rng_session": sim.session_rng.getstate(),
+        "rng_scenario": sim.scenario_rng.getstate(),
+        "processed": engine._processed,
+        "pool": sorted(
+            (r.resource_id, str(r.status), r.assigned_incident_id)
+            for r in sim.pool.all()
+        ),
+        "decisions": len(engine.decisions),
+        "history": len(engine.decision_history),
+        "validations": len(engine.validation_by_event),
     }
 
 
