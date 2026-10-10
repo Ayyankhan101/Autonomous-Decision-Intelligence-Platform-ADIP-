@@ -19,6 +19,11 @@ the same laya-mlx platform, per `JevCity_Implementation_Plan_Revised_v2_Laya.doc
   decision **lineage** on request (E3), server-classified **override friction tiers**
   (E4, LOW/HIGH/BREAK_GLASS), plus demo-liveness endpoints (`GET /api/audit/verify`,
   hot-swap `POST /api/simulation/laya-mode`). All QA-verified.
+- **Vision evidence** (shared `vision/` package, also on ADIP): image upload →
+  local MLX VLM (`mock | cache | live`, fail-closed) → structured `VisionFacts`
+  attached to incidents as **evidence, not authority** (soft flag
+  `severity_mismatch_vision`, dashboard card, sim-clock audit entry; guardrail and
+  ML triad unchanged). Live mode needs `uv sync --extra vision`.
 - Docs: [`docs/jevcity/PHASE0_SIGNOFF.md`](docs/jevcity/PHASE0_SIGNOFF.md) (22-item gate),
   [`ERRATA.md`](docs/jevcity/ERRATA.md) (plan-vs-repo resolutions),
   [`ARCHITECTURE.md`](docs/jevcity/ARCHITECTURE.md), [`API.md`](docs/jevcity/API.md),
@@ -32,9 +37,10 @@ the same laya-mlx platform, per `JevCity_Implementation_Plan_Revised_v2_Laya.doc
   [`LAYA_FAILURE_MODES.md`](docs/jevcity/LAYA_FAILURE_MODES.md),
   [`PROFESSIONAL_PRACTICES.md`](docs/jevcity/PROFESSIONAL_PRACTICES.md),
   [`QA.md`](docs/jevcity/QA.md) (test-loop findings + known limitations).
-- API (port **8200**): `uvicorn jevcity.api.app:app --port 8200` — 22 endpoints
-  (16 plan-frozen + 6 additive) incl. simulation controls, overrides (actor+reason
-  enforced, friction tiers), What-If (`dry_run`, zero live writes).
+- API (port **8200**): `uvicorn jevcity.api.app:app --port 8200` — 26 endpoints
+  (16 plan-frozen + 10 additive) incl. simulation controls, overrides (actor+reason
+  enforced, friction tiers), What-If (`dry_run`, zero live writes), and vision
+  evidence (upload/facts/attach/mode).
 - Command Center dashboard (`dashboard/`, React + TS + Vite): map layer, incident inspector
   with Laya advisory vs policy split, simulation/bad-data controls, override modal, audit
   viewer, What-If sandbox. Built assets are served by the API at `/` (when `dashboard/dist`
@@ -67,7 +73,7 @@ flowchart TD
     OVR["OVERRIDE (E4)\nLOW | HIGH | BREAK_GLASS\nactor + reason · impact tiers"]:::decision
     WIF["WHAT-IF SANDBOX\ndry-run · isolated scope\nzero live writes"]:::decision
 
-    API["FastAPI :8200 · 22 routes"]:::infra
+    API["FastAPI :8200 · 26 routes"]:::infra
     DASH["Command Center (React)\n1.5 s poll · UTC clocks"]:::infra
 
     EVT --> VAL --> FEAT --> ML --> LAYA --> GUARD --> ALLOC --> DEC
@@ -348,15 +354,16 @@ with nodes.
 - **Serving:** FastAPI; one uvicorn worker per agent — **built and measured** (`serving/`): end-to-end **P50 79.5 ms / P95 125.8 ms** over the golden set (200-call load test: 93.7 / 256.4 ms), inside the ≤150 ms / ≤400 ms KPI; replayable SQLite WAL audit verified bit-for-bit; Prometheus `/metrics`; optional bearer auth (`ADIP_API_TOKEN`); failed calls still land in the audit table as `route=ERROR`
 - **Privacy:** regex redaction ships today (EMAIL / PHONE / CARD / ORDER / PERSON); Microsoft Presidio swap-in is Phase 1; k-anonymity on exports
 - **Storage:** SQLite (WAL) → PostgreSQL; Prometheus `/metrics` + Grafana
-- **CI:** `.github/workflows/ci.yml` — `ubuntu-latest` runs ruff + the model-free test suite (307 tests) on every push/PR; `macos-14` runs the strict eval (`pytest -m model`) on `main` / manual dispatch with the checkpoint cached
+- **CI:** `.github/workflows/ci.yml` — `ubuntu-latest` runs ruff + the model-free test suite (333 tests) on every push/PR; `macos-14` runs the strict eval (`pytest -m model`) on `main` / manual dispatch with the checkpoint cached
 
 ## Build & run
 
 ```bash
 uv sync --frozen                      # or: UV_PROJECT_ENVIRONMENT=.venv-bench uv sync --frozen --inexact
+uv sync --frozen --extra vision       # optional: mlx-vlm for live vision evidence (model tier)
 uv run ruff check .                   # lint (E9, F)
-uv run pytest -q                      # 307 model-free tests (addopts deselects the 4 model-tier tests)
-uv run pytest -q -m model             # strict eval against the checkpoint (macOS + weights)
+uv run pytest -q                      # 333 model-free tests (addopts deselects the 6 model-tier tests)
+uv run pytest -q -m model             # strict eval against the checkpoint (macOS + weights); incl. 2 vision live smokes
 
 uvicorn serving.app:app --port 8100   # API: /decide, /audit/{id}/replay, /healthz, /metrics
 uv run python serving/loadtest.py --rounds 4          # KPI gates (exit 1 on failure)
@@ -385,7 +392,7 @@ pnpm --dir dashboard dev                             # dashboard dev server (pro
 - [`evals/`](evals/README.md) — eval runner: macro-F1, ECE, Brier, confusion matrix vs the frozen golden set; calibration (`calibrate.py`, `calibrate_dept.py`) + stored per-record predictions
 - [`datasets/golden-set/`](datasets/golden-set/README.md) — triage eval dataset: schema, labeling guidelines, exemplars, validator, AI-3 QC worksheet
 - [`serving/`](serving/README.md) — Phase 0 pipeline: DecisionService, FastAPI `/decide` + `/audit/{id}/replay` + `/metrics`, load-test tool
-- [`tests/`](tests/) — 307 model-free tests (decision rules, config↔artifact consistency, pipeline, HTTP contract, gate exit codes, JevCity invariants/API/audit/dashboard) + `pytest -m model` (4 tests incl. 3 live-checkpoint smokes)
+- [`tests/`](tests/) — 333 model-free tests (decision rules, config↔artifact consistency, pipeline, HTTP contract, gate exit codes, JevCity invariants/API/audit/dashboard/vision) + `pytest -m model` (6 tests incl. 3 live-checkpoint smokes and 2 mlx-vlm vision smokes)
 
 ## Attribution & licensing
 

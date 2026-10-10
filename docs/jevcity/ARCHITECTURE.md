@@ -53,6 +53,32 @@ Guardrail order: hard reject → model failure → signal combination (2-signal 
   (`{ok, entry_count, broken_at}`); `POST /api/simulation/laya-mode` hot-swaps the adapter
   mock|cache|live at runtime (live loads lazily, fail-closed routing unchanged).
 
+## Vision evidence (image input)
+
+Shared `vision/` package (used by JevCity and ADIP): image upload → local MLX VLM →
+structured `VisionFacts` (`vision/schema.py`: scene, objects, damage severity,
+per-field confidence, model id/version, status). `VisionAnalyzer`
+(`vision/analyzer.py`) deliberately mirrors `LayaAdapter`: **mock** derives facts
+purely from the image sha256 (byte-deterministic — seeded demos stay identical),
+**cache** is keyed by sha256, **live** runs `mlx-vlm` (optional extra
+`uv sync --extra vision`; model `mlx-community/Qwen2.5-VL-3B-Instruct-4bit`) in a
+daemon thread with wall-clock timeout; failures (timeout, model error, malformed
+output) fail closed to `UNAVAILABLE`/`INVALID_RESPONSE` — never guessed fields.
+Images are content-addressed on disk (`datasets/vision/images/`, gitignored,
+50-entry registry cap like the what-if store; no wall-clock timestamps anywhere in
+image metadata).
+
+**Evidence, not authority:** facts attach post-decision via
+`POST /api/incidents/{id}/images` → `IncidentRecord.vision` (display + audit) and the
+only policy lever is the soft validation finding `severity_mismatch_vision`
+(vision damage ≥ 2 ranks above the reported severity hint; `vision_findings.py`) —
+no severity writes, no ML-triad changes, Invariant 16 untouched. Attach emits a
+`VISION_ATTACHED` audit entry stamped with the simulation clock; the chain stays
+valid. ADIP mirrors the upload at `POST /images` and accepts optional
+`/decide.image_ids`: evidence suffixes the explanation and lands in the
+`vision_json` audit column without touching `decision_json`, so replay stays
+bit-for-bit.
+
 ## Confidence gates (§5.8)
 
 ```
@@ -154,7 +180,7 @@ recreated by a process restart (default `:memory:` store).
 **Operator identity:** `operator_id` = opaque non-empty string (no directory/authn in MVP);
 actor `system` is reserved for engine-emitted entries. **Read-only guarantee:** the only
 audit route is `GET /api/audit` (plus read-only `GET /api/audit/verify`) — no
-PUT/PATCH/DELETE route exists (16 plan-frozen routes unchanged + 6 additive = 22,
+PUT/PATCH/DELETE route exists (16 plan-frozen routes unchanged + 10 additive = 26,
 ledger asserted in `tests/jevcity/test_audit_phase4.py`) and SQL triggers abort
 mutations.
 
@@ -190,7 +216,7 @@ namespace (Inv 6/15).
 
 React + TypeScript + Vite + Tailwind app in `dashboard/`, built to `dashboard/dist` and
 served by the API at `/` (`StaticFiles` mount, skipped when `dist` is absent; `/api/*`
-routes unaffected — the 16 frozen routes plus 6 additive are the full ledger). CORS middleware allows the Vite dev
+routes unaffected — the 16 frozen routes plus 10 additive are the full ledger). CORS middleware allows the Vite dev
 origin (`:5173`/`:3000`, wildcard in dev). Data layer polls `/api/state`, `/api/incidents`,
 `/api/decisions`, `/api/resources`, `/api/audit` every **1.5 s**.
 
@@ -248,6 +274,10 @@ only — chain validation itself is server-side: `validate_chain` / export CLI).
 | Replay recordings + path-traversal guard | `tests/jevcity/test_replay.py` |
 | Feature engineering | `tests/jevcity/test_features.py` |
 | ML dataset/model/wrapper contracts | `tests/jevcity/test_ml_dataset.py`, `tests/jevcity/test_ml_models.py`, `tests/jevcity/test_wrapper.py` |
+| Vision evidence: schema/store/analyzer (mock+cache determinism, eviction) | `tests/vision/test_schema.py`, `tests/vision/test_store.py`, `tests/vision/test_analyzer.py` |
+| Vision live mlx-vlm smoke (model tier; `uv sync --extra vision`) | `tests/vision/test_live.py` |
+| Vision API routes + soft flag + attach audit + engine | `tests/jevcity/test_vision_api.py` |
+| ADIP vision: `/images`, `/decide.image_ids`, replay-safe `vision_json` | `tests/test_vision_adip.py` |
 | Event-pipeline load/latency check (bench, not pytest) | `benchmarks/jevcity_pipeline_bench.py` |
 
 ## Repo coexistence
