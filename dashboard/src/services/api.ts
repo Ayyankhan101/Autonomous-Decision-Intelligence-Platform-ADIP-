@@ -18,6 +18,8 @@ import type {
   SimulationActionResponse,
   StatePayload,
   SybilFloodResponse,
+  UploadResponse,
+  VisionAttachResponse,
   WhatIfResult,
   WhatIfScenario,
   Zone,
@@ -55,6 +57,22 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
 export const api = {
   // --- Reads ---
   getState: () => fetchJson<StatePayload>(`${API_BASE}/state`),
+
+  // --- Vision evidence ---
+  uploadImage: (imageB64: string, filename?: string): Promise<UploadResponse> =>
+    fetchJson<UploadResponse>(`${API_BASE}/images`, {
+      method: 'POST',
+      body: JSON.stringify({ image_b64: imageB64, filename }),
+    }),
+
+  attachImage: (
+    incidentId: string,
+    imageId: string,
+  ): Promise<VisionAttachResponse> =>
+    fetchJson<VisionAttachResponse>(`${API_BASE}/incidents/${incidentId}/images`, {
+      method: 'POST',
+      body: JSON.stringify({ image_id: imageId }),
+    }),
 
   getIncidents: async (): Promise<IncidentRecord[]> => {
     const res = await fetchJson<{ incidents: IncidentRecord[] }>(`${API_BASE}/incidents`);
