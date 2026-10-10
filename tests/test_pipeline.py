@@ -25,7 +25,8 @@ def agent_factory(monkeypatch):
 def test_decide_returns_contract_shape(svc):
     out = svc.decide("Charged twice for order #A1B2C3, please refund")
     assert set(out) == {"decision_id", "route", "decision", "explanation",
-                        "privacy", "latency_ms"}
+                        "privacy", "latency_ms", "vision"}
+    assert out["vision"] == []
     assert out["route"] in {"AUTO", "REVIEW", "ESCALATE"}
     d = out["decision"]
     assert set(d) == {"department", "department_dist", "department_dist_raw",

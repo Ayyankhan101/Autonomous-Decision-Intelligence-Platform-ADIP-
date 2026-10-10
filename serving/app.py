@@ -24,6 +24,9 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
 from adip.questions import PAYLOAD_VERSION
+from vision.analyzer import VisionAnalyzer
+from vision.schema import UploadRequest, UploadResponse
+from vision.store import ImageStore, decode_b64, sniff_mime
 
 from .pipeline import DecisionService, replay
 
@@ -31,6 +34,15 @@ AUDIT_DB = Path(__file__).resolve().parent / "audit.db"
 
 app = FastAPI(title="ADIP Decision Service", version="0.1.0-phase0")
 svc = DecisionService(audit_path=AUDIT_DB)
+
+_VISION = VisionAnalyzer()
+_STORE_ROOT = Path("datasets/vision/images")
+_STORE = ImageStore(_STORE_ROOT)  # one in-process registry per app
+
+
+def _image_store() -> ImageStore:
+    """Single shared store; tests monkeypatch this factory or _STORE."""
+    return _STORE
 
 # Metrics registry lock: uvicorn runs sync endpoints in a thread pool, and the
 # bare `+=` / dict-write pairs below are not atomic (a lost increment silently
@@ -68,6 +80,7 @@ async def auth_middleware(request: Request, call_next):
 
 class DecideRequest(BaseModel):
     text: str = Field(min_length=5, max_length=8000)
+    image_ids: list[str] = Field(default_factory=list, max_length=8)
 
 
 class DecideResponse(BaseModel):
@@ -75,6 +88,7 @@ class DecideResponse(BaseModel):
     route: str
     decision: dict
     explanation: str
+    vision: list[dict] = []
     # privacy is what stage 1 actually did (redaction counts, method); without
     # this field the response_model silently dropped it and callers could not
     # see whether input was redacted
@@ -103,10 +117,35 @@ def _record_error(text: str, exc: Exception) -> None:
         pass  # never mask the original failure
 
 
+@app.post("/images", response_model=UploadResponse)
+def upload_image(req: UploadRequest) -> UploadResponse:
+    try:
+        data = decode_b64(req.image_b64)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    mime = sniff_mime(data)
+    if mime is None:
+        raise HTTPException(status_code=422,
+                            detail="unrecognized image format (PNG/JPEG/WebP only)")
+    store = _image_store()
+    image_id = store.put(data, mime)
+    facts = _VISION.analyze(data, image_path=store.path(image_id))
+    store.set_facts(image_id, facts)
+    return UploadResponse(image_id=image_id, mime=mime, facts=facts)
+
+
 @app.post("/decide", response_model=DecideResponse)
 def decide(req: DecideRequest, request: Request) -> DecideResponse:
+    store = _image_store()
+    vision_facts = []
+    for iid in req.image_ids:
+        meta = store.meta(iid)
+        if meta is None or meta.facts is None:
+            raise HTTPException(status_code=422,
+                                detail=f"unknown image_id: {iid}")
+        vision_facts.append(meta.facts)
     try:
-        out = svc.decide(req.text)
+        out = svc.decide(req.text, vision_facts=vision_facts)
     except Exception as exc:
         with _METRICS_LOCK:
             ERRORS_TOTAL.labels(route="ERROR").inc()
