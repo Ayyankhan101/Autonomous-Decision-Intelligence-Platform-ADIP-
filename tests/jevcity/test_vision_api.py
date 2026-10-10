@@ -60,3 +60,40 @@ def test_incident_record_accepts_optional_vision():
     assert inc.vision is None
     assert inc.severity_hint is SeverityHint.MINOR
     inc.vision = None  # additive default; extra=forbid unaffected
+
+
+def test_attach_image_sets_incident_and_writes_audit_on_sim_clock():
+    from jevcity.api.app import build_engine
+    from jevcity.schemas import IncidentType, Zone
+
+    engine = build_engine()
+    engine.simulation.start(42, 7)
+    engine.simulation.inject_incident(
+        IncidentType.ACCIDENT, Zone.NORTH, SeverityHint.MINOR
+    )
+    records = engine.process_pending()
+    incident_id = records[0].incident_id
+
+    att = engine.attach_image(incident_id, _facts(DamageSeverity.HIGH))
+    assert engine.simulation.incidents[incident_id].vision is att
+    assert att.latest_decision_id == records[0].decision_id
+    assert [f.code for f in att.soft_findings] == ["severity_mismatch_vision"]
+
+    entries = [e for e in engine.audit.entries(limit=200)
+               if e.action == "VISION_ATTACHED"]
+    assert len(entries) == 1
+    assert entries[0].incident_id == incident_id
+    assert entries[0].timestamp is not None  # sim clock, passed explicitly
+    # chain still valid after the new entry
+    assert engine.audit.validate_chain()
+
+
+def test_attach_unknown_incident_raises_key_error():
+    from jevcity.api.app import build_engine
+
+    engine = build_engine()
+    try:
+        engine.attach_image("inc-does-not-exist", _facts(DamageSeverity.LOW))
+        raise AssertionError("expected KeyError")
+    except KeyError:
+        pass
