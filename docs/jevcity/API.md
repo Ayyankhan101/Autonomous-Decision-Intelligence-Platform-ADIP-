@@ -16,8 +16,13 @@ returns `{ok, entry_count, broken_at}`), and
 live loads lazily on the first decision), and
 `POST /api/simulation/sybil` (enhancement 1: Sybil-flood injection — honest seed +
 2–10 fabricated reports from fake identities, feeding per-stream trust scoring).
-22 routes total (16 frozen + 6 additive), ledger asserted in
-`tests/jevcity/test_audit_phase4.py::FROZEN_ROUTES`.
+26 routes total (16 frozen + 10 additive), ledger asserted in
+`tests/jevcity/test_audit_phase4.py::FROZEN_ROUTES`. Vision-evidence routes
+(4 additive, beyond the plan): `POST /api/images` (JSON base64 upload, ≤ 5 MB,
+PNG/JPEG/WebP by magic bytes, extraction runs synchronously in the request),
+`GET /api/images/{image_id}/facts`, `POST /api/incidents/{incident_id}/images`
+(attach — evidence on the incident record + `VISION_ATTACHED` audit entry),
+`POST /api/vision/mode` (hot-swap `mock | cache | live`).
 
 ## Reads
 
