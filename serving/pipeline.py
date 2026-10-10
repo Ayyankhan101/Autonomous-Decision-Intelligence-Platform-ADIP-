@@ -197,7 +197,8 @@ CREATE TABLE IF NOT EXISTS decisions (
     decision_json TEXT NOT NULL,
     stage_ms_json TEXT NOT NULL,
     pipeline_ms REAL NOT NULL,
-    payload_version INTEGER NOT NULL
+    payload_version INTEGER NOT NULL,
+    vision_json TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_decisions_ts ON decisions(ts_utc);
 """
@@ -214,6 +215,11 @@ class AuditLog:
             conn.execute("PRAGMA journal_mode=WAL")
             conn.execute("PRAGMA busy_timeout=5000")
             conn.executescript(_SCHEMA)
+            # explicit idempotent migration for pre-vision databases (schema
+            # check, not a swallowed exception)
+            cols = {row[1] for row in conn.execute("PRAGMA table_info(decisions)")}
+            if "vision_json" not in cols:
+                conn.execute("ALTER TABLE decisions ADD COLUMN vision_json TEXT")
             self._local.conn = conn
         return self._local.conn
 
@@ -222,10 +228,12 @@ class AuditLog:
         conn.execute(
             "INSERT OR REPLACE INTO decisions "
             "(decision_id, ts_utc, text_redacted, route, decision_json, "
-            "stage_ms_json, pipeline_ms, payload_version) VALUES (?,?,?,?,?,?,?,?)",
+            "stage_ms_json, pipeline_ms, payload_version, vision_json) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
             (record["decision_id"], record["ts_utc"], record["text_redacted"],
              record["route"], record["decision_json"], record["stage_ms_json"],
-             record["pipeline_ms"], record["payload_version"]),
+             record["pipeline_ms"], record["payload_version"],
+             record.get("vision_json")),
         )
         conn.commit()
 
@@ -270,7 +278,8 @@ class DecisionService:
         self.pipeline_ms: list[float] = []
         self._lock = threading.Lock()
 
-    def decide(self, text: str) -> dict:
+    def decide(self, text: str, vision_facts: list | None = None) -> dict:
+        vision_facts = vision_facts or []
         state: dict = {"text": text, "decision_id": str(uuid.uuid4())}
         stage_ms = {}
         t0 = time.perf_counter()
@@ -289,6 +298,8 @@ class DecisionService:
             "stage_ms_json": json.dumps(stage_ms, sort_keys=True),
             "pipeline_ms": pipeline_ms,
             "payload_version": PAYLOAD_VERSION,
+            "vision_json": json.dumps(
+                [f.model_dump(mode="json") for f in vision_facts]),
         }
         self.audit.append(record)
 
@@ -297,13 +308,22 @@ class DecisionService:
                 self._safe_append(self.stage_ms[name], ms)
             self._safe_append(self.pipeline_ms, pipeline_ms)
 
+        explanation = state["explanation"]["text"]
+        if vision_facts:
+            evidence = "; ".join(
+                f"{f.scene.value}/{f.damage_severity.value} ({f.status.value})"
+                for f in vision_facts
+            )
+            explanation = f"{explanation}\n[vision: {evidence}]"
+
         return {
             "decision_id": state["decision_id"],
             "route": state["policy"]["route"],
             "decision": state["decision"],
-            "explanation": state["explanation"]["text"],
+            "explanation": explanation,
             "privacy": state["privacy"],
             "latency_ms": {"pipeline": pipeline_ms, "stages": stage_ms},
+            "vision": [f.model_dump(mode="json") for f in vision_facts],
         }
 
     @staticmethod

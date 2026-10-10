@@ -30,7 +30,7 @@ def test_decide_exposes_privacy_and_latency(client):
     assert resp.status_code == 200
     body = resp.json()
     assert set(body) == {"decision_id", "route", "decision", "explanation",
-                         "privacy", "latency_ms"}
+                         "privacy", "latency_ms", "vision"}
     assert isinstance(body["privacy"]["redactions"], list)
     assert body["privacy"]["method"].startswith("regex-")
 
@@ -75,7 +75,7 @@ def test_auth_disabled_without_token(client, monkeypatch):
 def test_failed_decide_is_500_and_still_audited(client, monkeypatch):
     from serving import app as appmod
 
-    def boom(text):
+    def boom(text, vision_facts=None):
         raise RuntimeError("model exploded")
 
     monkeypatch.setattr(appmod.svc, "decide", boom)
