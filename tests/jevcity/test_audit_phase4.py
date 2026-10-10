@@ -48,6 +48,8 @@ FROZEN_ROUTES = {
     # Additive extension (demo-liveness): live hash-chain verify + mode toggle.
     ("GET", "/api/audit/verify"),
     ("POST", "/api/simulation/laya-mode"),
+    # Additive extension (enhancement 1): Sybil flood injection for trust scoring.
+    ("POST", "/api/simulation/sybil"),
     ("POST", "/api/what-if/run"),
 }
 

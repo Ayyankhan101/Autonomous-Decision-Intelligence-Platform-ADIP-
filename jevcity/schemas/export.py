@@ -24,6 +24,8 @@ MODELS = {
     "audit_verify_response": "AuditVerifyResponse",
     "laya_mode_request": "LayaModeRequest",
     "laya_mode_response": "LayaModeResponse",
+    "sybil_flood_request": "SybilFloodRequest",
+    "sybil_flood_response": "SybilFloodResponse",
     "policy_position_request": "PolicyPositionRequest",
     "policy_position_response": "PolicyPositionResponse",
     "what_if_request": "WhatIfRequest",

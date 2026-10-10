@@ -1,0 +1,59 @@
+{
+  "$defs": {
+    "IncidentType": {
+      "enum": [
+        "accident",
+        "fire",
+        "flood",
+        "traffic_spike"
+      ],
+      "title": "IncidentType",
+      "type": "string"
+    },
+    "SeverityHint": {
+      "enum": [
+        "minor",
+        "moderate",
+        "severe"
+      ],
+      "title": "SeverityHint",
+      "type": "string"
+    },
+    "Zone": {
+      "enum": [
+        "north",
+        "south",
+        "east",
+        "west",
+        "central"
+      ],
+      "title": "Zone",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Enhancement 1: Sybil-style flood of fabricated reports from fake identities.",
+  "properties": {
+    "incident_type": {
+      "$ref": "#/$defs/IncidentType",
+      "default": "accident"
+    },
+    "reports": {
+      "default": 5,
+      "maximum": 10,
+      "minimum": 2,
+      "title": "Reports",
+      "type": "integer"
+    },
+    "severity": {
+      "$ref": "#/$defs/SeverityHint",
+      "default": "severe"
+    },
+    "zone": {
+      "$ref": "#/$defs/Zone",
+      "default": "east"
+    }
+  },
+  "title": "SybilFloodRequest",
+  "type": "object"
+}

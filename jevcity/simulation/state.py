@@ -121,6 +121,52 @@ class SimulationState:
         self.second_emergency_fired = True
         return self.inject_incident(incident_type, zone, SeverityHint.SEVERE)
 
+    def inject_sybil(
+        self,
+        incident_type: IncidentType = IncidentType.ACCIDENT,
+        zone: Zone = Zone.EAST,
+        severity: SeverityHint = SeverityHint.SEVERE,
+        *,
+        reports: int = 5,
+    ) -> tuple[str, list[str]]:
+        """Sybil-style flood (enhancement 1): one honest seed report plus N fabricated
+        reports from fake identities that contradict the primary observation in a single
+        burst. Returns (incident_id, fake_source_ids)."""
+        self.clock.tick()
+        seed = self.generator.make_incident(
+            incident_type,
+            zone,
+            severity,
+            source_id="sensor-auto-01",
+            when=self.clock.now,
+            incident_id=self._next_unique_incident_id(),
+        )
+        seed_raw = seed.model_dump(mode="json")
+        self.raw_events.append(seed_raw)
+        parsed = EventEnvelope.model_validate(seed_raw)
+        self.events.append(parsed)
+        self._register_incident(parsed)
+
+        fake_sources: list[str] = []
+        fake_severity = (
+            SeverityHint.MINOR if severity != SeverityHint.MINOR else SeverityHint.SEVERE
+        )
+        for i in range(reports):
+            source_id = f"sybil-walker-{i:03d}"
+            fake_sources.append(source_id)
+            self.clock.tick()
+            fake = self.generator.second_report(
+                parsed, when=self.clock.now, source_id=source_id, contradict=False
+            )
+            attrs = fake.reported_attributes.model_copy(deep=True)
+            attrs.severity = fake_severity
+            fake = fake.model_copy(update={"reported_attributes": attrs})
+            fake_raw = fake.model_dump(mode="json")
+            self.raw_events.append(fake_raw)
+            self.events.append(fake)
+            self._register_incident(fake)
+        return seed.incident_id, fake_sources
+
     def append_replay(self, event: EventEnvelope) -> None:
         """Register one pre-recorded event (plan Phase 1 replay path)."""
         self.raw_events.append(event.model_dump(mode="json"))

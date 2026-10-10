@@ -17,6 +17,7 @@ import type {
   Resource,
   SimulationActionResponse,
   StatePayload,
+  SybilFloodResponse,
   WhatIfResult,
   WhatIfScenario,
   Zone,
@@ -155,6 +156,20 @@ export const api = {
       body: JSON.stringify({
         incident_type: params?.incident_type ?? 'fire',
         zone: params?.zone ?? 'north',
+      }),
+    }),
+
+  injectSybil: (params?: {
+    incident_type?: IncidentType;
+    zone?: Zone;
+    reports?: number;
+  }): Promise<SybilFloodResponse> =>
+    fetchJson<SybilFloodResponse>(`${API_BASE}/simulation/sybil`, {
+      method: 'POST',
+      body: JSON.stringify({
+        incident_type: params?.incident_type ?? 'accident',
+        zone: params?.zone ?? 'east',
+        ...(params?.reports !== undefined ? { reports: params.reports } : {}),
       }),
     }),
 

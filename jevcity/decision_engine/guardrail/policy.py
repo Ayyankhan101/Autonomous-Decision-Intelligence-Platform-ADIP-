@@ -25,9 +25,11 @@ from jevcity.schemas import (
     Signals,
     TrafficSignal,
     DataQualitySignal,
+    TrustBlock,
     ValidationResult,
     ValidationStatus,
 )
+from jevcity.ingestion.trust import TRUST_GATE
 from jevcity.simulation.resource_pool import ResourcePool
 
 from ..laya_adapter.adapter import (
@@ -61,8 +63,16 @@ R_CONTENTION = "R-CONTENTION-ESCALATE-01"
 R_AUTO = "R-AUTO-APPROVE-01"
 R_EQUITY = "R-EQUITY-UNSERVED-01"
 R_ECO = "R-ECO-ELECTRIC-FIRST-01"
+R_TRUST = "R-TRUST-DOWNWEIGHT-01"
 
 CRITICAL_TRAFFIC_THRESHOLD = 0.6
+
+_TRUST_STEP_DOWN: dict[Priority, Priority] = {
+    Priority.CRITICAL: Priority.HIGH,
+    Priority.HIGH: Priority.MEDIUM,
+    Priority.MEDIUM: Priority.LOW,
+    Priority.LOW: Priority.LOW,
+}
 
 
 @dataclass
@@ -80,6 +90,7 @@ class DecisionContext:
     laya_mode: LayaMode = LayaMode.MOCK
     decision_id: str = "dec-000000"
     policy_position: PolicyPosition = PolicyPosition.RESPONSE_TIME
+    trust: TrustBlock | None = None
 
 
 def decide(ctx: DecisionContext) -> DecisionRecord:
@@ -190,6 +201,23 @@ def decide(ctx: DecisionContext) -> DecisionRecord:
                 "Equity policy: priority raised one step for underserved zone "
                 f"{ctx.incident.zone.value}."
             )
+
+    # --- stream trust down-weight (enhancement 1) ----------------------
+    if ctx.trust is not None and ctx.trust.mean_veracity < TRUST_GATE:
+        lowered = _TRUST_STEP_DOWN[priority]
+        if lowered != priority:
+            priority = lowered
+        rules.append(R_TRUST)
+        flagged = (
+            f" Flagged sources: {', '.join(ctx.trust.flagged_sources)}."
+            if ctx.trust.flagged_sources
+            else ""
+        )
+        reasons.append(
+            f"Mean stream veracity {ctx.trust.mean_veracity:.2f} below gate "
+            f"{TRUST_GATE:.2f}; priority down-weighted pending corroborating "
+            f"sources.{flagged}"
+        )
 
     # --- confidence gates (§5.8) --------------------------------------
     if overall < OVERALL_GATE:
@@ -316,6 +344,7 @@ def _record(
         decision_time_simulated=ctx.now,
         policy_position=ctx.policy_position,
         objective_weights=weights_for(ctx.policy_position),
+        trust=ctx.trust,
     )
 
 

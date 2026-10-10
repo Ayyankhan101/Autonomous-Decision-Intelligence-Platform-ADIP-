@@ -15,6 +15,7 @@ from jevcity.audit.log import AuditLog
 from jevcity.decision_engine.engine import JevCityEngine
 from jevcity.decision_engine.laya_adapter.adapter import LayaAdapter
 from jevcity.decision_engine.policy_position import weights_for
+from jevcity.ingestion.trust import TrustRegistry
 from jevcity.schemas import (
     AuditListResponse,
     AuditVerifyResponse,
@@ -39,6 +40,8 @@ from jevcity.schemas import (
     SimulationResetRequest,
     SimulationStartRequest,
     StatePayload,
+    SybilFloodRequest,
+    SybilFloodResponse,
     WhatIfRequest,
     WhatIfResult,
 )
@@ -191,6 +194,7 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
     def sim_reset(req: SimulationResetRequest) -> SimulationActionResponse:
         engine.simulation.reset(SeedConfig(req.session_seed, req.scenario_seed))
         engine.adapter = LayaAdapter(mode=engine.adapter.mode)
+        engine.trust = TrustRegistry()
         engine.decisions.clear()
         engine.decision_history.clear()
         engine.validation_by_event.clear()
@@ -221,6 +225,21 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
         records = engine.process_pending()
         return SimulationActionResponse(
             incident_id=incident_id, decision_ids=[r.decision_id for r in records]
+        )
+
+    @app.post("/api/simulation/sybil", response_model=SybilFloodResponse)
+    def sim_sybil(req: SybilFloodRequest) -> SybilFloodResponse:
+        incident_id, fake_sources = engine.simulation.inject_sybil(
+            req.incident_type,
+            req.zone,
+            req.severity,
+            reports=req.reports,
+        )
+        records = engine.process_pending()
+        return SybilFloodResponse(
+            incident_id=incident_id,
+            fake_sources=fake_sources,
+            decision_ids=[r.decision_id for r in records],
         )
 
     @app.post("/api/simulation/second-emergency", response_model=SimulationActionResponse)

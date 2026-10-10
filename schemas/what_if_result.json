@@ -209,6 +209,18 @@
         },
         "state": {
           "$ref": "#/$defs/DecisionState"
+        },
+        "trust": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TrustBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Per-stream veracity snapshot; enhancement 1 adversarial robustness."
         }
       },
       "required": [
@@ -715,6 +727,42 @@
         }
       },
       "title": "TrafficSignal",
+      "type": "object"
+    },
+    "TrustBlock": {
+      "additionalProperties": false,
+      "description": "Per-stream veracity snapshot for one decision (enhancement 1).",
+      "properties": {
+        "availability": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Availability",
+          "type": "object"
+        },
+        "flagged_sources": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Flagged Sources",
+          "type": "array"
+        },
+        "mean_veracity": {
+          "default": 1.0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Mean Veracity",
+          "type": "number"
+        },
+        "source_scores": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Source Scores",
+          "type": "object"
+        }
+      },
+      "title": "TrustBlock",
       "type": "object"
     },
     "WhatIfScenario": {

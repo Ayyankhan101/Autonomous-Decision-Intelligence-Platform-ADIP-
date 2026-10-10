@@ -8,6 +8,7 @@ import {
   RotateCcw,
   Send,
   ShieldAlert,
+  Users,
   Zap,
 } from 'lucide-react';
 import { api } from '../services/api';
@@ -136,6 +137,21 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
     try {
       const res = await api.injectSecondEmergency({ incident_type: 'fire', zone: 'north' });
       showToast(`Second Emergency triggered: ${res.incident_id || 'OK'}`);
+      onRefresh();
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : String(err), 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSybilFlood = async () => {
+    setIsSubmitting(true);
+    try {
+      const res = await api.injectSybil({ reports: 5 });
+      showToast(
+        `Sybil flood: ${res.fake_sources.length} fake sources on ${res.incident_id}`
+      );
       onRefresh();
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : String(err), 'error');
@@ -399,6 +415,17 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
         >
           <Flame className="w-3.5 h-3.5 text-amber-400" />
           <span>Trigger Second Emergency (Contention Test)</span>
+        </button>
+
+        {/* Sybil flood — enhancement 1 adversarial scenario */}
+        <button
+          onClick={handleSybilFlood}
+          disabled={isSubmitting}
+          className="w-full py-1.5 rounded-lg text-xs font-semibold bg-fuchsia-950/70 hover:bg-fuchsia-900/70 text-fuchsia-300 border border-fuchsia-800/50 flex items-center justify-center gap-1.5 shadow-sm transition-all mt-1"
+          title="Floods one incident with 5 fabricated reports from fake identities; trust scoring flags them and down-weights the decision"
+        >
+          <Users className="w-3.5 h-3.5 text-fuchsia-400" />
+          <span>Sybil Flood (5 fake sources)</span>
         </button>
       </div>
     </div>

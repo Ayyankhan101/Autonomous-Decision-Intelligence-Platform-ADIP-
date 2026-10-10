@@ -23,6 +23,8 @@ from .api import (
     SimulationStartRequest,
     SecondEmergencyRequest,
     StatePayload,
+    SybilFloodRequest,
+    SybilFloodResponse,
     WhatIfRequest,
     WhatIfResult,
 )
@@ -38,6 +40,7 @@ from .decision import (
     SeveritySignal,
     Signals,
     TrafficSignal,
+    TrustBlock,
 )
 from .enums import (
     DecisionSource,
@@ -149,7 +152,10 @@ __all__ = [
     "SimulationActionResponse",
     "SimulationStartRequest",
     "StatePayload",
+    "SybilFloodRequest",
+    "SybilFloodResponse",
     "TrafficSignal",
+    "TrustBlock",
     "ValidationFinding",
     "ValidationResult",
     "ValidationStatus",
