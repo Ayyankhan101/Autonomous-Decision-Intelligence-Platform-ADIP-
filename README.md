@@ -2,7 +2,7 @@
 
 **A decision intelligence platform blueprint built on [Laya](https://huggingface.co/convaiinnovations/laya) typed decision models, served locally via the [laya-mlx](https://github.com/mizorewww/laya-mlx) runtime — free, Apache-2.0, and private by architecture.**
 
-> Status: **Phase 0 built and measured** (pipeline, eval runner, serving app, tests, CI). The full technical blueprint lives in [`BLUEPRINT.md`](BLUEPRINT.md) — plan of record; every number below is reproduced by a checked-in artifact.
+> Status: **Phases 0–7 built** (pipeline, eval runner, serving, JevCity vertical slice, Command Center dashboard, demo runbook) and **QA-verified** — 4 black-box/browser test loops, 2 consecutive clean passes (PRs #18–20, [`docs/jevcity/QA.md`](docs/jevcity/QA.md)). The full technical blueprint lives in [`BLUEPRINT.md`](BLUEPRINT.md) — plan of record; every number below is reproduced by a checked-in artifact.
 
 ---
 
@@ -14,6 +14,11 @@ the same laya-mlx platform, per `JevCity_Implementation_Plan_Revised_v2_Laya.doc
 
 - Vertical slice implemented: simulation (seeded) → validation → stub ML → mock-Laya
   adapter → guardrail (16 invariants) → greedy allocation → append-only audit → API → What-If.
+  Enhancements on top: per-stream **trust scoring** with Sybil-flood injection (E1),
+  runtime **policy-position sandbox** (E2, RESPONSE_TIME/EQUITY/ECO + `reoptimise_active`),
+  decision **lineage** on request (E3), server-classified **override friction tiers**
+  (E4, LOW/HIGH/BREAK_GLASS), plus demo-liveness endpoints (`GET /api/audit/verify`,
+  hot-swap `POST /api/simulation/laya-mode`). All QA-verified.
 - Docs: [`docs/jevcity/PHASE0_SIGNOFF.md`](docs/jevcity/PHASE0_SIGNOFF.md) (22-item gate),
   [`ERRATA.md`](docs/jevcity/ERRATA.md) (plan-vs-repo resolutions),
   [`ARCHITECTURE.md`](docs/jevcity/ARCHITECTURE.md), [`API.md`](docs/jevcity/API.md),
@@ -25,9 +30,11 @@ the same laya-mlx platform, per `JevCity_Implementation_Plan_Revised_v2_Laya.doc
   [`CONFIDENCE_CALIBRATION.md`](docs/jevcity/CONFIDENCE_CALIBRATION.md),
   [`GUARDRAIL.md`](docs/jevcity/GUARDRAIL.md),
   [`LAYA_FAILURE_MODES.md`](docs/jevcity/LAYA_FAILURE_MODES.md),
-  [`PROFESSIONAL_PRACTICES.md`](docs/jevcity/PROFESSIONAL_PRACTICES.md).
-- API (port **8200**): `uvicorn jevcity.api.app:app --port 8200` — 16 endpoints incl.
-  simulation controls, overrides (actor+reason enforced), What-If (`dry_run`, zero live writes).
+  [`PROFESSIONAL_PRACTICES.md`](docs/jevcity/PROFESSIONAL_PRACTICES.md),
+  [`QA.md`](docs/jevcity/QA.md) (test-loop findings + known limitations).
+- API (port **8200**): `uvicorn jevcity.api.app:app --port 8200` — 22 endpoints
+  (16 plan-frozen + 6 additive) incl. simulation controls, overrides (actor+reason
+  enforced, friction tiers), What-If (`dry_run`, zero live writes).
 - Command Center dashboard (`dashboard/`, React + TS + Vite): map layer, incident inspector
   with Laya advisory vs policy split, simulation/bad-data controls, override modal, audit
   viewer, What-If sandbox. Built assets are served by the API at `/` (when `dashboard/dist`
@@ -36,6 +43,53 @@ the same laya-mlx platform, per `JevCity_Implementation_Plan_Revised_v2_Laya.doc
 - Tests: `tests/jevcity/` — invariant property tests, audit append-only/hash-chain, adapter
   fail-closed, API contracts. Full suite: `uv run pytest`.
 - Triage platform (`adip/`, `serving/` on port 8100) untouched underneath.
+
+### JevCity architecture
+
+```mermaid
+flowchart TD
+    subgraph SIM["SIMULATION — seeded · deterministic (42 / 7)"]
+        CLOCK["SimClock · epoch 2026-09-27T10:00Z\nno host wall-clock"]:::stage
+        EVT["events · inject · bad-data · sybil flood (E1)"]:::stage
+        CLOCK --> EVT
+    end
+
+    VAL["1 · VALIDATE\nhard reject / soft flag"]:::stage
+    FEAT["2 · FEATURES\nsimulated-time only"]:::stage
+    ML["3 · ML TRIAD\nseverity · traffic · anomaly"]:::stage
+    LAYA["4 · LAYA ADAPTER\nmock | cache | live · fail-closed"]:::stage
+    GUARD["5 · GUARDRAIL\nLaya proposes · policy decides\n16 invariants · 15 rules"]:::stage
+    ALLOC["6 · ALLOCATE\ngreedy · contention honest"]:::stage
+    DEC["DECISION RECORD\n6 states · lineage (E3)"]:::decision
+    AUDIT[("APPEND-ONLY AUDIT\nSHA-256 chain · sim clock\nGET /api/audit/verify")]:::store
+
+    POL["POLICY POSITION (E2)\nRESPONSE_TIME | EQUITY | ECO\nreoptimise_active"]:::decision
+    OVR["OVERRIDE (E4)\nLOW | HIGH | BREAK_GLASS\nactor + reason · impact tiers"]:::decision
+    WIF["WHAT-IF SANDBOX\ndry-run · isolated scope\nzero live writes"]:::decision
+
+    API["FastAPI :8200 · 22 routes"]:::infra
+    DASH["Command Center (React)\n1.5 s poll · UTC clocks"]:::infra
+
+    EVT --> VAL --> FEAT --> ML --> LAYA --> GUARD --> ALLOC --> DEC
+    DEC --> AUDIT
+    DEC --> OVR
+    OVR --> AUDIT
+    POL --> GUARD
+    GUARD -.->|"trial only"| WIF
+    WIF -.->|"never writes"| AUDIT
+    DEC --> API
+    AUDIT --> API
+    API --> DASH
+
+    classDef stage fill:#e8eef7,stroke:#3b6ea5,color:#111
+    classDef decision fill:#f7e8d8,stroke:#b06a2c,color:#111
+    classDef store fill:#e8f4e8,stroke:#3a7d44,color:#111
+    classDef infra fill:#f0e8f7,stroke:#6a3ba5,color:#111
+```
+
+**Guarantees:** deterministic under pinned seeds (same policy position → identical
+decisions across restarts), What-If mutates nothing live, audit chain tamper-evident
+and read-only. Full detail: [`docs/jevcity/ARCHITECTURE.md`](docs/jevcity/ARCHITECTURE.md).
 
 ---
 
@@ -294,14 +348,14 @@ with nodes.
 - **Serving:** FastAPI; one uvicorn worker per agent — **built and measured** (`serving/`): end-to-end **P50 79.5 ms / P95 125.8 ms** over the golden set (200-call load test: 93.7 / 256.4 ms), inside the ≤150 ms / ≤400 ms KPI; replayable SQLite WAL audit verified bit-for-bit; Prometheus `/metrics`; optional bearer auth (`ADIP_API_TOKEN`); failed calls still land in the audit table as `route=ERROR`
 - **Privacy:** regex redaction ships today (EMAIL / PHONE / CARD / ORDER / PERSON); Microsoft Presidio swap-in is Phase 1; k-anonymity on exports
 - **Storage:** SQLite (WAL) → PostgreSQL; Prometheus `/metrics` + Grafana
-- **CI:** `.github/workflows/ci.yml` — `ubuntu-latest` runs ruff + the model-free test suite (58 tests) on every push/PR; `macos-14` runs the strict eval (`pytest -m model`) on `main` / manual dispatch with the checkpoint cached
+- **CI:** `.github/workflows/ci.yml` — `ubuntu-latest` runs ruff + the model-free test suite (304 tests) on every push/PR; `macos-14` runs the strict eval (`pytest -m model`) on `main` / manual dispatch with the checkpoint cached
 
 ## Build & run
 
 ```bash
 uv sync --frozen                      # or: UV_PROJECT_ENVIRONMENT=.venv-bench uv sync --frozen --inexact
 uv run ruff check .                   # lint (E9, F)
-uv run pytest -q                      # 58 model-free tests (model tier deselected)
+uv run pytest -q                      # 304 model-free tests (addopts deselects the 4 model-tier tests)
 uv run pytest -q -m model             # strict eval against the checkpoint (macOS + weights)
 
 uvicorn serving.app:app --port 8100   # API: /decide, /audit/{id}/replay, /healthz, /metrics
@@ -331,7 +385,7 @@ pnpm --dir dashboard dev                             # dashboard dev server (pro
 - [`evals/`](evals/README.md) — eval runner: macro-F1, ECE, Brier, confusion matrix vs the frozen golden set; calibration (`calibrate.py`, `calibrate_dept.py`) + stored per-record predictions
 - [`datasets/golden-set/`](datasets/golden-set/README.md) — triage eval dataset: schema, labeling guidelines, exemplars, validator, AI-3 QC worksheet
 - [`serving/`](serving/README.md) — Phase 0 pipeline: DecisionService, FastAPI `/decide` + `/audit/{id}/replay` + `/metrics`, load-test tool
-- [`tests/`](tests/) — 58 model-free tests (decision rules, config↔artifact consistency, pipeline, HTTP contract, gate exit codes) + `pytest -m model`
+- [`tests/`](tests/) — 304 model-free tests (decision rules, config↔artifact consistency, pipeline, HTTP contract, gate exit codes, JevCity invariants/API/audit/dashboard) + `pytest -m model` (4 tests incl. 3 live-checkpoint smokes)
 
 ## Attribution & licensing
 

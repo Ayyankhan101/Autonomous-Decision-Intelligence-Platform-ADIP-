@@ -26,7 +26,7 @@ not the model (`LAYA_MODEL_CARD.md` measured-below-gate).
 | 15 | What-If Laya runs never write live audit; isolated cache namespace | `test_what_if_uses_isolated_laya_cache`, `test_what_if_second_emergency_leaves_no_trace`, dry-run rejection |
 | 16 | Incident text is untrusted; bounded copy only, never instructions | `test_notes_never_reach_state_or_render`, `test_adversarial_free_text_is_cleaned_and_bounded`, `test_adversarial_notes_flagged_not_followed` |
 
-## Matched rules (12)
+## Matched rules (15)
 
 | Rule ID | Fires when |
 |---|---|
@@ -42,6 +42,8 @@ not the model (`LAYA_MODEL_CARD.md` measured-below-gate).
 | `R-LAYA-MODEL-DEGRADED-01` | Laya status not ok but policy operating → `MODEL_DEGRADED` state marker |
 | `R-CONTENTION-ESCALATE-01` | required resources unavailable → `CONTENTION_ESCALATION` (no fake success) |
 | `R-TRUST-DOWNWEIGHT-01` | mean stream veracity < 0.7 (enhancement 1 trust scoring) → priority stepped down one level; flagged fake sources named in the reason |
+| `R-EQUITY-UNSERVED-01` | E2 position = EQUITY and incident zone is underserved → priority raised one step (step-up recorded as the matched rule) |
+| `R-ECO-ELECTRIC-FIRST-01` | E2 position = ECO → allocation picks the candidate with the highest `eco_score` (electric-first) |
 | `R-AUTO-APPROVE-01` | all gates pass → `AUTO_APPROVED` (source `laya_proposed` iff Laya matched, else `policy_finalized`) |
 
 ## Guardrail precedence (order `decide()` applies)
@@ -50,6 +52,24 @@ not the model (`LAYA_MODEL_CARD.md` measured-below-gate).
 overall / low Laya AC / review suggestion) → `MODEL_DEGRADED` (Laya-only) →
 `CONTENTION_ESCALATION` → `AUTO_APPROVED` (with `OVERRIDE_ACTIVE` possible later via
 operator override on any decidable record).
+
+## Override friction (enhancement 4 — server-classified tiers)
+
+Friction is applied **after** the guardrail, at the override API, and never lets a
+client bypass it: the server re-classifies each override into an impact tier and
+rejects missing acknowledgements with 422.
+
+| Tier | When | Required (else 422) |
+|---|---|---|
+| `LOW` | non-priority-changing, non-life-safety overrides | `operator_id` + `reason` only (Invariant 7) |
+| `HIGH` | priority changes / dismissals on open incidents | + `impact_ack=true` + `context_code` |
+| `BREAK_GLASS` | life-safety priority raises (e.g. dismissing a CRITICAL fire) | + `break_glass=true` |
+
+`new_priority` is honored only for `CHANGE_PRIORITY` — stray values are normalized to
+`None` client- and server-side so they can never escalate the tier. Tier, `context_code`
+and `break_glass` are stored on the override record and its audit entry; a re-override
+of an already-overridden decision is itself BREAK_GLASS. Evidence:
+`tests/jevcity/test_friction.py`.
 
 ## Plan §6 six scenarios → tests (in `test_guardrail_invariants.py` unless noted)
 
