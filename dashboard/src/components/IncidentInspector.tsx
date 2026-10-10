@@ -114,7 +114,10 @@ export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
             </span>
           </div>
           <div className="flex items-center gap-3 text-xs text-slate-400 mt-1 font-mono">
-            <span>First seen: {new Date(incident.first_seen_simulated).toLocaleTimeString()}</span>
+            <span>
+              First seen: {new Date(incident.first_seen_simulated).toISOString().substring(11, 19)}{' '}
+              UTC
+            </span>
             <span>•</span>
             <span>Reports: {incident.report_count}</span>
             <span>•</span>
