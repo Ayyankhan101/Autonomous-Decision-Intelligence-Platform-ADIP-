@@ -2,7 +2,7 @@
 
 **A decision intelligence platform blueprint built on [Laya](https://huggingface.co/convaiinnovations/laya) typed decision models, served locally via the [laya-mlx](https://github.com/mizorewww/laya-mlx) runtime — free, Apache-2.0, and private by architecture.**
 
-> Status: **Phases 0–7 built** (pipeline, eval runner, serving, JevCity vertical slice, Command Center dashboard, demo runbook) and **QA-verified** — 4 black-box/browser test loops, 2 consecutive clean passes (PRs #18–20, [`docs/jevcity/QA.md`](docs/jevcity/QA.md)). The full technical blueprint lives in [`BLUEPRINT.md`](BLUEPRINT.md) — plan of record; every number below is reproduced by a checked-in artifact.
+> Status: **Phases 0–7 built** (pipeline, eval runner, serving, JevCity vertical slice, Command Center dashboard, demo runbook) and **QA-verified** — 4 black-box/browser test loops, 2 consecutive clean passes, backlog cleared (PRs #18–22, [`docs/jevcity/QA.md`](docs/jevcity/QA.md)). The full technical blueprint lives in [`BLUEPRINT.md`](BLUEPRINT.md) — plan of record; every number below is reproduced by a checked-in artifact.
 
 ---
 
@@ -348,14 +348,14 @@ with nodes.
 - **Serving:** FastAPI; one uvicorn worker per agent — **built and measured** (`serving/`): end-to-end **P50 79.5 ms / P95 125.8 ms** over the golden set (200-call load test: 93.7 / 256.4 ms), inside the ≤150 ms / ≤400 ms KPI; replayable SQLite WAL audit verified bit-for-bit; Prometheus `/metrics`; optional bearer auth (`ADIP_API_TOKEN`); failed calls still land in the audit table as `route=ERROR`
 - **Privacy:** regex redaction ships today (EMAIL / PHONE / CARD / ORDER / PERSON); Microsoft Presidio swap-in is Phase 1; k-anonymity on exports
 - **Storage:** SQLite (WAL) → PostgreSQL; Prometheus `/metrics` + Grafana
-- **CI:** `.github/workflows/ci.yml` — `ubuntu-latest` runs ruff + the model-free test suite (304 tests) on every push/PR; `macos-14` runs the strict eval (`pytest -m model`) on `main` / manual dispatch with the checkpoint cached
+- **CI:** `.github/workflows/ci.yml` — `ubuntu-latest` runs ruff + the model-free test suite (307 tests) on every push/PR; `macos-14` runs the strict eval (`pytest -m model`) on `main` / manual dispatch with the checkpoint cached
 
 ## Build & run
 
 ```bash
 uv sync --frozen                      # or: UV_PROJECT_ENVIRONMENT=.venv-bench uv sync --frozen --inexact
 uv run ruff check .                   # lint (E9, F)
-uv run pytest -q                      # 304 model-free tests (addopts deselects the 4 model-tier tests)
+uv run pytest -q                      # 307 model-free tests (addopts deselects the 4 model-tier tests)
 uv run pytest -q -m model             # strict eval against the checkpoint (macOS + weights)
 
 uvicorn serving.app:app --port 8100   # API: /decide, /audit/{id}/replay, /healthz, /metrics
@@ -385,7 +385,7 @@ pnpm --dir dashboard dev                             # dashboard dev server (pro
 - [`evals/`](evals/README.md) — eval runner: macro-F1, ECE, Brier, confusion matrix vs the frozen golden set; calibration (`calibrate.py`, `calibrate_dept.py`) + stored per-record predictions
 - [`datasets/golden-set/`](datasets/golden-set/README.md) — triage eval dataset: schema, labeling guidelines, exemplars, validator, AI-3 QC worksheet
 - [`serving/`](serving/README.md) — Phase 0 pipeline: DecisionService, FastAPI `/decide` + `/audit/{id}/replay` + `/metrics`, load-test tool
-- [`tests/`](tests/) — 304 model-free tests (decision rules, config↔artifact consistency, pipeline, HTTP contract, gate exit codes, JevCity invariants/API/audit/dashboard) + `pytest -m model` (4 tests incl. 3 live-checkpoint smokes)
+- [`tests/`](tests/) — 307 model-free tests (decision rules, config↔artifact consistency, pipeline, HTTP contract, gate exit codes, JevCity invariants/API/audit/dashboard) + `pytest -m model` (4 tests incl. 3 live-checkpoint smokes)
 
 ## Attribution & licensing
 
