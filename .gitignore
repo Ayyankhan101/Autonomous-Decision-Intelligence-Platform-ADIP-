@@ -21,3 +21,4 @@ evals/results/eval-AppleM1Pro-*.json
 
 # local requirements PDF (untracked by design)
 jevcity-enhancements-must.pdf
+datasets/vision/images/

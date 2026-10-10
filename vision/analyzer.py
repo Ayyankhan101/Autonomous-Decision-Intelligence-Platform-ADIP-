@@ -3,6 +3,7 @@ from image bytes), cache (keyed by sha256), live (mlx-vlm, thread-timeout, fail-
 from __future__ import annotations
 
 import hashlib
+import threading
 import time
 
 from .schema import (
@@ -15,12 +16,16 @@ from .schema import (
 
 MOCK_MODEL_ID = "mock-vlm"
 MOCK_MODEL_VERSION = "0.1.0"
+MOCK_LATENCY_MS = 1.5  # fixed, like LayaAdapter's mock latency — determinism
 VISION_MODEL_ID = "mlx-community/Qwen2.5-VL-3B-Instruct-4bit"
 LIVE_TIMEOUT_S = 15.0
 LIVE_PROMPT = (
-    'Reply ONLY with JSON: {"scene": "accident|fire|flood|traffic|other", '
+    "Look at the image and answer with EXACTLY ONE JSON object and nothing else "
+    "(no prose, no repetition, no markdown). Use only these values — pick the best "
+    "fit for what you actually see: "
+    '{"scene": "accident|fire|flood|traffic|other", '
     '"damage_severity": "low|medium|high", '
-    '"injuries_visible": true|false|null, "objects": ["max 8 short words"]}'
+    '"injuries_visible": true or false or null, "objects": [up to 8 short words]}'
 )
 
 _SCENES = [SceneType.ACCIDENT, SceneType.FIRE, SceneType.FLOOD,
@@ -61,10 +66,12 @@ class VisionAnalyzer:
         *,
         cache: dict[str, VisionFacts] | None = None,
         live_timeout_s: float = LIVE_TIMEOUT_S,
+        latency_ms: float = MOCK_LATENCY_MS,
     ) -> None:
         self.mode = mode
         self.cache: dict[str, VisionFacts] = cache if cache is not None else {}
         self.live_timeout_s = live_timeout_s
+        self.latency_ms = latency_ms
         self._live_failures = 0
 
     def health(self) -> dict[str, str | bool | float]:
@@ -77,13 +84,12 @@ class VisionAnalyzer:
 
     def analyze(self, data: bytes, *, image_path=None) -> VisionFacts:
         sha = _sha256(data)
-        t0 = time.perf_counter()
         if self.mode is VisionMode.MOCK:
-            return _mock_facts(sha, self.mode, round((time.perf_counter() - t0) * 1000, 3))
+            return _mock_facts(sha, self.mode, self.latency_ms)
         if self.mode is VisionMode.CACHE and sha in self.cache:
             return self.cache[sha]
         # cache miss (or live): need the real model
-        if _live_facts is None:
+        if _live_facts is None:  # no model loader available (e.g. tests force this)
             return VisionFacts.failed(
                 image_sha256=sha, mode=self.mode, model_id=VISION_MODEL_ID,
                 model_version="n/a", latency_ms=0.0,
@@ -97,10 +103,86 @@ class VisionAnalyzer:
         return facts
 
 
-# --- live plumbing (Task 4 implements; stub keeps Task 3 fail-closed) --------
+# --- live plumbing (mlx-vlm, optional extra: uv sync --extra vision) --------
 _VLIVE: dict[str, object] = {}
-_live_facts = None  # becomes the mlx-vlm loader in Task 4
+
+
+def _live_facts(data: bytes, image_path, model_id: str) -> dict:
+    """Load (once) and call mlx-vlm. Raises on any failure — caller fail-closes."""
+    import json as _json
+
+    from mlx_vlm import generate, load  # optional extra: uv sync --extra vision
+
+    if "model" not in _VLIVE:
+        model, processor = load(model_id)  # mlx-vlm 0.7.6: returns (model, processor)
+        _VLIVE["model"], _VLIVE["processor"] = model, processor
+        _VLIVE["loaded"] = True
+    out = generate(
+        _VLIVE["model"], _VLIVE["processor"], LIVE_PROMPT,
+        image=str(image_path), max_tokens=256,
+    )
+    text = getattr(out, "text", None) or str(out)
+    start = text.find("{")
+    if start < 0:
+        raise ValueError("no JSON object in model output")
+    # first balanced object only — the model may repeat or trail prose
+    raw, _ = _json.JSONDecoder().raw_decode(text, start)
+    return raw
 
 
 def _run_live(loader, data, image_path, sha, mode, timeout_s) -> VisionFacts:
-    raise AssertionError("live path not implemented (Task 4)")
+    if image_path is None:
+        return VisionFacts.failed(
+            image_sha256=sha, mode=mode, model_id=VISION_MODEL_ID,
+            model_version="n/a", latency_ms=0.0,
+            status=VisionStatus.UNAVAILABLE, error_code="no_image_path",
+        )
+    t0 = time.perf_counter()
+    box: dict[str, object] = {}
+
+    def worker() -> None:
+        try:
+            box["raw"] = loader(data, image_path, VISION_MODEL_ID)
+        except Exception as exc:  # fail-closed: any model error → structured failure
+            box["error"] = f"{type(exc).__name__}: {exc}"[:200]
+
+    th = threading.Thread(target=worker, daemon=True)
+    th.start()
+    th.join(timeout_s)
+    latency = round((time.perf_counter() - t0) * 1000, 3)
+    if th.is_alive():
+        return VisionFacts.failed(
+            image_sha256=sha, mode=mode, model_id=VISION_MODEL_ID,
+            model_version="4bit", latency_ms=latency,
+            status=VisionStatus.UNAVAILABLE, error_code="timeout",
+        )
+    if "error" in box:
+        return VisionFacts.failed(
+            image_sha256=sha, mode=mode, model_id=VISION_MODEL_ID,
+            model_version="4bit", latency_ms=latency,
+            status=VisionStatus.UNAVAILABLE, error_code="live_error",
+        )
+    raw = box.get("raw")
+    if not isinstance(raw, dict) or ("scene" not in raw and "damage_severity" not in raw):
+        return VisionFacts.failed(
+            image_sha256=sha, mode=mode, model_id=VISION_MODEL_ID,
+            model_version="4bit", latency_ms=latency,
+            status=VisionStatus.INVALID_RESPONSE, error_code="missing_fields",
+        )
+    try:
+        scene = SceneType(str(raw.get("scene", "unknown")).lower())
+    except ValueError:
+        scene = SceneType.UNKNOWN
+    try:
+        damage = DamageSeverity(str(raw.get("damage_severity", "unknown")).lower())
+    except ValueError:
+        damage = DamageSeverity.UNKNOWN
+    objs = [str(o)[:32] for o in raw.get("objects", []) if isinstance(o, str)][:16]
+    inj = raw.get("injuries_visible")
+    return VisionFacts(
+        image_sha256=sha, scene=scene, objects=objs, damage_severity=damage,
+        injuries_visible=inj if isinstance(inj, bool) else None,
+        confidence={"scene": 0.0, "damage_severity": 0.0},  # live model is uncalibrated
+        model_id=VISION_MODEL_ID, model_version="4bit", mode=mode,
+        latency_ms=latency,
+    )
