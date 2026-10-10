@@ -33,6 +33,8 @@ from jevcity.schemas import (
     ResourceType,
     ValidationResult,
     ValidationStatus,
+    VisionAttachment,
+    VisionFacts,
     Zone,
     WhatIfRequest,
     WhatIfResult,
@@ -559,6 +561,35 @@ class JevCityEngine:
             "affected_decisions": affected,
             "reoptimised": reoptimised,
         }
+
+    def attach_image(self, incident_id: str, facts: VisionFacts) -> VisionAttachment:
+        """Attach vision evidence to an incident. Evidence, not authority: records
+        + soft flags + audit only — never writes severity (spec: vision-evidence)."""
+        from jevcity.ingestion.vision_findings import vision_findings
+
+        incident = self.simulation.incidents.get(incident_id)
+        if incident is None:
+            raise KeyError(incident_id)
+        findings = vision_findings(facts, incident)
+        latest = self._latest_decision(incident_id)
+        attachment = VisionAttachment(
+            image_id=facts.image_sha256, facts=facts, soft_findings=findings,
+            latest_decision_id=latest.decision_id if latest else None,
+        )
+        incident.vision = attachment
+        self.audit.append(
+            actor="system",
+            action="VISION_ATTACHED",
+            reason=(f"scene={facts.scene.value}; damage={facts.damage_severity.value}; "
+                    f"status={facts.status.value}; "
+                    f"findings={[f.code for f in findings]}"),
+            before_state="",
+            after_state="vision_attached",
+            incident_id=incident_id,
+            decision_id=attachment.latest_decision_id,
+            timestamp=self.simulation.clock.now,
+        )
+        return attachment
 
     def _latest_decision(self, incident_id: str) -> DecisionRecord | None:
         for record in reversed(self.decision_history):
