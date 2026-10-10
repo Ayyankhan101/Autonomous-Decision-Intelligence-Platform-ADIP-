@@ -254,6 +254,20 @@ export interface LineageBlock {
   expression: string;
 }
 
+export interface TrustBlock {
+  source_scores: Record<string, number>;
+  mean_veracity: number;
+  flagged_sources: string[];
+  availability?: Record<string, number>;
+}
+
+export interface SybilFloodResponse {
+  ok: boolean;
+  incident_id: string;
+  fake_sources: string[];
+  decision_ids: string[];
+}
+
 export interface DecisionRecord {
   decision_id: string;
   incident_id: string;
@@ -263,6 +277,7 @@ export interface DecisionRecord {
   policy_version: string;
   policy_position?: PolicyPosition;
   objective_weights?: Record<string, number>;
+  trust?: TrustBlock | null;
   matched_rules: string[];
   signals: Signals;
   laya?: LayaBlock | null;

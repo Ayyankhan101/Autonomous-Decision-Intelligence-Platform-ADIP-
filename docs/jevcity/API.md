@@ -3,7 +3,7 @@
 Base: `http://localhost:8200` · run: `uvicorn jevcity.api.app:app --port 8200`
 JSON Schema exports (dashboard contract): `schemas/*.json` via `python -m jevcity.schemas.export`.
 
-The 16 plan-frozen endpoints below are unchanged; five **additive** endpoints
+The 16 plan-frozen endpoints below are unchanged; six **additive** endpoints
 were added: `POST /api/simulation/resume` (because `start()` resets state —
 without it, pause → resume silently wiped the session),
 `POST /api/overrides/impact` (enhancement 4: read-only override risk preview),
@@ -37,6 +37,7 @@ live loads lazily on the first decision).
 | POST | `/api/simulation/reset` | `{session_seed, scenario_seed}` |
 | POST | `/api/simulation/incident` | `{incident_type, zone, severity?, source_id?, notes?, multi_report?}` |
 | POST | `/api/simulation/bad-data` | `{mode: missing_fields\|out_of_range\|conflicting_reports\|adversarial_notes, target_incident_id?}` |
+| POST | `/api/simulation/sybil` | `{incident_type?, zone?, severity?, reports? 2–10}` — Sybil flood: honest seed + N fabricated reports from fake identities; response `{ok, incident_id, fake_sources, decision_ids}` (enhancement 1) |
 | POST | `/api/simulation/second-emergency` | `{incident_type?, zone?}` |
 
 All control responses: `SimulationActionResponse {ok, incident_id, decision_ids}`.

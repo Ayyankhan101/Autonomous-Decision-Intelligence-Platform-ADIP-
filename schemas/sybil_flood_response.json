@@ -1,0 +1,34 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "decision_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Decision Ids",
+      "type": "array"
+    },
+    "fake_sources": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Fake Sources",
+      "type": "array"
+    },
+    "incident_id": {
+      "title": "Incident Id",
+      "type": "string"
+    },
+    "ok": {
+      "default": true,
+      "title": "Ok",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "incident_id",
+    "fake_sources"
+  ],
+  "title": "SybilFloodResponse",
+  "type": "object"
+}

@@ -142,6 +142,26 @@ class SimulationBadDataRequest(BaseModel):
     target_incident_id: str | None = None
 
 
+class SybilFloodRequest(BaseModel):
+    """Enhancement 1: Sybil-style flood of fabricated reports from fake identities."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    incident_type: IncidentType = IncidentType.ACCIDENT
+    zone: Zone = Zone.EAST
+    severity: SeverityHint = SeverityHint.SEVERE
+    reports: int = Field(default=5, ge=2, le=10)
+
+
+class SybilFloodResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    ok: bool = True
+    incident_id: str
+    fake_sources: list[str]
+    decision_ids: list[str] = Field(default_factory=list)
+
+
 class SecondEmergencyRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

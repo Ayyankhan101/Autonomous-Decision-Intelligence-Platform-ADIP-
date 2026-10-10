@@ -41,6 +41,7 @@ not the model (`LAYA_MODEL_CARD.md` measured-below-gate).
 | `R-LAYA-FALLBACK-POLICY-ONLY-01` | Laya degraded/invalid/timeout (Inv 12) → policy-only decision |
 | `R-LAYA-MODEL-DEGRADED-01` | Laya status not ok but policy operating → `MODEL_DEGRADED` state marker |
 | `R-CONTENTION-ESCALATE-01` | required resources unavailable → `CONTENTION_ESCALATION` (no fake success) |
+| `R-TRUST-DOWNWEIGHT-01` | mean stream veracity < 0.7 (enhancement 1 trust scoring) → priority stepped down one level; flagged fake sources named in the reason |
 | `R-AUTO-APPROVE-01` | all gates pass → `AUTO_APPROVED` (source `laya_proposed` iff Laya matched, else `policy_finalized`) |
 
 ## Guardrail precedence (order `decide()` applies)

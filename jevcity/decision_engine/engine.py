@@ -7,6 +7,7 @@ import copy
 from jevcity.audit.log import AuditLog
 from jevcity.features.engineer import build_features, history_features
 from jevcity.ingestion.correlate import correlate
+from jevcity.ingestion.trust import TrustRegistry
 from jevcity.ingestion.validate import validate_raw
 from jevcity.models.anomaly import AnomalyDetector
 from jevcity.models.severity import SeverityModel
@@ -63,6 +64,7 @@ class JevCityEngine:
         self.severity = ModelWrapper(severity or SeverityModel())
         self.traffic = ModelWrapper(traffic or TrafficModel())
         self.anomaly = AnomalyWrapper(anomaly or AnomalyDetector())
+        self.trust = TrustRegistry()
         self.decisions: dict[str, DecisionRecord] = {}
         self.decision_history: list[DecisionRecord] = []
         self.validation_by_event: dict[str, ValidationResult] = {}
@@ -159,6 +161,8 @@ class JevCityEngine:
             raise KeyError(f"no reports for incident {incident_id}")
 
         correlation = correlate(reports)
+        self.trust.observe(reports)
+        trust_block = self.trust.block_for(sorted({r.source_id for r in reports}))
         primary = sorted(reports, key=lambda e: e.simulated_time)[0]
         features = build_features(
             reports,
@@ -220,6 +224,7 @@ class JevCityEngine:
                     if policy_position is not None
                     else self.policy_position
                 ),
+                trust=trust_block,
             )
         )
         return record.model_copy(update={"dry_run": dry_run})

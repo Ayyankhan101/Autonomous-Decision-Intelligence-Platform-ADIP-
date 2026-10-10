@@ -119,6 +119,17 @@ class OverrideRecord(BaseModel):
     break_glass: bool = False
 
 
+class TrustBlock(BaseModel):
+    """Per-stream veracity snapshot for one decision (enhancement 1)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    source_scores: dict[str, float] = Field(default_factory=dict)
+    mean_veracity: float = Field(default=1.0, ge=0, le=1)
+    flagged_sources: list[str] = Field(default_factory=list)
+    availability: dict[str, float] = Field(default_factory=dict)
+
+
 class DecisionRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -133,6 +144,10 @@ class DecisionRecord(BaseModel):
         default_factory=dict,
         description="Objective weights active when this decision was generated "
         "(response_time / equity / emissions); enhancement 2 audit-trace completeness.",
+    )
+    trust: TrustBlock | None = Field(
+        default=None,
+        description="Per-stream veracity snapshot; enhancement 1 adversarial robustness.",
     )
     matched_rules: list[str] = Field(default_factory=list)
     signals: Signals

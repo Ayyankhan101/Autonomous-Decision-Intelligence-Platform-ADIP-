@@ -563,6 +563,53 @@ export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
         </div>
       )}
 
+      {/* Stream Trust (enhancement 1) */}
+      {decision?.trust && (
+        <div
+          className={`bg-slate-950/70 border rounded-lg p-3 ${
+            decision.trust.flagged_sources.length > 0
+              ? 'border-fuchsia-500/50'
+              : 'border-slate-800'
+          }`}
+        >
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
+              <ShieldAlert className="w-3.5 h-3.5 text-fuchsia-400" />
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                Stream Trust
+              </h4>
+            </div>
+            <span
+              className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded border ${
+                decision.trust.mean_veracity < 0.7
+                  ? 'bg-fuchsia-950/80 text-fuchsia-300 border-fuchsia-700/60'
+                  : 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60'
+              }`}
+            >
+              mean {decision.trust.mean_veracity.toFixed(2)}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {Object.entries(decision.trust.source_scores).map(([src, score]) => {
+              const flagged = decision.trust!.flagged_sources.includes(src);
+              return (
+                <span
+                  key={src}
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono border ${
+                    flagged
+                      ? 'bg-fuchsia-950/70 text-fuchsia-300 border-fuchsia-700/60'
+                      : 'bg-slate-900 text-emerald-300 border-slate-700'
+                  }`}
+                  title={flagged ? 'Flagged — veracity below threshold' : 'Trusted stream'}
+                >
+                  {src} · {score.toFixed(2)}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Matched Rules & Structured Rationale */}
       {decision && (
         <div className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-3">
