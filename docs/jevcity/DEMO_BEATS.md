@@ -1,4 +1,4 @@
-# Demo Acceptance Matrix (plan §6, 17 beats → 11 graded + 6 optional)
+# Demo Acceptance Matrix (plan §6, 19 beats → 11 graded + 8 optional)
 
 Graded beats must pass for demo sign-off; optional beats are bonus/rehearsal-time.
 
@@ -18,7 +18,7 @@ Graded beats must pass for demo sign-off; optional beats are bonus/rehearsal-tim
 | 10 | Laya advisory shown | suggestion vs final side-by-side | `laya.suggested_priority` ≠ final → warning shown; structured reasons listed |
 | 11 | Laya degraded (timeout/invalid) | forced failure | policy-only fallback decision; `laya.status` visible; system keeps operating |
 
-## Optional (6)
+## Optional (8)
 
 | # | Beat | Notes |
 |---|------|-------|
@@ -28,6 +28,8 @@ Graded beats must pass for demo sign-off; optional beats are bonus/rehearsal-tim
 | 15 | Deterministic Laya replay | cache-mode same-hash proof |
 | 16 | Resource option budget | option-budget guard (Invariant 13) |
 | 17 | Calibration gate walkthrough | ECE fixture results (needs Phase-0 item 21 fixtures) |
+| 18 | Policy sandbox switch (E2) | `/api/policy/position` EQUITY → ECO: weights bar animates, badge flips, later decisions use new weights; optional `reoptimise_active=true` re-decides open incidents; `POLICY_POSITION_SWITCHED` in audit |
+| 19 | Sybil-flood trust down-weight (E1) | `POST /api/simulation/sybil` (5 fake sources): Stream Trust panel mean drops (~0.63), fake chips fuchsia, `R-TRUST-DOWNWEIGHT-01` in matched rules; clean incident contrast = mean 1.00, no trust rule |
 
 ## Notes
 

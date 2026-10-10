@@ -106,6 +106,7 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
             ),
             policy_position=engine.policy_position,
             objective_weights=weights_for(engine.policy_position),
+            audit_write_failed=engine.audit_write_failed,
         )
 
     @app.get("/api/incidents", response_model=IncidentListResponse)
@@ -198,6 +199,7 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
         engine.decisions.clear()
         engine.decision_history.clear()
         engine.validation_by_event.clear()
+        engine.audit_write_failed = False
         engine._processed = 0
         return SimulationActionResponse()
 

@@ -218,3 +218,41 @@ def test_human_override_after_laya_carries_laya_metadata(monkeypatch):
     assert engine.audit.validate_chain() is True
     assert override.state.value == "OVERRIDE_ACTIVE"
     engine.audit.close()
+
+
+def test_audit_write_failure_flags_state_without_crashing(client, engine, monkeypatch):
+    started = client.post(
+        "/api/simulation/start", json={"session_seed": 42, "scenario_seed": 7}
+    )
+    assert started.status_code == 200
+    assert client.get("/api/state").json()["audit_write_failed"] is False
+
+    def _boom(*args, **kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(engine.audit, "append", _boom)
+    created = client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "accident", "zone": "north"},
+    )
+    assert created.status_code == 200
+    assert created.json()["decision_ids"]
+    assert client.get("/api/state").json()["audit_write_failed"] is True
+
+    monkeypatch.undo()
+    rec = client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "fire", "zone": "east"},
+    )
+    assert rec.status_code == 200
+    assert client.get("/api/state").json()["audit_write_failed"] is False
+
+    client.post("/api/simulation/reset", json={"session_seed": 42, "scenario_seed": 7})
+    monkeypatch.setattr(engine.audit, "append", _boom)
+    client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "flood", "zone": "south"},
+    )
+    assert client.get("/api/state").json()["audit_write_failed"] is True
+    client.post("/api/simulation/reset", json={"session_seed": 42, "scenario_seed": 7})
+    assert client.get("/api/state").json()["audit_write_failed"] is False

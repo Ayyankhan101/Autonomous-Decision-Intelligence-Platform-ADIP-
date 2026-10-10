@@ -24,6 +24,12 @@
   "additionalProperties": false,
   "description": "GET /api/state \u2014 dashboard polls this every 1\u20132 s.",
   "properties": {
+    "audit_write_failed": {
+      "default": false,
+      "description": "True while the append-only audit log rejects writes; the dashboard shows a banner because the trail may be incomplete (phase-5 UI state).",
+      "title": "Audit Write Failed",
+      "type": "boolean"
+    },
     "available_resources": {
       "additionalProperties": {
         "type": "integer"

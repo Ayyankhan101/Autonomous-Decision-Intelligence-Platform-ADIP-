@@ -88,6 +88,18 @@ export function App() {
         </div>
       )}
 
+      {/* Audit Write Failed — append-only log rejected a write; trail may be incomplete */}
+      {isConnected && state?.audit_write_failed && (
+        <div className="bg-red-950/90 border-b border-red-500/50 px-4 py-2 text-xs font-mono text-red-200 flex items-center gap-2 shadow-lg">
+          <ShieldAlert className="w-4 h-4 text-red-400 animate-pulse" />
+          <span>
+            <strong>AUDIT WRITE FAILED:</strong> the append-only audit log rejected a
+            write — decisions are live but the trail may be incomplete. Check disk
+            permissions and audit path.
+          </span>
+        </div>
+      )}
+
       {/* Contention Alert */}
       {contentionCount > 0 && (
         <div className="bg-amber-950/80 border-b border-amber-500/50 px-4 py-1.5 text-xs font-mono text-amber-200 flex items-center gap-2">
