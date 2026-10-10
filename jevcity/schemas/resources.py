@@ -10,9 +10,11 @@ from .enums import (
     IncidentType,
     ResourceType,
     ResourceStatus,
+    SeverityHint,
     ValidationStatus,
     Zone,
 )
+from .vision_api import VisionAttachment
 
 
 class Resource(BaseModel):
@@ -45,9 +47,19 @@ class IncidentRecord(BaseModel):
     source_ids: list[str] = Field(default_factory=list)
     report_count: int = Field(default=0, ge=0)
     assigned_resource_ids: list[str] = Field(default_factory=list)
+    severity_hint: SeverityHint | None = Field(
+        default=None,
+        description="Severity hint carried from the first registered report "
+        "(used by vision soft-flag comparison; display/audit only).",
+    )
     notes: str | None = Field(
         default=None,
         max_length=500,
         description="Free-text notes carried from the originating report "
         "(display-only; never enters the Laya state, Invariant 16).",
+    )
+    vision: VisionAttachment | None = Field(
+        default=None,
+        description="Vision evidence attached post-decision (display + soft "
+        "flags only; never writes severity).",
     )

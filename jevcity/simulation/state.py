@@ -198,6 +198,7 @@ class SimulationState:
                 source_ids=[event.source_id],
                 report_count=1,
                 notes=event.reported_attributes.notes,
+                severity_hint=event.reported_attributes.severity,
             )
         else:
             existing.latest_simulated = event.simulated_time

@@ -1,0 +1,24 @@
+{
+  "$defs": {
+    "VisionMode": {
+      "enum": [
+        "mock",
+        "cache",
+        "live"
+      ],
+      "title": "VisionMode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "mode": {
+      "$ref": "#/$defs/VisionMode"
+    }
+  },
+  "required": [
+    "mode"
+  ],
+  "title": "VisionModeRequest",
+  "type": "object"
+}
