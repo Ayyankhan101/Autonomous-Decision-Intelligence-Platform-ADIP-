@@ -141,6 +141,7 @@ export interface IncidentRecord {
   source_ids: string[];
   report_count: number;
   assigned_resource_ids: string[];
+  notes?: string | null;
 }
 
 export interface ModelOutput {

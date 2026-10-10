@@ -197,12 +197,15 @@ class SimulationState:
                 latest_simulated=event.simulated_time,
                 source_ids=[event.source_id],
                 report_count=1,
+                notes=event.reported_attributes.notes,
             )
         else:
             existing.latest_simulated = event.simulated_time
             existing.report_count += 1
             if event.source_id not in existing.source_ids:
                 existing.source_ids.append(event.source_id)
+            if existing.notes is None and event.reported_attributes.notes is not None:
+                existing.notes = event.reported_attributes.notes
 
     def _add_second_report(self, first: EventEnvelope, *, contradict: bool) -> None:
         self.clock.tick()

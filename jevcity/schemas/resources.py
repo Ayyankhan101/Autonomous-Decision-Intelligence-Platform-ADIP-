@@ -45,3 +45,9 @@ class IncidentRecord(BaseModel):
     source_ids: list[str] = Field(default_factory=list)
     report_count: int = Field(default=0, ge=0)
     assigned_resource_ids: list[str] = Field(default_factory=list)
+    notes: str | None = Field(
+        default=None,
+        max_length=500,
+        description="Free-text notes carried from the originating report "
+        "(display-only; never enters the Laya state, Invariant 16).",
+    )

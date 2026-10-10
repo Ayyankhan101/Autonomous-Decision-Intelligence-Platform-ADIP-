@@ -331,3 +331,20 @@ def test_chained_overrides_dedupe_rule_ids(client):
         ][-1]
         dec_id = latest["decision_id"]
         assert latest["matched_rules"].count("R-OVERRIDE-01") == 1
+
+
+def test_incident_notes_flow_through_to_api(client):
+    client.post("/api/simulation/start", json={"session_seed": 5, "scenario_seed": 6})
+    client.post(
+        "/api/simulation/incident",
+        json={
+            "incident_type": "fire",
+            "zone": "north",
+            "severity": "severe",
+            "notes": "caller reports trapped occupants",
+        },
+    )
+    incidents = client.get("/api/incidents").json()["incidents"]
+    assert incidents[0]["notes"] == "caller reports trapped occupants"
+    detail = client.get(f"/api/incidents/{incidents[0]['incident_id']}").json()
+    assert detail["incident"]["notes"] == "caller reports trapped occupants"

@@ -75,6 +75,7 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    SANDBOX_STORE_MAX = 50
     sandbox_store: dict[str, WhatIfResult] = {}
 
     def _decisions_for(incident_id: str) -> list[DecisionRecord]:
@@ -323,6 +324,8 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
         except RuntimeError as exc:
             raise HTTPException(409, str(exc)) from exc
         sandbox_store[result.sandbox_id] = result
+        while len(sandbox_store) > SANDBOX_STORE_MAX:
+            sandbox_store.pop(next(iter(sandbox_store)))
         return result
 
     @app.get("/api/what-if/{sandbox_id}/result", response_model=WhatIfResult)

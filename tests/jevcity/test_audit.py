@@ -72,3 +72,32 @@ def test_override_entry_records_actor_and_reason(log):
     assert entry.reason == "field confirmation"
     assert entry.previous_hash == GENESIS
     assert log.validate_chain() is True
+
+
+def test_concurrent_appends_keep_chain_intact(log):
+    import threading
+
+    failures: list[BaseException] = []
+
+    def worker(tag: int) -> None:
+        try:
+            for i in range(25):
+                log.append(
+                    actor="system",
+                    action="DECISION_EMITTED",
+                    decision_id=f"dec-{tag}-{i}",
+                )
+        except BaseException as exc:
+            failures.append(exc)
+
+    threads = [threading.Thread(target=worker, args=(tag,)) for tag in range(4)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert not failures
+    entries = log.entries(limit=1000)
+    assert len(entries) == 100
+    assert len({entry.entry_id for entry in entries}) == 100
+    assert log.validate_chain() is True

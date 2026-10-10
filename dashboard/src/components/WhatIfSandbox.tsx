@@ -214,7 +214,7 @@ export const WhatIfSandbox: React.FC<WhatIfSandboxProps> = ({ latestDecision }) 
               </div>
 
               <div className="mt-4 pt-2 border-t border-slate-800 text-[10px] text-slate-500 font-mono">
-                Persisted in production DB & Audit Log
+                Recorded in session audit log &middot; cleared on restart
               </div>
             </div>
 
