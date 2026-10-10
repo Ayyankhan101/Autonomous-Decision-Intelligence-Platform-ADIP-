@@ -250,7 +250,7 @@ export const MapLayer: React.FC<MapLayerProps> = ({
                     <div className="flex items-center gap-1.5">
                       {getResourceIcon(type)}
                       <span className="text-xs font-semibold capitalize text-slate-200">
-                        {type.replace('_', ' ')}
+                        {type.replaceAll('_', ' ')}
                       </span>
                     </div>
                     <span
@@ -367,7 +367,7 @@ export const MapLayer: React.FC<MapLayerProps> = ({
                                   {incident.incident_id}
                                 </span>
                                 <span className="text-[10px] uppercase font-mono text-slate-500">
-                                  {incident.incident_type.replace('_', ' ')}
+                                  {incident.incident_type.replaceAll('_', ' ')}
                                 </span>
                               </div>
                               <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5 font-mono">

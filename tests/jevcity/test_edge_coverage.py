@@ -599,3 +599,20 @@ def test_next_live_incident_id_after_what_if_has_no_gap(engine):
     engine.run_what_if(WhatIfRequest(scenario=WhatIfScenario.SECOND_EMERGENCY))
     injected = engine.simulation.inject_incident(IncidentType.FLOOD, Zone.SOUTH)
     assert injected == f"inc-{expected_next:05d}"
+
+
+def test_sandbox_store_evicts_oldest_beyond_cap(client):
+    client.post("/api/simulation/start", json={"session_seed": 42, "scenario_seed": 7})
+    client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "fire", "zone": "north", "severity": "severe"},
+    )
+    ids = []
+    for _ in range(52):
+        response = client.post("/api/what-if/run", json={"scenario": "close_road"})
+        assert response.status_code == 200
+        ids.append(response.json()["sandbox_id"])
+    assert client.get(f"/api/what-if/{ids[0]}/result").status_code == 404
+    assert client.get(f"/api/what-if/{ids[1]}/result").status_code == 404
+    assert client.get(f"/api/what-if/{ids[2]}/result").status_code == 200
+    assert client.get(f"/api/what-if/{ids[-1]}/result").status_code == 200

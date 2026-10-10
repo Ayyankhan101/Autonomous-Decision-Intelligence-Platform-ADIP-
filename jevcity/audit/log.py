@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+import threading
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -62,6 +63,7 @@ class AuditLog:
         self._conn.executescript(_SCHEMA)
         self._conn.commit()
         self._counter = self._load_counter()
+        self._lock = threading.Lock()
 
     def _load_counter(self) -> int:
         row = self._conn.execute("SELECT COUNT(*) FROM audit_log").fetchone()
@@ -97,6 +99,46 @@ class AuditLog:
     ) -> AuditEntry:
         if dry_run:
             raise ValueError("dry_run entries must never reach the live audit (Invariant 15)")
+        with self._lock:
+            return self._append_locked(
+                actor=actor,
+                action=action,
+                reason=reason,
+                before_state=before_state,
+                after_state=after_state,
+                decision_id=decision_id,
+                incident_id=incident_id,
+                policy_version=policy_version,
+                model_versions=model_versions,
+                laya=laya,
+                timestamp=timestamp,
+                cited_clause=cited_clause,
+                reason_code=reason_code,
+                impact_tier=impact_tier,
+                context_code=context_code,
+                break_glass=break_glass,
+            )
+
+    def _append_locked(
+        self,
+        *,
+        actor: str,
+        action: str,
+        reason: str,
+        before_state: str | None,
+        after_state: str | None,
+        decision_id: str | None,
+        incident_id: str | None,
+        policy_version: str | None,
+        model_versions: dict[str, str] | None,
+        laya: AuditLayaMetadata | None,
+        timestamp: datetime | None,
+        cited_clause: str | None,
+        reason_code: str | None,
+        impact_tier: str | None,
+        context_code: str | None,
+        break_glass: bool,
+    ) -> AuditEntry:
         self._counter += 1
         entry = AuditEntry(
             entry_id=f"aud-{self._counter:06d}",

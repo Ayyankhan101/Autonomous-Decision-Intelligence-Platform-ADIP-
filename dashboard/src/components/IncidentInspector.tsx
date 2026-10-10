@@ -95,7 +95,7 @@ export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
               {incident.incident_id}
             </span>
             <span className="px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700">
-              {incident.incident_type.replace('_', ' ')}
+              {incident.incident_type.replaceAll('_', ' ')}
             </span>
             <span className="px-2 py-0.5 rounded text-[11px] font-mono text-cyan-300 bg-cyan-950/50 border border-cyan-800/50">
               Zone: {incident.zone.toUpperCase()}
@@ -110,7 +110,7 @@ export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
               }`}
               title="Ingestion validation status (quality hint)"
             >
-              DQ: {incident.validation_status.replace('_', ' ').toUpperCase()}
+              DQ: {incident.validation_status.replaceAll('_', ' ').toUpperCase()}
             </span>
           </div>
           <div className="flex items-center gap-3 text-xs text-slate-400 mt-1 font-mono">
@@ -123,6 +123,11 @@ export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
             <span>•</span>
             <span>Sources: {incident.source_ids.join(', ')}</span>
           </div>
+          {incident.notes && (
+            <div className="text-xs text-slate-400 mt-1 font-mono">
+              <span className="text-slate-500">Notes:</span> {incident.notes}
+            </div>
+          )}
         </div>
 
         {/* Human Override Trigger */}
@@ -356,7 +361,7 @@ export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Recommended Resource:</span>
                   <span className="font-mono text-slate-200 capitalize">
-                    {laya.recommended_resource_type?.replace('_', ' ') || 'None'}
+                    {laya.recommended_resource_type?.replaceAll('_', ' ') || 'None'}
                   </span>
                 </div>
 
@@ -477,7 +482,9 @@ export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Final Decision Source:</span>
                   <span className="font-mono text-slate-200">
-                    {laya?.final_decision_source || 'policy_finalized'}
+                    {decision.state === 'OVERRIDE_ACTIVE'
+                      ? `override_active (original: ${laya?.final_decision_source || 'policy_finalized'})`
+                      : laya?.final_decision_source || 'policy_finalized'}
                   </span>
                 </div>
 

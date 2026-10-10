@@ -73,6 +73,20 @@
       "$ref": "#/$defs/IncidentLifecycle",
       "default": "detected"
     },
+    "notes": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Free-text notes carried from the originating report (display-only; never enters the Laya state, Invariant 16).",
+      "title": "Notes"
+    },
     "report_count": {
       "default": 0,
       "minimum": 0,
