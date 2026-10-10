@@ -29,6 +29,30 @@ fallback_rule, human_required}.
 Guardrail order: hard reject → model failure → signal combination (2-signal CRITICAL rule)
 → Laya advisory handling → data-quality hold → confidence gates → allocation → record.
 
+## Enhancements E1–E4 + demo-liveness
+
+- **E1 trust scoring** — per-stream veracity from report history; mean veracity < 0.7
+  fires `R-TRUST-DOWNWEIGHT-01` (priority stepped down one level, fake sources named).
+  `POST /api/simulation/sybil` injects an honest seed + 2–10 fabricated reports for the
+  demo (`test_trust.py`; rules table in `GUARDRAIL.md`).
+- **E2 policy position sandbox** — runtime switch `RESPONSE_TIME | EQUITY | ECO`
+  (`POST /api/policy/position`). New decisions follow the position; `reoptimise_active=true`
+  re-decides open incidents (units released/reassigned) and emits `R-EQUITY-UNSERVED-01` /
+  `R-ECO-ELECTRIC-FIRST-01` as matched rules. Writes `POLICY_POSITION_SWITCHED` audit
+  entry **on the simulation clock**. Position is runtime config: persists across
+  `/api/simulation/start` and `/reset` (only an explicit switch changes it) — pin it to
+  reproduce seeded runs (`test_policy_sandbox.py`).
+- **E3 decision lineage** — `GET /api/decisions/{id}` carries an optional `lineage` block
+  (evidence terms, decisive clause, expression) for explainability demos (`test_lineage.py`).
+- **E4 override friction** — server classifies each override into `LOW | HIGH | BREAK_GLASS`
+  impact tiers; HIGH needs `impact_ack` + `context_code`, life-safety priority raises are
+  BREAK_GLASS and need `break_glass=true` (missing → 422). `new_priority` is honored only
+  for `CHANGE_PRIORITY` (stray values normalized away client- and server-side). Tiers +
+  context stored on record and audit entry (`test_friction.py`).
+- **Demo-liveness** — `GET /api/audit/verify` recomputes the full SHA-256 chain now
+  (`{ok, entry_count, broken_at}`); `POST /api/simulation/laya-mode` hot-swaps the adapter
+  mock|cache|live at runtime (live loads lazily, fail-closed routing unchanged).
+
 ## Confidence gates (§5.8)
 
 ```
@@ -91,7 +115,12 @@ checkpoint smoke (`test_laya_live.py`, marks `model` + `laya_live`, CI step
 `SeedConfig(session_seed=42, scenario_seed=7)` → two `random.Random` streams
 (`simulation/seeds.py`). Same seeds reproduce event order, attributes, injection modes,
 resource states. SimClock epoch = 2026-09-27T10:00Z; **no host wall-clock anywhere** in
-feature/decision timestamps.
+feature/decision timestamps (every audit append passes the sim clock explicitly).
+
+Determinism caveat (QA-verified): the E2 policy position is runtime config and persists
+across start/reset — same seeds with a *different* position legitimately diverge.
+Pin the position to reproduce; with it pinned, decisions are byte-identical across
+process restarts.
 
 ## Decision states (6 — ERRATA C6)
 
@@ -116,10 +145,18 @@ emits an entry with actor/action/reason/timestamp/before-after/decision id/polic
 model versions + full Laya metadata block (§3.1.4). Overrides require operator_id + reason
 (Invariant 7). `dry_run` entries are rejected at the API (Invariant 15).
 
+**Read model:** `GET /api/audit?limit=100` returns entries **newest-first**;
+every entry's `timestamp` is the simulation clock (`POLICY_POSITION_SWITCHED`
+included — QA loop 2). The log is immutable by design: it survives an in-process
+`/api/simulation/reset` (reset clears session state, not history) and is only
+recreated by a process restart (default `:memory:` store).
+
 **Operator identity:** `operator_id` = opaque non-empty string (no directory/authn in MVP);
 actor `system` is reserved for engine-emitted entries. **Read-only guarantee:** the only
-audit route is `GET /api/audit` — no PUT/PATCH/DELETE route exists (route set frozen at
-16, asserted in `tests/jevcity/test_audit_phase4.py`) and SQL triggers abort mutations.
+audit route is `GET /api/audit` (plus read-only `GET /api/audit/verify`) — no
+PUT/PATCH/DELETE route exists (16 plan-frozen routes unchanged + 6 additive = 22,
+ledger asserted in `tests/jevcity/test_audit_phase4.py`) and SQL triggers abort
+mutations.
 
 **Laya metadata** on both `DECISION_EMITTED` and `OVERRIDE_APPLIED` entries: checkpoint,
 router model, status, state/questions hash, questions version (`q-0.1.0`), suggested
@@ -132,20 +169,28 @@ field itself (`payload_hash()`), so adding schema fields never invalidates old r
 
 **Export:** `uv run python tools/export_audit.py [--db PATH] [--out FILE]` dumps JSONL
 read-only (`mode=ro`), refusing `:memory:` and failing non-zero on a broken chain
-(`jevcity/audit/export.py`). No new API endpoint (contract frozen at 16).
+(`jevcity/audit/export.py`). No new API endpoint beyond the 22-route ledger.
 
 ## What-If
 
-Sandboxed `run_what_if`: deepcopy resource pool, fresh isolated Laya cache, no audit
-append, no decision persistence, `dry_run=True` stamped on the decision. Predefined
-scenarios only (remove_one_ambulance, close_road, second_emergency); second-emergency
-sandbox incident is rolled back from the live registry on completion.
+Sandboxed `run_what_if`: predefined scenarios only (remove_one_ambulance, close_road,
+second_emergency); results always carry `dry_run=true, audit_written=false,
+live_state_mutated=false`. Isolation is enforced by `sandbox_scope()`
+(`engine.py`): on entry it snapshots the simulation clock, fired-events set, generator
+counters, both RNG stream states, resource pool, `_processed` cursor, decision/history/
+validation collections, trust scores, engine `_counter`, and audit entry count —
+restored on exit, so a dry-run cannot tick the live clock, consume incident ids, or
+leave any residue (regression-tested by the residue assertions in
+`test_edge_coverage.py`; `sandbox_store` keeps results keyed `sbx-*` for
+`GET /api/what-if/{sandbox_id}/result`). Second-emergency's sandbox incident is also
+rolled back from the live registry on completion. The Laya cache uses an isolated
+namespace (Inv 6/15).
 
 ## Command Center dashboard (Phase 5)
 
 React + TypeScript + Vite + Tailwind app in `dashboard/`, built to `dashboard/dist` and
 served by the API at `/` (`StaticFiles` mount, skipped when `dist` is absent; `/api/*`
-routes unaffected — route set still frozen at 16). CORS middleware allows the Vite dev
+routes unaffected — the 16 frozen routes plus 6 additive are the full ledger). CORS middleware allows the Vite dev
 origin (`:5173`/`:3000`, wildcard in dev). Data layer polls `/api/state`, `/api/incidents`,
 `/api/decisions`, `/api/resources`, `/api/audit` every **1.5 s**.
 
@@ -193,6 +238,16 @@ only — chain validation itself is server-side: `validate_chain` / export CLI).
 | Phase 5 dashboard: CORS, static mount, frozen routes with dashboard, sim/override/What-If/bad-data flows | `tests/jevcity/test_dashboard_phase5.py` |
 | `LayaBlock.distribution` plumbing on LIVE path | `tests/jevcity/test_laya_distribution.py` |
 | Fixture honesty (C4 gates + measured fail report) | `tests/jevcity/test_fixtures.py`, `tests/jevcity/test_eval_model.py` |
+| E1 trust scoring + Sybil flood | `tests/jevcity/test_trust.py` |
+| E2 policy position switch, reoptimise + sim-clock audit | `tests/jevcity/test_policy_sandbox.py` |
+| E3 decision lineage block | `tests/jevcity/test_lineage.py` |
+| E4 override friction tiers, stray `new_priority` normalization | `tests/jevcity/test_friction.py` |
+| Demo beats / CLI script | `tests/jevcity/test_demo_script.py` |
+| Demo-liveness (audit verify, mode hot-swap, backend recovery) | `tests/jevcity/test_liveness.py` |
+| Edge + negative paths (404/409/422), what-if residue snapshot | `tests/jevcity/test_edge_coverage.py` |
+| Replay recordings + path-traversal guard | `tests/jevcity/test_replay.py` |
+| Feature engineering | `tests/jevcity/test_features.py` |
+| ML dataset/model/wrapper contracts | `tests/jevcity/test_ml_dataset.py`, `tests/jevcity/test_ml_models.py`, `tests/jevcity/test_wrapper.py` |
 | Event-pipeline load/latency check (bench, not pytest) | `benchmarks/jevcity_pipeline_bench.py` |
 
 ## Repo coexistence

@@ -13,7 +13,11 @@ RESPONSE_TIME/EQUITY/ECO — new decisions follow the new position unless
 `GET /api/audit/verify` (demo-liveness: recompute the SHA-256 hash chain now,
 returns `{ok, entry_count, broken_at}`), and
 `POST /api/simulation/laya-mode` (demo-liveness: hot-swap adapter mock|cache|live;
-live loads lazily on the first decision).
+live loads lazily on the first decision), and
+`POST /api/simulation/sybil` (enhancement 1: Sybil-flood injection — honest seed +
+2–10 fabricated reports from fake identities, feeding per-stream trust scoring).
+22 routes total (16 frozen + 6 additive), ledger asserted in
+`tests/jevcity/test_audit_phase4.py::FROZEN_ROUTES`.
 
 ## Reads
 
