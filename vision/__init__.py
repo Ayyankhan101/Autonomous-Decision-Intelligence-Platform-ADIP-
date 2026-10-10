@@ -9,6 +9,7 @@ from .schema import (
     VisionMode,
     VisionStatus,
 )
+from .analyzer import VisionAnalyzer
 from .store import ImageStore, sniff_mime
 
 __all__ = [
@@ -18,6 +19,7 @@ __all__ = [
     "SceneType",
     "UploadRequest",
     "UploadResponse",
+    "VisionAnalyzer",
     "VisionFacts",
     "VisionMode",
     "VisionStatus",
