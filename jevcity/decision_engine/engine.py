@@ -3,6 +3,8 @@ Laya advisory → guardrail → audit. Live path persists; What-If path never do
 from __future__ import annotations
 
 import copy
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 from jevcity.audit.log import AuditLog
 from jevcity.features.engineer import build_features, history_features
@@ -72,6 +74,43 @@ class JevCityEngine:
         self.audit_write_failed: bool = False
         self._processed = 0
         self._counter = 0
+        self._sandbox_counter = 0
+
+    @contextmanager
+    def sandbox_scope(self) -> Iterator[None]:
+        """Isolate a What-If run: every side effect the sandbox would otherwise leave on
+        live state (clock tick, seeded RNG draw, id counter, trust scores, appended
+        events/incidents) is rolled back on exit (Invariants 6/15)."""
+        sim = self.simulation
+        saved = {
+            "clock": sim.clock.now,
+            "fired": sim.second_emergency_fired,
+            "incident_counter": sim.generator._incident_counter,
+            "event_counter": sim.generator._event_counter,
+            "session_state": sim.session_rng.getstate(),
+            "scenario_state": sim.scenario_rng.getstate(),
+            "raw_len": len(sim.raw_events),
+            "event_len": len(sim.events),
+            "incident_ids": set(sim.incidents),
+            "counter": self._counter,
+            "trust": copy.deepcopy(self.trust),
+        }
+        try:
+            yield
+        finally:
+            sim.clock.reset(saved["clock"])
+            sim.second_emergency_fired = saved["fired"]
+            sim.generator._incident_counter = saved["incident_counter"]
+            sim.generator._event_counter = saved["event_counter"]
+            sim.session_rng.setstate(saved["session_state"])
+            sim.scenario_rng.setstate(saved["scenario_state"])
+            del sim.raw_events[saved["raw_len"]:]
+            del sim.events[saved["event_len"]:]
+            for incident_id in list(sim.incidents):
+                if incident_id not in saved["incident_ids"]:
+                    del sim.incidents[incident_id]
+            self._counter = saved["counter"]
+            self.trust = saved["trust"]
 
     # --- live path ------------------------------------------------------
 
@@ -527,44 +566,39 @@ class JevCityEngine:
         if not decidable:
             raise RuntimeError("no decidable incidents to run What-If against")
         target = decidable[-1]
-        if req.scenario == WhatIfScenario.REMOVE_ONE_AMBULANCE:
-            removable = [
-                r for r in sandbox_pool.all()
-                if r.type == ResourceType.AMBULANCE
-            ]
-            if removable:
-                sandbox_pool.remove(sorted(removable, key=lambda r: r.resource_id)[0].resource_id)
-        elif req.scenario == WhatIfScenario.CLOSE_ROAD:
-            pass  # same target; feature-level scenario hooks come in Phase 5
-        elif req.scenario == WhatIfScenario.SECOND_EMERGENCY:
-            self.simulation.second_emergency()
-            pending = self.simulation.raw_events[self._processed:]
-            if pending:
-                shell_id = str(pending[-1].get("incident_id"))
-                shell = self.simulation.incidents.get(shell_id)
-                if shell is None:
-                    shell = self._rejected_shell(shell_id, validate_raw(pending[-1]))
-                    self.simulation.incidents[shell_id] = shell
-                target = shell
-
         sandbox_adapter = LayaAdapter(mode=LayaMode.MOCK, cache={})
-        record = self.decide_for(
-            target.incident_id,
-            pool=sandbox_pool,
-            adapter=sandbox_adapter,
-            dry_run=True,
-        )
+        with self.sandbox_scope():
+            if req.scenario == WhatIfScenario.REMOVE_ONE_AMBULANCE:
+                removable = [
+                    r for r in sandbox_pool.all()
+                    if r.type == ResourceType.AMBULANCE
+                ]
+                if removable:
+                    sandbox_pool.remove(sorted(removable, key=lambda r: r.resource_id)[0].resource_id)
+            elif req.scenario == WhatIfScenario.CLOSE_ROAD:
+                pass  # same target; feature-level scenario hooks come in Phase 5
+            elif req.scenario == WhatIfScenario.SECOND_EMERGENCY:
+                self.simulation.second_emergency()
+                pending = self.simulation.raw_events[self._processed:]
+                if pending:
+                    shell_id = str(pending[-1].get("incident_id"))
+                    shell = self.simulation.incidents.get(shell_id)
+                    if shell is None:
+                        shell = self._rejected_shell(shell_id, validate_raw(pending[-1]))
+                        self.simulation.incidents[shell_id] = shell
+                    target = shell
 
-        if req.scenario == WhatIfScenario.SECOND_EMERGENCY:
-            # roll the sandbox-only incident back out of the live registry
-            self.simulation.incidents.pop(target.incident_id, None)
-            self.simulation.raw_events = self.simulation.raw_events[: self._processed]
-            self.simulation.events = [
-                e for e in self.simulation.events if e.incident_id != target.incident_id
-            ]
+            record = self.decide_for(
+                target.incident_id,
+                pool=sandbox_pool,
+                adapter=sandbox_adapter,
+                dry_run=True,
+            )
+            self._sandbox_counter += 1
+            sandbox_id = f"sbx-{self._sandbox_counter:06d}"
 
         return WhatIfResult(
-            sandbox_id=f"sbx-{self._counter + 1:06d}",
+            sandbox_id=sandbox_id,
             scenario=req.scenario,
             dry_run=True,
             laya_mode=sandbox_adapter.mode.value,

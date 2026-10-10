@@ -44,6 +44,8 @@ from jevcity.schemas import (
     Signals,
     TrafficSignal,
     ValidationStatus,
+    WhatIfRequest,
+    WhatIfScenario,
     Zone,
 )
 
@@ -527,3 +529,63 @@ def test_export_raises_on_previous_hash_mismatch(tmp_path):
 
     with pytest.raises(AuditExportError, match="previous_hash mismatch"):
         export_entries(path)
+
+
+def _seed_decidable(engine) -> None:
+    engine.simulation.inject_incident(IncidentType.FIRE, Zone.NORTH)
+    engine.process_pending()
+
+
+def _live_snapshot(engine) -> dict:
+    sim = engine.simulation
+    return {
+        "clock": sim.simulated_time,
+        "incidents": set(sim.incidents),
+        "raw": len(sim.raw_events),
+        "events": len(sim.events),
+        "fired": sim.second_emergency_fired,
+        "incident_counter": sim.generator._incident_counter,
+        "event_counter": sim.generator._event_counter,
+        "engine_counter": engine._counter,
+        "veracity": dict(engine.trust.veracity),
+        "availability": dict(engine.trust.availability),
+        "audit": engine.audit.chain_report()["entry_count"],
+    }
+
+
+@pytest.mark.parametrize(
+    "scenario",
+    ["second_emergency", "remove_one_ambulance", "close_road"],
+)
+def test_what_if_leaves_zero_live_residue(engine, scenario):
+    _seed_decidable(engine)
+    before = _live_snapshot(engine)
+    result = engine.run_what_if(WhatIfRequest(scenario=WhatIfScenario(scenario)))
+    assert result.live_state_mutated is False
+    assert result.audit_written is False
+    after = _live_snapshot(engine)
+    assert after == before
+
+
+def test_what_if_second_emergency_repeat_is_deterministic_and_unique(engine):
+    _seed_decidable(engine)
+    first = engine.run_what_if(WhatIfRequest(scenario=WhatIfScenario.SECOND_EMERGENCY))
+    second = engine.run_what_if(WhatIfRequest(scenario=WhatIfScenario.SECOND_EMERGENCY))
+    assert first.sandbox_id != second.sandbox_id
+    assert (
+        first.decision.priority,
+        first.decision.state,
+        tuple(first.decision.matched_rules),
+    ) == (
+        second.decision.priority,
+        second.decision.state,
+        tuple(second.decision.matched_rules),
+    )
+
+
+def test_next_live_incident_id_after_what_if_has_no_gap(engine):
+    _seed_decidable(engine)
+    expected_next = engine.simulation.generator._incident_counter + 1
+    engine.run_what_if(WhatIfRequest(scenario=WhatIfScenario.SECOND_EMERGENCY))
+    injected = engine.simulation.inject_incident(IncidentType.FLOOD, Zone.SOUTH)
+    assert injected == f"inc-{expected_next:05d}"

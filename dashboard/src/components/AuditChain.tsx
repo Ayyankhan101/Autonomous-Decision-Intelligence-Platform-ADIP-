@@ -15,8 +15,8 @@ export const AuditChain: React.FC<AuditChainProps> = ({ entries, newIds }) => {
   const [verify, setVerify] = useState<AuditVerifyResponse | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  // chronological, newest last; show the last CHAIN_LEN
-  const window = entries.slice(-CHAIN_LEN);
+  // API returns newest first; show the most recent CHAIN_LEN
+  const window = entries.slice(0, CHAIN_LEN);
 
   const handleVerify = async () => {
     setIsVerifying(true);

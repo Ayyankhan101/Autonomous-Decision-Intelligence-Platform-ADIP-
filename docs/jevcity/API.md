@@ -25,7 +25,7 @@ live loads lazily on the first decision).
 | GET | `/api/decisions` | `DecisionListResponse` |
 | GET | `/api/decisions/{decision_id}` | `DecisionRecord` (includes optional `lineage` block — evidence terms, decisive clause, expression; enhancement 3) |
 | GET | `/api/resources` | `ResourceListResponse` |
-| GET | `/api/audit?limit=100` | `AuditListResponse` |
+| GET | `/api/audit?limit=100` | `AuditListResponse` — entries newest-first |
 
 ## Simulation controls
 

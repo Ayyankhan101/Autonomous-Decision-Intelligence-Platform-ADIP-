@@ -148,7 +148,7 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ entries, newIds }) => {
 
                   <div className="flex items-center gap-3">
                     <span className="text-[11px] font-mono text-slate-400">
-                      {new Date(entry.timestamp).toLocaleTimeString()}
+                      {new Date(entry.timestamp).toISOString().substring(11, 19)} UTC
                     </span>
 
                     <span
