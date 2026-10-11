@@ -83,6 +83,18 @@ class AuditListResponse(BaseModel):
     entries: list[AuditEntry]
 
 
+class DashboardPayload(BaseModel):
+    """GET /api/dashboard — combined poll bundle (state + 4 slices)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    state: StatePayload
+    incidents: IncidentListResponse
+    decisions: DecisionListResponse
+    resources: ResourceListResponse
+    audit: AuditListResponse
+
+
 class AuditVerifyResponse(BaseModel):
     """GET /api/audit/verify — live hash-chain recompute (demo-liveness pack)."""
 

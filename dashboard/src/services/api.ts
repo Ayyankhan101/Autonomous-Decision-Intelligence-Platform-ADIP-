@@ -1,6 +1,7 @@
 import type {
   AuditEntry,
   AuditVerifyResponse,
+  DashboardResponse,
   DecisionRecord,
   ImpactPreviewResponse,
   IncidentRecord,
@@ -59,6 +60,9 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
 export const api = {
   // --- Reads ---
   getState: () => fetchJson<StatePayload>(`${API_BASE}/state`),
+
+  getDashboard: (auditLimit = 100): Promise<DashboardResponse> =>
+    fetchJson<DashboardResponse>(`${API_BASE}/dashboard?audit_limit=${auditLimit}`),
 
   // --- Vision evidence ---
   uploadImage: (imageB64: string, filename?: string): Promise<UploadResponse> =>

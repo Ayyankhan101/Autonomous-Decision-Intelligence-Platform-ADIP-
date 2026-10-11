@@ -414,3 +414,11 @@ export interface SimulationActionResponse {
   incident_id?: string | null;
   decision_ids: string[];
 }
+
+export interface DashboardResponse {
+  state: StatePayload;
+  incidents: { incidents: IncidentRecord[] };
+  decisions: { decisions: DecisionRecord[] };
+  resources: { resources: Resource[] };
+  audit: { entries: AuditEntry[] };
+}

@@ -5,6 +5,7 @@ from .audit import AuditEntry, AuditLayaMetadata
 from .api import (
     AuditListResponse,
     AuditVerifyResponse,
+    DashboardPayload,
     DecisionListResponse,
     ImpactPreviewRequest,
     ImpactPreviewResponse,
@@ -110,6 +111,7 @@ __all__ = [
     "AuditVerifyResponse",
     "ChoiceAnswer",
     "DamageSeverity",
+    "DashboardPayload",
     "DataQualitySignal",
     "DecisionListResponse",
     "DecisionRecord",
