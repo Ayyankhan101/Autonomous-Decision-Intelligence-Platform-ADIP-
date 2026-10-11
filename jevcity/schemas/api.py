@@ -41,6 +41,7 @@ class StatePayload(BaseModel):
     available_resources: dict[ResourceType, int]
     laya_mode: str
     last_laya_status: str | None = None
+    vision_mode: str = "mock"
     policy_position: PolicyPosition = PolicyPosition.RESPONSE_TIME
     objective_weights: dict[str, float] = Field(default_factory=dict)
     audit_write_failed: bool = Field(

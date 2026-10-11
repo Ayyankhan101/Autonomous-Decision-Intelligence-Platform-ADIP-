@@ -98,6 +98,11 @@
       "format": "date-time",
       "title": "Simulated Time",
       "type": "string"
+    },
+    "vision_mode": {
+      "default": "mock",
+      "title": "Vision Mode",
+      "type": "string"
     }
   },
   "required": [

@@ -87,6 +87,13 @@ export interface LayaModeResponse {
   mode: LayaRunMode;
 }
 
+export type VisionRunMode = 'mock' | 'cache' | 'live';
+
+export interface VisionModeResponse {
+  previous_mode: VisionRunMode;
+  mode: VisionRunMode;
+}
+
 export interface NewIds {
   decisions: string[];
   incidents: string[];
@@ -117,6 +124,7 @@ export interface StatePayload {
   available_resources: Record<ResourceType, number>;
   laya_mode: string;
   last_laya_status?: string | null;
+  vision_mode?: string;
   policy_position?: PolicyPosition;
   objective_weights?: Record<string, number>;
   audit_write_failed?: boolean;

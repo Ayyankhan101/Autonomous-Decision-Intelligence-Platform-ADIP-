@@ -9,6 +9,8 @@ import type {
   InjectionMode,
   LayaModeResponse,
   LayaRunMode,
+  VisionModeResponse,
+  VisionRunMode,
   OverrideContextCode,
   OverrideType,
   PolicyPosition,
@@ -250,6 +252,12 @@ export const api = {
 
   setLayaMode: (mode: LayaRunMode): Promise<LayaModeResponse> =>
     fetchJson<LayaModeResponse>(`${API_BASE}/simulation/laya-mode`, {
+      method: 'POST',
+      body: JSON.stringify({ mode }),
+    }),
+
+  setVisionMode: (mode: VisionRunMode): Promise<VisionModeResponse> =>
+    fetchJson<VisionModeResponse>(`${API_BASE}/vision/mode`, {
       method: 'POST',
       body: JSON.stringify({ mode }),
     }),
