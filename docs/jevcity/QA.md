@@ -20,8 +20,10 @@ The loop stops after **two consecutive clean passes**.
 | Post-audit | test hardening + determinism doc | **PR #20** (`b8b404b`) |
 | Docs refresh | README graph, QA.md, count corrections | **PR #21** (`dcb276c`) |
 | Backlog | 3 cosmetic findings + all known limitations cleared | **PR #22** (`9e003d0`) |
+| Status refresh | finding statuses + README PR range updated through PR #22 | **PR #23** (`4cf6a6a`) |
+| User-journey walkthrough | full operator journey (vision, overrides, policy, adversarial, resilience); 1 functional + 1 doc finding | **PR #24** |
 
-**Verdict: QA loop complete — 2 consecutive clean passes (loops 3 + 4).**
+**Verdict: QA loop complete — 2 consecutive clean passes (loops 3 + 4); user-journey walkthrough clean after PR #24.**
 
 ## Findings
 
@@ -38,10 +40,12 @@ The loop stops after **two consecutive clean passes**.
 | F-B9 | dashboard | "Incident notes" input (`SimulationControls.tsx:109,364`) accepts and stores `notes` but no UI surface ever displays them | cosmetic | Fixed (PR #22: additive `IncidentRecord.notes` + inspector "Notes:" row; display-only, Invariant 16 unchanged) |
 | F-B10 | dashboard + API | Override modal sent `new_priority: CRITICAL` (state default) for **all** override types; server graded the stray priority as a raise, so a `DISMISS` on a life-safety incident was classified `BREAK_GLASS` at apply after the client had validated it as `HIGH` → 422 after client validation passed | functional | Fixed (PR #19): client sends `new_priority` only for `CHANGE_PRIORITY`; server normalizes in `assess_override`/`apply_override`; regression test `test_stray_new_priority_on_non_change_type_is_ignored` |
 | F-B11 | engine | `POLICY_POSITION_SWITCHED` audit entry omitted `timestamp` → `log.py` fell back to host wall clock, mixing time bases inside one hash chain (violates "no host wall-clock anywhere") | data-integrity | Fixed (PR #19): entry stamped with `self.simulation.clock.now`; assertion in `test_policy_sandbox.py` |
+| F-B12 | dashboard | Override modal stays mounted when closed (`if (!isOpen) return null`) and keeps `reason`/`basis`/`break_glass` state — reopening and submitting resends the previous override payload without re-entry (observed: identical no-op re-override silently applied at LOW tier) | functional | Fixed (PR #24): form state (`reason`, `basis`, acknowledgments, `errorMsg`) reset whenever the modal closes |
+| F-B13 | docs | `GUARDRAIL.md`/`QA.md` claimed "a re-override is itself BREAK_GLASS"; `friction.py` grades every override on its own projected impact (no-op `CHANGE_PRIORITY` → LOW) | docs accuracy | Fixed (PR #24): both docs reworded to match `assess()` |
 
 ### Designed friction (verified, not bugs)
 
-- Re-override → 422 unless `break_glass=true`.
+- A re-override is tier-graded on its own projected impact (no-op `CHANGE_PRIORITY` → LOW; another life-safety raise → `BREAK_GLASS`); `HIGH`/`BREAK_GLASS` tiers then enforce their friction as usual.
 - Override audit entries reference the **original** decision id (asserted by `test_audit_phase4`).
 - `HIGH` tier requires `impact_ack=true` + `context_code`; `BREAK_GLASS` requires `break_glass=true`; `CHANGE_PRIORITY` requires `new_priority`.
 - `hazmat` is not a valid incident type (enum has 4: accident/fire/flood/traffic_spike) → 422.

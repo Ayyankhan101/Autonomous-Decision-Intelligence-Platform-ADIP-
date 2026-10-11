@@ -67,9 +67,10 @@ rejects missing acknowledgements with 422.
 
 `new_priority` is honored only for `CHANGE_PRIORITY` — stray values are normalized to
 `None` client- and server-side so they can never escalate the tier. Tier, `context_code`
-and `break_glass` are stored on the override record and its audit entry; a re-override
-of an already-overridden decision is itself BREAK_GLASS. Evidence:
-`tests/jevcity/test_friction.py`.
+and `break_glass` are stored on the override record and its audit entry. A re-override
+of an already-overridden decision is graded on its own projected impact like any other
+override (a no-op `CHANGE_PRIORITY` is LOW; another life-safety priority raise is
+BREAK_GLASS). Evidence: `tests/jevcity/test_friction.py`.
 
 ## Plan §6 six scenarios → tests (in `test_guardrail_invariants.py` unless noted)
 

@@ -80,6 +80,19 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
     setContextCode('');
     setBreakGlass(false);
   }
+  // clear entered payload on close so a reopened modal can never resubmit it
+  const [prevOpen, setPrevOpen] = useState(isOpen);
+  if (prevOpen !== isOpen) {
+    setPrevOpen(isOpen);
+    if (!isOpen) {
+      setReason('');
+      setBasis('');
+      setImpactAck(false);
+      setContextCode('');
+      setBreakGlass(false);
+      setErrorMsg(null);
+    }
+  }
 
   if (!isOpen) return null;
 
