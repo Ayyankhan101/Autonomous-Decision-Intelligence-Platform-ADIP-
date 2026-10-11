@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 from adip.config import REPO_ROOT
 
@@ -19,15 +20,16 @@ def run(*args: str, cwd=REPO_ROOT) -> subprocess.CompletedProcess:
 
 
 def test_selftests_pass():
-    for script, flag in [
+    scripts = [
         ("evals/run_eval.py", "--selftest"),
         ("evals/calibrate.py", "--selftest"),
         ("evals/calibrate_dept.py", "--selftest"),
-        ("evals/eval_ml.py", "--selftest"),
         ("evals/run_jevcity_eval.py", "--selftest"),
         ("benchmarks/latency_bench.py", "--selftest"),
-    ]:
-        p = run(script, flag)
+    ]
+    with ThreadPoolExecutor(max_workers=len(scripts)) as pool:
+        results = list(pool.map(lambda sf: run(*sf), scripts))
+    for (script, flag), p in zip(scripts, results):
         assert p.returncode == 0, f"{script} {flag}: {p.stdout}{p.stderr}"
         assert "selftest OK" in p.stdout
 

@@ -109,23 +109,44 @@ export function useDashboardData(pollIntervalMs = 1500) {
     setIsRefreshing(false);
   }, [fetchAll]);
 
-  // Polling loop
+  // Polling loop (paused while the tab is hidden)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     let mounted = true;
+    const stop = () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+    const start = () => {
+      stop();
+      timerRef.current = setInterval(() => {
+        if (mounted) void fetchAll();
+      }, pollIntervalMs);
+    };
     const run = async () => {
       if (mounted) await fetchAll();
     };
-    void run();
+    const onVisibility = () => {
+      if (!mounted) return;
+      if (document.visibilityState === 'hidden') {
+        stop();
+      } else {
+        void run();
+        start();
+      }
+    };
 
-    timerRef.current = setInterval(() => {
-      if (mounted) void fetchAll();
-    }, pollIntervalMs);
+    void run();
+    if (document.visibilityState === 'visible') start();
+    document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
       mounted = false;
-      if (timerRef.current) clearInterval(timerRef.current);
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [fetchAll, pollIntervalMs]);
 
