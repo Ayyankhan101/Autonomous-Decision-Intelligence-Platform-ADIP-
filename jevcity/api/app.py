@@ -117,6 +117,7 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
                 if engine.decision_history and engine.decision_history[-1].laya
                 else None
             ),
+            vision_mode=vision_analyzer.mode.value,
             policy_position=engine.policy_position,
             objective_weights=weights_for(engine.policy_position),
             audit_write_failed=engine.audit_write_failed,

@@ -166,6 +166,7 @@ export function App() {
                   decisionCount={state?.decision_count ?? 0}
                   onRefresh={refresh}
                   layaMode={state?.laya_mode ?? 'mock'}
+                  visionMode={state?.vision_mode ?? 'mock'}
                 />
 
                 <PolicySandbox

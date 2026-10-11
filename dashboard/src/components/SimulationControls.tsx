@@ -2,6 +2,7 @@ import type React from 'react';
 import { useState } from 'react';
 import {
   Brain,
+  Camera,
   Flame,
   Play,
   Pause,
@@ -26,6 +27,7 @@ interface SimulationControlsProps {
   decisionCount: number;
   onRefresh: () => void;
   layaMode?: string;
+  visionMode?: string;
 }
 
 export const SimulationControls: React.FC<SimulationControlsProps> = ({
@@ -36,6 +38,7 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
   decisionCount,
   onRefresh,
   layaMode = 'mock',
+  visionMode = 'mock',
 }) => {
   const [sSeed, setSSeed] = useState(sessionSeed);
   const [rSeed, setRSeed] = useState(scenarioSeed);
@@ -55,6 +58,9 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
   // Laya runtime mode toggle (demo-liveness)
   const [modeTarget, setModeTarget] = useState<'mock' | 'cache' | 'live'>(
     layaMode as 'mock' | 'cache' | 'live',
+  );
+  const [visionTarget, setVisionTarget] = useState<'mock' | 'cache' | 'live'>(
+    visionMode as 'mock' | 'cache' | 'live',
   );
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
@@ -165,6 +171,19 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
     try {
       const res = await api.setLayaMode(modeTarget);
       showToast(`Laya adapter: ${res.previous_mode} → ${res.mode}`);
+      onRefresh();
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : String(err), 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleVisionMode = async () => {
+    setIsSubmitting(true);
+    try {
+      const res = await api.setVisionMode(visionTarget);
+      showToast(`Vision analyzer: ${res.previous_mode} → ${res.mode}`);
       onRefresh();
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : String(err), 'error');
@@ -285,6 +304,40 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
           <button
             onClick={handleLayaMode}
             disabled={isSubmitting || modeTarget === layaMode}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-teal-950 hover:bg-teal-900 text-teal-200 border border-teal-800/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            Switch
+          </button>
+        </div>
+      </div>
+
+      {/* Vision Runtime Mode Toggle (demo-liveness) */}
+      <div className="border-t border-slate-800 pt-3">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 flex items-center gap-1.5">
+          <Camera className="w-3.5 h-3.5 text-teal-400" />
+          <span>Vision Runtime</span>
+          <span className="ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-teal-300 uppercase">
+            {visionMode}
+          </span>
+        </h4>
+        <p className="text-[10px] text-slate-500 mb-2 leading-relaxed">
+          Hot-swap the vision analyzer live — mock is deterministic, cache replays
+          recorded facts, live runs the mlx-vlm checkpoint (fails closed if the
+          model is unavailable).
+        </p>
+        <div className="flex gap-2">
+          <select
+            value={visionTarget}
+            onChange={(e) => setVisionTarget(e.target.value as 'mock' | 'cache' | 'live')}
+            className="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-200 focus:border-teal-500 focus:outline-none"
+          >
+            <option value="mock">Mock (deterministic)</option>
+            <option value="cache">Cache (recorded)</option>
+            <option value="live">Live (MLX checkpoint)</option>
+          </select>
+          <button
+            onClick={handleVisionMode}
+            disabled={isSubmitting || visionTarget === visionMode}
             className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-teal-950 hover:bg-teal-900 text-teal-200 border border-teal-800/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             Switch

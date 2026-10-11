@@ -79,6 +79,7 @@ What-If results always carry `dry_run=true, audit_written=false, live_state_muta
   "available_resources": {"ambulance": 5, "fire_truck": 3, "...": 0},
   "laya_mode": "mock",
   "last_laya_status": "ok",
+  "vision_mode": "mock",
   "audit_write_failed": false
 }
 ```

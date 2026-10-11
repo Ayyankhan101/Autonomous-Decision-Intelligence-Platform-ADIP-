@@ -177,3 +177,12 @@ def test_vision_mode_switch_mirrors_laya_mode():
     assert client.post("/api/vision/mode", json={"mode": "quantum"}).status_code == 422
     assert client.post("/api/vision/mode",
                        json={"mode": "live", "extra": 1}).status_code == 422
+
+
+def test_state_reports_vision_mode():
+    _, client = _started_client()
+    r = client.get("/api/state")
+    assert r.status_code == 200
+    assert r.json()["vision_mode"] == "mock"
+    client.post("/api/vision/mode", json={"mode": "live"})
+    assert client.get("/api/state").json()["vision_mode"] == "live"
