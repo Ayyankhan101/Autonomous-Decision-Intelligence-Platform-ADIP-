@@ -24,8 +24,12 @@ Runner: `evals/run_jevcity_eval.py` on `fixtures/jevcity_decisions.jsonl`.
 
 | | Measured | Gate (ERRATA C4, frozen) |
 |---|---|---|
-| Accuracy | 0.5675 (n = 84) | ≥ 0.70 |
-| ECE | 0.3528 | ≤ 0.15 |
+| Accuracy | 0.5674 (n = 84) | ≥ 0.70 |
+| ECE | 0.3196 | ≤ 0.15 |
+
+Fixture labels are **policy-only ground truth** (governed priority, non-Laya hold
+rules, `FALLBACK_RESOURCE` type mapping) — re-anchored away from the mock
+proposer's answers so the gate measures policy-agreement, not stub-agreement.
 
 **Both gates FAIL.** CI (`macos` strict-eval job) reports the failure as a warning +
 step summary — thresholds are frozen, never moved to go green. Honesty contract:
