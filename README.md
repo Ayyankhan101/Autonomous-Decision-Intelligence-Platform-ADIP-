@@ -2,7 +2,7 @@
 
 **A decision intelligence platform blueprint built on [Laya](https://huggingface.co/convaiinnovations/laya) typed decision models, served locally via the [laya-mlx](https://github.com/mizorewww/laya-mlx) runtime — free, Apache-2.0, and private by architecture.**
 
-> Status: **Phases 0–7 built** (pipeline, eval runner, serving, JevCity vertical slice, Command Center dashboard, demo runbook) and **QA-verified** — 4 black-box/browser test loops, 2 consecutive clean passes, backlog cleared (PRs #18–22, [`docs/jevcity/QA.md`](docs/jevcity/QA.md)). The full technical blueprint lives in [`BLUEPRINT.md`](BLUEPRINT.md) — plan of record; every number below is reproduced by a checked-in artifact.
+> Status: **Phases 0–7 built** (pipeline, eval runner, serving, JevCity vertical slice, Command Center dashboard, demo runbook) and **QA-verified** — 4 black-box/browser test loops + deeper pass, 2 consecutive clean passes, backlog cleared, suite/polling optimizations (PRs #18–28, [`docs/jevcity/QA.md`](docs/jevcity/QA.md)). The full technical blueprint lives in [`BLUEPRINT.md`](BLUEPRINT.md) — plan of record; every number below is reproduced by a checked-in artifact. Start with the operator guide: [`docs/jevcity/USER_GUIDE.md`](docs/jevcity/USER_GUIDE.md).
 
 ---
 
@@ -24,7 +24,8 @@ the same laya-mlx platform, per `JevCity_Implementation_Plan_Revised_v2_Laya.doc
   attached to incidents as **evidence, not authority** (soft flag
   `severity_mismatch_vision`, dashboard card, sim-clock audit entry; guardrail and
   ML triad unchanged). Live mode needs `uv sync --extra vision`.
-- Docs: [`docs/jevcity/PHASE0_SIGNOFF.md`](docs/jevcity/PHASE0_SIGNOFF.md) (22-item gate),
+- Docs: [`docs/jevcity/USER_GUIDE.md`](docs/jevcity/USER_GUIDE.md) (operator guide — what it is, who it's for, how to drive it, current status),
+  [`docs/jevcity/PHASE0_SIGNOFF.md`](docs/jevcity/PHASE0_SIGNOFF.md) (22-item gate),
   [`ERRATA.md`](docs/jevcity/ERRATA.md) (plan-vs-repo resolutions),
   [`ARCHITECTURE.md`](docs/jevcity/ARCHITECTURE.md), [`API.md`](docs/jevcity/API.md),
   [`DEMO_BEATS.md`](docs/jevcity/DEMO_BEATS.md); Phase 6 documentation:
@@ -37,10 +38,10 @@ the same laya-mlx platform, per `JevCity_Implementation_Plan_Revised_v2_Laya.doc
   [`LAYA_FAILURE_MODES.md`](docs/jevcity/LAYA_FAILURE_MODES.md),
   [`PROFESSIONAL_PRACTICES.md`](docs/jevcity/PROFESSIONAL_PRACTICES.md),
   [`QA.md`](docs/jevcity/QA.md) (test-loop findings + known limitations).
-- API (port **8200**): `uvicorn jevcity.api.app:app --port 8200` — 26 endpoints
-  (16 plan-frozen + 10 additive) incl. simulation controls, overrides (actor+reason
-  enforced, friction tiers), What-If (`dry_run`, zero live writes), and vision
-  evidence (upload/facts/attach/mode).
+- API (port **8200**): `uvicorn jevcity.api.app:app --port 8200` — 27 endpoints
+  (16 plan-frozen + 11 additive) incl. simulation controls, overrides (actor+reason
+  enforced, friction tiers), What-If (`dry_run`, zero live writes), vision
+  evidence (upload/facts/attach/mode), and the combined `GET /api/dashboard` poll bundle.
 - Command Center dashboard (`dashboard/`, React + TS + Vite): map layer, incident inspector
   with Laya advisory vs policy split, simulation/bad-data controls, override modal, audit
   viewer, What-If sandbox. Built assets are served by the API at `/` (when `dashboard/dist`
@@ -73,7 +74,7 @@ flowchart TD
     OVR["OVERRIDE (E4)\nLOW | HIGH | BREAK_GLASS\nactor + reason · impact tiers"]:::decision
     WIF["WHAT-IF SANDBOX\ndry-run · isolated scope\nzero live writes"]:::decision
 
-    API["FastAPI :8200 · 26 routes"]:::infra
+    API["FastAPI :8200 · 27 routes"]:::infra
     DASH["Command Center (React)\n1.5 s poll · UTC clocks"]:::infra
 
     EVT --> VAL --> FEAT --> ML --> LAYA --> GUARD --> ALLOC --> DEC
