@@ -44,24 +44,26 @@ version, limitations, guardrail design). Companion: [`CHECKPOINT_CARD.md`](CHECK
 
 ## Evaluation
 
-Fixture set: `fixtures/jevcity_decisions.jsonl` (n = 84, labels from the
-baseline-proposer rubric), runner `evals/run_jevcity_eval.py`, honesty contract in
-`tests/jevcity/test_eval_model.py`.
+Fixture set: `fixtures/jevcity_decisions.jsonl` (n = 84, labels = policy-only
+ground truth: governed priority, non-Laya hold rules, `FALLBACK_RESOURCE` type
+mapping — re-anchored away from the mock proposer's answers), runner
+`evals/run_jevcity_eval.py`, honesty contract in `tests/jevcity/test_eval_model.py`.
 
-Measured (`evals/results/eval-jevcity-*.json`, latest):
+Measured (`evals/results/eval-jevcity-1791750086.json`):
 
 | Metric | Measured | Gate (ERRATA C4, frozen) | Verdict |
 |---|---|---|---|
-| Accuracy | 0.5675 | ≥ 0.70 | **FAIL** |
-| ECE | 0.3528 | ≤ 0.15 | **FAIL** |
+| Accuracy | 0.5674 | ≥ 0.70 | **FAIL** |
+| ECE | 0.3196 | ≤ 0.15 | **FAIL** |
 | Determinism (repeats) | pass | exact repeat | pass |
-| Priority accuracy | 0.6548 | — | reported |
-| needs_human_review accuracy | 0.2857 | — | reported (weakest) |
-| recommended_resource_type accuracy | 0.7619 | — | reported |
+| Priority accuracy | 0.619 | — | reported (never predicts CRITICAL: 9/9→HIGH) |
+| needs_human_review accuracy | 0.3333 | — | reported (always-review noul bias: 84/84) |
+| recommended_resource_type accuracy | 0.750 | — | reported (ACCIDENT→TMU mis-mapping: 21/21) |
 
 C4 gates are frozen and CI reports the failure as a warning + step summary — the
-numbers above are never green-washed. Closing the gap = checkpoint/label alignment
-work tracked in `PHASE0_SIGNOFF.md` row 21.
+numbers above are never green-washed. Closing the gap = checkpoint v2 work tracked
+in `PHASE0_SIGNOFF.md` row 21; `render_state` enrichment was tested and hurt
+(0.5476) — rejected.
 
 Latency (M1 Pro, `benchmarks/results/latency-AppleM1Pro-*.json`): 61.6–93.6 ms per
 3-question decision — within plan budgets (§5 demo < 250 ms, §6 CPU < 750 ms).

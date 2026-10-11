@@ -44,5 +44,5 @@ Plan §Phase 6 ("Checkpoint card"). Reproducibility record for the pinned weight
   **unverified upstream**; this repo only pins and records the revision.
 - `laya-serve` / HTTP sidecar claims (plan C1) are unverified; only the in-process
   laya-mlx load path is exercised (`tests/jevcity/test_laya_live.py`).
-- Evaluated gate status: **C4 measured fail** (accuracy 0.5675, ECE 0.3528 vs
-  0.70/0.15, n = 84) — see `LAYA_MODEL_CARD.md`; thresholds frozen.
+- Evaluated gate status: **C4 measured fail** (accuracy 0.5674, ECE 0.3196 vs
+  0.70/0.15, n = 84, policy-only gold labels) — see `LAYA_MODEL_CARD.md`; thresholds frozen.
