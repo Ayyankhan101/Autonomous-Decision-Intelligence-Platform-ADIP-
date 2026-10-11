@@ -1,0 +1,1699 @@
+{
+  "$defs": {
+    "AnomalyOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "data_quality_anomaly": {
+          "title": "Data Quality Anomaly",
+          "type": "boolean"
+        },
+        "data_quality_score": {
+          "description": "badness: higher = more anomalous",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Data Quality Score",
+          "type": "number"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "situational_anomaly": {
+          "title": "Situational Anomaly",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "data_quality_anomaly",
+        "data_quality_score",
+        "situational_anomaly"
+      ],
+      "title": "AnomalyOutput",
+      "type": "object"
+    },
+    "AuditEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "minLength": 1,
+          "title": "Action",
+          "type": "string"
+        },
+        "actor": {
+          "description": "operator_id or 'system'",
+          "minLength": 1,
+          "title": "Actor",
+          "type": "string"
+        },
+        "after_state": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "After State"
+        },
+        "before_state": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Before State"
+        },
+        "break_glass": {
+          "default": false,
+          "title": "Break Glass",
+          "type": "boolean"
+        },
+        "cited_clause": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cited Clause"
+        },
+        "context_code": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OverrideContextCode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "decision_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decision Id"
+        },
+        "dry_run": {
+          "default": false,
+          "title": "Dry Run",
+          "type": "boolean"
+        },
+        "entry_hash": {
+          "minLength": 1,
+          "title": "Entry Hash",
+          "type": "string"
+        },
+        "entry_id": {
+          "title": "Entry Id",
+          "type": "string"
+        },
+        "impact_tier": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImpactTier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "incident_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Incident Id"
+        },
+        "laya": {
+          "$ref": "#/$defs/AuditLayaMetadata"
+        },
+        "model_versions": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Model Versions",
+          "type": "object"
+        },
+        "policy_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Policy Version"
+        },
+        "previous_hash": {
+          "minLength": 1,
+          "title": "Previous Hash",
+          "type": "string"
+        },
+        "reason": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Reason",
+          "type": "string"
+        },
+        "reason_code": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OverrideReasonCode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "timestamp": {
+          "format": "date-time",
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entry_id",
+        "timestamp",
+        "actor",
+        "action",
+        "previous_hash",
+        "entry_hash"
+      ],
+      "title": "AuditEntry",
+      "type": "object"
+    },
+    "AuditLayaMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "laya_answer_confidence_priority": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Laya Answer Confidence Priority"
+        },
+        "laya_checkpoint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Laya Checkpoint"
+        },
+        "laya_fallback_used": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Laya Fallback Used"
+        },
+        "laya_final_decision_source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DecisionSource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "laya_guardrail_applied": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Laya Guardrail Applied"
+        },
+        "laya_guardrail_modified": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Laya Guardrail Modified"
+        },
+        "laya_latency_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Laya Latency Ms"
+        },
+        "laya_questions_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Laya Questions Hash"
+        },
+        "laya_questions_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Laya Questions Version"
+        },
+        "laya_router_model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Laya Router Model"
+        },
+        "laya_state_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Laya State Hash"
+        },
+        "laya_status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LayaStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "laya_suggested_priority": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Priority"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "AuditLayaMetadata",
+      "type": "object"
+    },
+    "AuditListResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/AuditEntry"
+          },
+          "title": "Entries",
+          "type": "array"
+        }
+      },
+      "required": [
+        "entries"
+      ],
+      "title": "AuditListResponse",
+      "type": "object"
+    },
+    "DamageSeverity": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "unknown"
+      ],
+      "title": "DamageSeverity",
+      "type": "string"
+    },
+    "DataQualitySignal": {
+      "additionalProperties": false,
+      "properties": {
+        "anomaly": {
+          "default": false,
+          "title": "Anomaly",
+          "type": "boolean"
+        },
+        "data_quality_score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Data Quality Score",
+          "type": "number"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        }
+      },
+      "required": [
+        "data_quality_score"
+      ],
+      "title": "DataQualitySignal",
+      "type": "object"
+    },
+    "DecisionListResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "decisions": {
+          "items": {
+            "$ref": "#/$defs/DecisionRecord"
+          },
+          "title": "Decisions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "decisions"
+      ],
+      "title": "DecisionListResponse",
+      "type": "object"
+    },
+    "DecisionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "assigned_resource_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Assigned Resource Ids",
+          "type": "array"
+        },
+        "available_resource_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Available Resource Ids",
+          "type": "array"
+        },
+        "decision_id": {
+          "title": "Decision Id",
+          "type": "string"
+        },
+        "decision_time_simulated": {
+          "format": "date-time",
+          "title": "Decision Time Simulated",
+          "type": "string"
+        },
+        "dry_run": {
+          "default": false,
+          "title": "Dry Run",
+          "type": "boolean"
+        },
+        "incident_id": {
+          "title": "Incident Id",
+          "type": "string"
+        },
+        "laya": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LayaBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "laya_answer_confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Laya Answer Confidence"
+        },
+        "lineage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LineageBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "matched_rules": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Matched Rules",
+          "type": "array"
+        },
+        "objective_weights": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Objective weights active when this decision was generated (response_time / equity / emissions); enhancement 2 audit-trace completeness.",
+          "title": "Objective Weights",
+          "type": "object"
+        },
+        "overall_confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Overall Confidence"
+        },
+        "override": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OverrideRecord"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "policy_id": {
+          "default": "city-priority-policy",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "policy_position": {
+          "$ref": "#/$defs/PolicyPosition",
+          "default": "RESPONSE_TIME"
+        },
+        "policy_version": {
+          "default": "0.1.0",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "priority": {
+          "$ref": "#/$defs/Priority"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "recommended_resources": {
+          "items": {
+            "$ref": "#/$defs/ResourceType"
+          },
+          "title": "Recommended Resources",
+          "type": "array"
+        },
+        "signals": {
+          "$ref": "#/$defs/Signals"
+        },
+        "state": {
+          "$ref": "#/$defs/DecisionState"
+        },
+        "trust": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TrustBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Per-stream veracity snapshot; enhancement 1 adversarial robustness."
+        }
+      },
+      "required": [
+        "decision_id",
+        "incident_id",
+        "state",
+        "priority",
+        "signals",
+        "decision_time_simulated"
+      ],
+      "title": "DecisionRecord",
+      "type": "object"
+    },
+    "DecisionSource": {
+      "enum": [
+        "laya_proposed",
+        "policy_finalized",
+        "fallback_rule",
+        "human_required"
+      ],
+      "title": "DecisionSource",
+      "type": "string"
+    },
+    "DecisionState": {
+      "enum": [
+        "AUTO_APPROVED",
+        "HOLD_FOR_HUMAN",
+        "REJECTED_INPUT",
+        "CONTENTION_ESCALATION",
+        "OVERRIDE_ACTIVE",
+        "MODEL_DEGRADED"
+      ],
+      "title": "DecisionState",
+      "type": "string"
+    },
+    "ImpactTier": {
+      "enum": [
+        "LOW",
+        "HIGH",
+        "BREAK_GLASS"
+      ],
+      "title": "ImpactTier",
+      "type": "string"
+    },
+    "IncidentLifecycle": {
+      "enum": [
+        "detected",
+        "validated",
+        "prioritized",
+        "resource_assigned",
+        "active",
+        "resolved"
+      ],
+      "title": "IncidentLifecycle",
+      "type": "string"
+    },
+    "IncidentListResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "incidents": {
+          "items": {
+            "$ref": "#/$defs/IncidentRecord"
+          },
+          "title": "Incidents",
+          "type": "array"
+        }
+      },
+      "required": [
+        "incidents"
+      ],
+      "title": "IncidentListResponse",
+      "type": "object"
+    },
+    "IncidentRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "assigned_resource_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Assigned Resource Ids",
+          "type": "array"
+        },
+        "first_seen_simulated": {
+          "format": "date-time",
+          "title": "First Seen Simulated",
+          "type": "string"
+        },
+        "incident_id": {
+          "title": "Incident Id",
+          "type": "string"
+        },
+        "incident_type": {
+          "$ref": "#/$defs/IncidentType"
+        },
+        "latest_simulated": {
+          "format": "date-time",
+          "title": "Latest Simulated",
+          "type": "string"
+        },
+        "lifecycle": {
+          "$ref": "#/$defs/IncidentLifecycle",
+          "default": "detected"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Free-text notes carried from the originating report (display-only; never enters the Laya state, Invariant 16).",
+          "title": "Notes"
+        },
+        "report_count": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Report Count",
+          "type": "integer"
+        },
+        "severity_hint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SeverityHint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Severity hint carried from the first registered report (used by vision soft-flag comparison; display/audit only)."
+        },
+        "source_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Ids",
+          "type": "array"
+        },
+        "validation_status": {
+          "$ref": "#/$defs/ValidationStatus",
+          "default": "valid"
+        },
+        "vision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VisionAttachment"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Vision evidence attached post-decision (display + soft flags only; never writes severity)."
+        },
+        "zone": {
+          "$ref": "#/$defs/Zone"
+        }
+      },
+      "required": [
+        "incident_id",
+        "incident_type",
+        "zone",
+        "first_seen_simulated",
+        "latest_simulated"
+      ],
+      "title": "IncidentRecord",
+      "type": "object"
+    },
+    "IncidentType": {
+      "enum": [
+        "accident",
+        "fire",
+        "flood",
+        "traffic_spike"
+      ],
+      "title": "IncidentType",
+      "type": "string"
+    },
+    "LayaBlock": {
+      "additionalProperties": false,
+      "properties": {
+        "answer_confidence_priority": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer Confidence Priority"
+        },
+        "checkpoint": {
+          "title": "Checkpoint",
+          "type": "string"
+        },
+        "device": {
+          "title": "Device",
+          "type": "string"
+        },
+        "distribution": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Distribution",
+          "type": "object"
+        },
+        "final_decision_source": {
+          "$ref": "#/$defs/DecisionSource",
+          "default": "policy_finalized"
+        },
+        "guardrail_applied": {
+          "default": true,
+          "title": "Guardrail Applied",
+          "type": "boolean"
+        },
+        "latency_ms": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Latency Ms",
+          "type": "number"
+        },
+        "questions_hash": {
+          "default": "",
+          "title": "Questions Hash",
+          "type": "string"
+        },
+        "recommended_resource_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ResourceType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "router_model": {
+          "title": "Router Model",
+          "type": "string"
+        },
+        "state_hash": {
+          "default": "",
+          "title": "State Hash",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/LayaStatus"
+        },
+        "suggested_needs_human_review": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Suggested Needs Human Review"
+        },
+        "suggested_priority": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Priority"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "status",
+        "checkpoint",
+        "router_model",
+        "device"
+      ],
+      "title": "LayaBlock",
+      "type": "object"
+    },
+    "LayaStatus": {
+      "enum": [
+        "ok",
+        "error",
+        "timeout",
+        "invalid_response",
+        "unavailable"
+      ],
+      "title": "LayaStatus",
+      "type": "string"
+    },
+    "LineageBlock": {
+      "additionalProperties": false,
+      "description": "Structured decision lineage: evidence scores -> decisive policy clause (enhancement 3).",
+      "properties": {
+        "clause_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clause Id"
+        },
+        "expression": {
+          "minLength": 1,
+          "title": "Expression",
+          "type": "string"
+        },
+        "terms": {
+          "items": {
+            "$ref": "#/$defs/LineageTerm"
+          },
+          "minItems": 1,
+          "title": "Terms",
+          "type": "array"
+        }
+      },
+      "required": [
+        "terms",
+        "expression"
+      ],
+      "title": "LineageBlock",
+      "type": "object"
+    },
+    "LineageTerm": {
+      "additionalProperties": false,
+      "description": "One normalised evidence contribution (enhancement 3: all terms on a common 0-1 scale).",
+      "properties": {
+        "direction": {
+          "enum": [
+            "positive",
+            "negative",
+            "neutral"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "score",
+        "direction",
+        "source"
+      ],
+      "title": "LineageTerm",
+      "type": "object"
+    },
+    "ModelStatus": {
+      "enum": [
+        "ok",
+        "error",
+        "timeout",
+        "invalid_input"
+      ],
+      "title": "ModelStatus",
+      "type": "string"
+    },
+    "OverrideContextCode": {
+      "enum": [
+        "SCENE_REPORT",
+        "COMMAND_ORDER",
+        "ROAD_CONDITION",
+        "SENSOR_FAILURE",
+        "EXTERNAL_AGENCY",
+        "OTHER"
+      ],
+      "title": "OverrideContextCode",
+      "type": "string"
+    },
+    "OverrideReasonCode": {
+      "enum": [
+        "POLICY_CLAUSE",
+        "POLICY_GAP",
+        "EXTERNAL_CONTEXT"
+      ],
+      "title": "OverrideReasonCode",
+      "type": "string"
+    },
+    "OverrideRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "break_glass": {
+          "default": false,
+          "title": "Break Glass",
+          "type": "boolean"
+        },
+        "cited_clause": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cited Clause"
+        },
+        "context_code": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OverrideContextCode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "impact_tier": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImpactTier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "operator_id": {
+          "title": "Operator Id",
+          "type": "string"
+        },
+        "override_type": {
+          "$ref": "#/$defs/OverrideType"
+        },
+        "previous_priority": {
+          "$ref": "#/$defs/Priority"
+        },
+        "previous_state": {
+          "$ref": "#/$defs/DecisionState"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "reason_code": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OverrideReasonCode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "timestamp": {
+          "format": "date-time",
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operator_id",
+        "override_type",
+        "reason",
+        "timestamp",
+        "previous_state",
+        "previous_priority"
+      ],
+      "title": "OverrideRecord",
+      "type": "object"
+    },
+    "OverrideType": {
+      "enum": [
+        "CHANGE_PRIORITY",
+        "ASSIGN_RESOURCES",
+        "DISMISS_INCIDENT",
+        "ESCALATE_TO_HUMAN",
+        "MARK_DATA_UNTRUSTED",
+        "OVERRIDE_AUTOMATION_HOLD"
+      ],
+      "title": "OverrideType",
+      "type": "string"
+    },
+    "PolicyPosition": {
+      "enum": [
+        "RESPONSE_TIME",
+        "EQUITY",
+        "ECO"
+      ],
+      "title": "PolicyPosition",
+      "type": "string"
+    },
+    "Priority": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "Priority",
+      "type": "string"
+    },
+    "Resource": {
+      "additionalProperties": false,
+      "properties": {
+        "assigned_incident_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assigned Incident Id"
+        },
+        "eco_score": {
+          "default": 0.0,
+          "description": "Eco-optimisation fitness (1 = electric/zero-emission response vehicle, 0 = highest-emission). Used only when the policy position is ECO.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Eco Score",
+          "type": "number"
+        },
+        "resource_id": {
+          "title": "Resource Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ResourceStatus",
+          "default": "available"
+        },
+        "type": {
+          "$ref": "#/$defs/ResourceType"
+        },
+        "zone": {
+          "$ref": "#/$defs/Zone"
+        }
+      },
+      "required": [
+        "resource_id",
+        "type",
+        "zone"
+      ],
+      "title": "Resource",
+      "type": "object"
+    },
+    "ResourceListResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "resources": {
+          "items": {
+            "$ref": "#/$defs/Resource"
+          },
+          "title": "Resources",
+          "type": "array"
+        }
+      },
+      "required": [
+        "resources"
+      ],
+      "title": "ResourceListResponse",
+      "type": "object"
+    },
+    "ResourceStatus": {
+      "enum": [
+        "available",
+        "assigned",
+        "busy",
+        "offline"
+      ],
+      "title": "ResourceStatus",
+      "type": "string"
+    },
+    "ResourceType": {
+      "enum": [
+        "ambulance",
+        "fire_truck",
+        "police_unit",
+        "flood_response_unit",
+        "traffic_management_unit"
+      ],
+      "title": "ResourceType",
+      "type": "string"
+    },
+    "SceneType": {
+      "enum": [
+        "accident",
+        "fire",
+        "flood",
+        "traffic",
+        "other",
+        "unknown"
+      ],
+      "title": "SceneType",
+      "type": "string"
+    },
+    "SeverityHint": {
+      "enum": [
+        "minor",
+        "moderate",
+        "severe"
+      ],
+      "title": "SeverityHint",
+      "type": "string"
+    },
+    "SeveritySignal": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "prediction": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prediction"
+        },
+        "status": {
+          "$ref": "#/$defs/ModelStatus",
+          "default": "ok"
+        }
+      },
+      "title": "SeveritySignal",
+      "type": "object"
+    },
+    "Signals": {
+      "additionalProperties": false,
+      "properties": {
+        "anomaly": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnomalyOutput"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "data_quality": {
+          "$ref": "#/$defs/DataQualitySignal"
+        },
+        "severity": {
+          "$ref": "#/$defs/SeveritySignal"
+        },
+        "situational_anomaly": {
+          "default": false,
+          "title": "Situational Anomaly",
+          "type": "boolean"
+        },
+        "traffic": {
+          "$ref": "#/$defs/TrafficSignal"
+        }
+      },
+      "required": [
+        "severity",
+        "traffic",
+        "data_quality"
+      ],
+      "title": "Signals",
+      "type": "object"
+    },
+    "StatePayload": {
+      "additionalProperties": false,
+      "description": "GET /api/state \u2014 dashboard polls this every 1\u20132 s.",
+      "properties": {
+        "audit_write_failed": {
+          "default": false,
+          "description": "True while the append-only audit log rejects writes; the dashboard shows a banner because the trail may be incomplete (phase-5 UI state).",
+          "title": "Audit Write Failed",
+          "type": "boolean"
+        },
+        "available_resources": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/ResourceType"
+          },
+          "title": "Available Resources",
+          "type": "object"
+        },
+        "decision_count": {
+          "minimum": 0,
+          "title": "Decision Count",
+          "type": "integer"
+        },
+        "incident_count": {
+          "minimum": 0,
+          "title": "Incident Count",
+          "type": "integer"
+        },
+        "last_laya_status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Laya Status"
+        },
+        "laya_mode": {
+          "title": "Laya Mode",
+          "type": "string"
+        },
+        "objective_weights": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Objective Weights",
+          "type": "object"
+        },
+        "open_incident_count": {
+          "minimum": 0,
+          "title": "Open Incident Count",
+          "type": "integer"
+        },
+        "policy_position": {
+          "$ref": "#/$defs/PolicyPosition",
+          "default": "RESPONSE_TIME"
+        },
+        "running": {
+          "title": "Running",
+          "type": "boolean"
+        },
+        "scenario_seed": {
+          "title": "Scenario Seed",
+          "type": "integer"
+        },
+        "session_seed": {
+          "title": "Session Seed",
+          "type": "integer"
+        },
+        "simulated_time": {
+          "format": "date-time",
+          "title": "Simulated Time",
+          "type": "string"
+        },
+        "vision_mode": {
+          "default": "mock",
+          "title": "Vision Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "simulated_time",
+        "running",
+        "session_seed",
+        "scenario_seed",
+        "incident_count",
+        "decision_count",
+        "open_incident_count",
+        "available_resources",
+        "laya_mode"
+      ],
+      "title": "StatePayload",
+      "type": "object"
+    },
+    "TrafficSignal": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "predicted_congestion_delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Predicted Congestion Delta"
+        },
+        "status": {
+          "$ref": "#/$defs/ModelStatus",
+          "default": "ok"
+        }
+      },
+      "title": "TrafficSignal",
+      "type": "object"
+    },
+    "TrustBlock": {
+      "additionalProperties": false,
+      "description": "Per-stream veracity snapshot for one decision (enhancement 1).",
+      "properties": {
+        "availability": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Availability",
+          "type": "object"
+        },
+        "flagged_sources": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Flagged Sources",
+          "type": "array"
+        },
+        "mean_veracity": {
+          "default": 1.0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Mean Veracity",
+          "type": "number"
+        },
+        "source_scores": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Source Scores",
+          "type": "object"
+        }
+      },
+      "title": "TrustBlock",
+      "type": "object"
+    },
+    "ValidationFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "pattern": "^(hard|soft)$",
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "severity",
+        "code",
+        "message"
+      ],
+      "title": "ValidationFinding",
+      "type": "object"
+    },
+    "ValidationStatus": {
+      "enum": [
+        "valid",
+        "soft_flagged",
+        "hard_rejected"
+      ],
+      "title": "ValidationStatus",
+      "type": "string"
+    },
+    "VisionAttachment": {
+      "additionalProperties": false,
+      "properties": {
+        "facts": {
+          "$ref": "#/$defs/VisionFacts"
+        },
+        "image_id": {
+          "title": "Image Id",
+          "type": "string"
+        },
+        "latest_decision_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latest Decision Id"
+        },
+        "soft_findings": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ValidationFinding"
+          },
+          "title": "Soft Findings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "image_id",
+        "facts"
+      ],
+      "title": "VisionAttachment",
+      "type": "object"
+    },
+    "VisionFacts": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Confidence",
+          "type": "object"
+        },
+        "damage_severity": {
+          "$ref": "#/$defs/DamageSeverity",
+          "default": "unknown"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Code"
+        },
+        "image_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Image Sha256",
+          "type": "string"
+        },
+        "injuries_visible": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Injuries Visible"
+        },
+        "latency_ms": {
+          "minimum": 0,
+          "title": "Latency Ms",
+          "type": "number"
+        },
+        "mode": {
+          "$ref": "#/$defs/VisionMode"
+        },
+        "model_id": {
+          "title": "Model Id",
+          "type": "string"
+        },
+        "model_version": {
+          "title": "Model Version",
+          "type": "string"
+        },
+        "objects": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Objects",
+          "type": "array"
+        },
+        "scene": {
+          "$ref": "#/$defs/SceneType",
+          "default": "unknown"
+        },
+        "status": {
+          "$ref": "#/$defs/VisionStatus",
+          "default": "ok"
+        }
+      },
+      "required": [
+        "image_sha256",
+        "model_id",
+        "model_version",
+        "mode",
+        "latency_ms"
+      ],
+      "title": "VisionFacts",
+      "type": "object"
+    },
+    "VisionMode": {
+      "enum": [
+        "mock",
+        "cache",
+        "live"
+      ],
+      "title": "VisionMode",
+      "type": "string"
+    },
+    "VisionStatus": {
+      "enum": [
+        "ok",
+        "unavailable",
+        "invalid_response"
+      ],
+      "title": "VisionStatus",
+      "type": "string"
+    },
+    "Zone": {
+      "enum": [
+        "north",
+        "south",
+        "east",
+        "west",
+        "central"
+      ],
+      "title": "Zone",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "GET /api/dashboard \u2014 combined poll bundle (state + 4 slices).",
+  "properties": {
+    "audit": {
+      "$ref": "#/$defs/AuditListResponse"
+    },
+    "decisions": {
+      "$ref": "#/$defs/DecisionListResponse"
+    },
+    "incidents": {
+      "$ref": "#/$defs/IncidentListResponse"
+    },
+    "resources": {
+      "$ref": "#/$defs/ResourceListResponse"
+    },
+    "state": {
+      "$ref": "#/$defs/StatePayload"
+    }
+  },
+  "required": [
+    "state",
+    "incidents",
+    "decisions",
+    "resources",
+    "audit"
+  ],
+  "title": "DashboardPayload",
+  "type": "object"
+}

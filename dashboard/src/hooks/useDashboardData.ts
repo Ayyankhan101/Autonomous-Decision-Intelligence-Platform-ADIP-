@@ -35,22 +35,30 @@ export function useDashboardData(pollIntervalMs = 1500) {
     incidents: Set<string>;
     audit: Set<string>;
   }>({ decisions: new Set(), incidents: new Set(), audit: new Set() });
+  const sigRef = useRef<Record<string, string>>({});
 
   const fetchAll = useCallback(async () => {
     try {
-      const [stateRes, incsRes, decsRes, resRes, auditRes] = await Promise.all([
-        api.getState(),
-        api.getIncidents(),
-        api.getDecisions(),
-        api.getResources(),
-        api.getAudit(50),
-      ]);
+      const bundle = await api.getDashboard(50);
+      const incsRes = bundle.incidents.incidents;
+      const decsRes = bundle.decisions.decisions;
+      const resRes = bundle.resources.resources;
+      const auditRes = bundle.audit.entries;
 
-      setState(stateRes);
-      setIncidents(incsRes);
-      setDecisions(decsRes);
-      setResources(resRes);
-      setAuditEntries(auditRes);
+      const sig = {
+        state: JSON.stringify(bundle.state),
+        incidents: JSON.stringify(incsRes),
+        decisions: JSON.stringify(decsRes),
+        resources: JSON.stringify(resRes),
+        audit: JSON.stringify(auditRes),
+      };
+      const prevSig = sigRef.current;
+      if (prevSig.state !== sig.state) setState(bundle.state);
+      if (prevSig.incidents !== sig.incidents) setIncidents(incsRes);
+      if (prevSig.decisions !== sig.decisions) setDecisions(decsRes);
+      if (prevSig.resources !== sig.resources) setResources(resRes);
+      if (prevSig.audit !== sig.audit) setAuditEntries(auditRes);
+      sigRef.current = sig;
       setIsConnected(true);
       setLastError(null);
       setLastUpdatedAt(Date.now());

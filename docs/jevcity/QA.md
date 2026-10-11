@@ -23,6 +23,8 @@ The loop stops after **two consecutive clean passes**.
 | Status refresh | finding statuses + README PR range updated through PR #22 | **PR #23** (`4cf6a6a`) |
 | User-journey walkthrough | full operator journey (vision, overrides, policy, adversarial, resilience); 1 functional + 1 doc finding | **PR #25** |
 | Deeper pass | ECO switch, vision live-mode fail-closed, upload/attach idempotency (all clean) + feature: dashboard Vision Runtime control, `vision_mode` state field, test 333→334 | **PR #26** |
+| Optimization (tier 1) | suite 19→12.4s (parallel gate/ml selftests + duplicate eval_ml coverage dropped), engine latest-decision index (len-guarded), polling paused on hidden tab | **PR #27** |
+| Optimization (tier 2) | combined `GET /api/dashboard` bundle (5→1 request per poll), per-slice signature-skip state updates, test 334→335 | **PR #28** |
 
 **Verdict: QA loop complete — 2 consecutive clean passes (loops 3 + 4); user-journey walkthrough clean after PR #25; deeper pass clean after PR #26.**
 

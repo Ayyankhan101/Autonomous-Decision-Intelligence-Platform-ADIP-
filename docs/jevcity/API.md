@@ -3,7 +3,7 @@
 Base: `http://localhost:8200` · run: `uvicorn jevcity.api.app:app --port 8200`
 JSON Schema exports (dashboard contract): `schemas/*.json` via `python -m jevcity.schemas.export`.
 
-The 16 plan-frozen endpoints below are unchanged; six **additive** endpoints
+The 16 plan-frozen endpoints below are unchanged; seven **additive** endpoints
 were added: `POST /api/simulation/resume` (because `start()` resets state —
 without it, pause → resume silently wiped the session),
 `POST /api/overrides/impact` (enhancement 4: read-only override risk preview),
@@ -15,8 +15,10 @@ returns `{ok, entry_count, broken_at}`), and
 `POST /api/simulation/laya-mode` (demo-liveness: hot-swap adapter mock|cache|live;
 live loads lazily on the first decision), and
 `POST /api/simulation/sybil` (enhancement 1: Sybil-flood injection — honest seed +
-2–10 fabricated reports from fake identities, feeding per-stream trust scoring).
-26 routes total (16 frozen + 10 additive), ledger asserted in
+2–10 fabricated reports from fake identities, feeding per-stream trust scoring), and
+`GET /api/dashboard` (optimization: one round trip per poll returning
+`{state, incidents, decisions, resources, audit}`).
+27 routes total (16 frozen + 11 additive), ledger asserted in
 `tests/jevcity/test_audit_phase4.py::FROZEN_ROUTES`. Vision-evidence routes
 (4 additive, beyond the plan): `POST /api/images` (JSON base64 upload, ≤ 5 MB,
 PNG/JPEG/WebP by magic bytes, extraction runs synchronously in the request),
@@ -35,6 +37,7 @@ PNG/JPEG/WebP by magic bytes, extraction runs synchronously in the request),
 | GET | `/api/decisions/{decision_id}` | `DecisionRecord` (includes optional `lineage` block — evidence terms, decisive clause, expression; enhancement 3) |
 | GET | `/api/resources` | `ResourceListResponse` |
 | GET | `/api/audit?limit=100` | `AuditListResponse` — entries newest-first |
+| GET | `/api/dashboard?audit_limit=100` | `DashboardPayload` — combined poll bundle: `state` + `incidents` + `decisions` + `resources` + `audit` in one response (optimization: 5 round trips → 1) |
 
 ## Simulation controls
 
@@ -87,6 +90,11 @@ What-If results always carry `dry_run=true, audit_written=false, live_state_muta
 `audit_write_failed` (optional, default `false`): turns `true` while the append-only
 audit log rejects a write (engine catches the error instead of 500-ing); the dashboard
 shows the AUDIT WRITE FAILED banner. Cleared by the next successful write or `/api/simulation/reset`.
+
+`GET /api/dashboard` wraps the object above under `state` alongside the four list
+slices (`incidents`, `decisions`, `resources`, `audit`), contract in
+`schemas/dashboard_payload.json`; slices are byte-identical to the standalone
+endpoints (asserted in `test_dashboard_bundle_matches_single_endpoints`).
 
 ## Errors
 

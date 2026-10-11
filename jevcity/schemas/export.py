@@ -18,6 +18,7 @@ MODELS = {
     "decision_record": "DecisionRecord",
     "audit_entry": "AuditEntry",
     "state_payload": "StatePayload",
+    "dashboard_payload": "DashboardPayload",
     "override_request": "OverrideRequest",
     "impact_preview_request": "ImpactPreviewRequest",
     "impact_preview_response": "ImpactPreviewResponse",

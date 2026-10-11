@@ -348,3 +348,20 @@ def test_incident_notes_flow_through_to_api(client):
     assert incidents[0]["notes"] == "caller reports trapped occupants"
     detail = client.get(f"/api/incidents/{incidents[0]['incident_id']}").json()
     assert detail["incident"]["notes"] == "caller reports trapped occupants"
+
+
+def test_dashboard_bundle_matches_single_endpoints(client):
+    client.post("/api/simulation/start", json={"session_seed": 42, "scenario_seed": 7})
+    client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "fire", "zone": "north", "severity": "severe"},
+    )
+    resp = client.get("/api/dashboard", params={"audit_limit": 50})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert set(body) == {"state", "incidents", "decisions", "resources", "audit"}
+    assert body["state"] == client.get("/api/state").json()
+    assert body["incidents"] == client.get("/api/incidents").json()
+    assert body["decisions"] == client.get("/api/decisions").json()
+    assert body["resources"] == client.get("/api/resources").json()
+    assert body["audit"] == client.get("/api/audit", params={"limit": 50}).json()

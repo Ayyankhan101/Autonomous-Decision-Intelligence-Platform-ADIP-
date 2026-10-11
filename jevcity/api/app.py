@@ -19,6 +19,7 @@ from jevcity.ingestion.trust import TrustRegistry
 from jevcity.schemas import (
     AuditListResponse,
     AuditVerifyResponse,
+    DashboardPayload,
     DecisionListResponse,
     DecisionRecord,
     IncidentListResponse,
@@ -167,6 +168,18 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
         limit: Annotated[int, Query(ge=1, le=1000)] = 100,
     ) -> AuditListResponse:
         return AuditListResponse(entries=engine.audit.entries(limit=limit))
+
+    @app.get("/api/dashboard", response_model=DashboardPayload)
+    def get_dashboard(
+        audit_limit: Annotated[int, Query(ge=1, le=1000)] = 100,
+    ) -> DashboardPayload:
+        return DashboardPayload(
+            state=get_state(),
+            incidents=list_incidents(),
+            decisions=list_decisions(),
+            resources=list_resources(),
+            audit=list_audit(limit=audit_limit),
+        )
 
     # --- simulation controls -------------------------------------------
 
