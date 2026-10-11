@@ -71,6 +71,8 @@ class JevCityEngine:
         self.trust = TrustRegistry()
         self.decisions: dict[str, DecisionRecord] = {}
         self.decision_history: list[DecisionRecord] = []
+        self._latest_by_incident: dict[str, DecisionRecord] = {}
+        self._latest_cached_len = 0
         self.validation_by_event: dict[str, ValidationResult] = {}
         self.policy_position: PolicyPosition = PolicyPosition.RESPONSE_TIME
         self.audit_write_failed: bool = False
@@ -281,6 +283,8 @@ class JevCityEngine:
     ) -> DecisionRecord:
         self.decisions[record.decision_id] = record
         self.decision_history.append(record)
+        self._latest_by_incident[record.incident_id] = record
+        self._latest_cached_len = len(self.decision_history)
         self._advance_lifecycle(incident, record)
         self._append_audit(record, incident, validation)
         return record
@@ -414,6 +418,8 @@ class JevCityEngine:
         )
         self.decisions[override_record.decision_id] = override_record
         self.decision_history.append(override_record)
+        self._latest_by_incident[override_record.incident_id] = override_record
+        self._latest_cached_len = len(self.decision_history)
         incident = self.simulation.incidents[original.incident_id]
         self.audit.append(
             actor=req.operator_id,
@@ -592,10 +598,12 @@ class JevCityEngine:
         return attachment
 
     def _latest_decision(self, incident_id: str) -> DecisionRecord | None:
-        for record in reversed(self.decision_history):
-            if record.incident_id == incident_id:
-                return record
-        return None
+        if len(self.decision_history) != self._latest_cached_len:
+            self._latest_by_incident.clear()
+            for record in self.decision_history:
+                self._latest_by_incident[record.incident_id] = record
+            self._latest_cached_len = len(self.decision_history)
+        return self._latest_by_incident.get(incident_id)
 
     # --- What-If (Invariants 6, 15) -------------------------------------
 

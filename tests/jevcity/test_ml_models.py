@@ -146,6 +146,7 @@ def test_anomaly_deterministic():
 import json
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 REPORT = Path("evals/results/ml-phase2-v1.json")
@@ -153,12 +154,18 @@ REPORT = Path("evals/results/ml-phase2-v1.json")
 
 def test_eval_ml_selftest_and_report():
     repo = Path(__file__).resolve().parents[2]
-    p = subprocess.run([sys.executable, "evals/eval_ml.py", "--selftest"],
-                       cwd=repo, capture_output=True, text=True, timeout=120)
+    cmds = [
+        [sys.executable, "evals/eval_ml.py", "--selftest"],
+        [sys.executable, "evals/eval_ml.py"],
+    ]
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        p, p2 = pool.map(
+            lambda cmd: subprocess.run(cmd, cwd=repo, capture_output=True,
+                                       text=True, timeout=300),
+            cmds,
+        )
     assert p.returncode == 0, p.stdout + p.stderr
     assert "selftest OK" in p.stdout
-    p2 = subprocess.run([sys.executable, "evals/eval_ml.py"],
-                        cwd=repo, capture_output=True, text=True, timeout=300)
     assert p2.returncode == 0, p2.stdout + p2.stderr
     report = json.loads(REPORT.read_text())
     assert report["schema"] == "jevcity.ml.v1"
