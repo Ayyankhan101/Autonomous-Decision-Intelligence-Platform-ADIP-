@@ -26,8 +26,9 @@ The loop stops after **two consecutive clean passes**.
 | Optimization (tier 1) | suite 19→12.4s (parallel gate/ml selftests + duplicate eval_ml coverage dropped), engine latest-decision index (len-guarded), polling paused on hidden tab | **PR #27** |
 | Optimization (tier 2) | combined `GET /api/dashboard` bundle (5→1 request per poll), per-slice signature-skip state updates, test 334→335 | **PR #28** |
 | API-semantics sweep (loop 5) | 27-route edge-case sweep (validation, boundaries, friction tiers, what-if isolation, sybil trust, audit chain): 3 fixes — pause now gates inject endpoints (**409**), attach-image checks incident before image (404 order), `POST /api/overrides` returns `OverrideApplyResponse {decision_id, override}` so clients can track override chains; schema `override_apply_response.json` added; test 335→337 | **PR #31** |
+| Loop 6 confirmation | doc-only stamp — regression re-probe of all 3 loop-5 fixes (pause 409, attach 404 order, override chain id) plus untested corners (audit pagination bounds, vision cache-mode roundtrip, EQUITY policy reoptimise, second-emergency, all 3 what-if scenarios, final audit chain) all clean; second consecutive clean pass per QA doctrine | **PR #32** |
 
-**Verdict: QA loop 5 clean after fixes — validation layer, friction tiers, what-if sandbox isolation, sybil trust path, audit hash chain all verified sound; 3 semantic gaps fixed (pause enforcement, 404 ordering, override chain id).**
+**Verdict: QA loops 5 + 6 complete — loop-5 fixes verified, loop-6 confirmation clean (2 consecutive clean passes). Deferred by design: C4 checkpoint gap (v2), incident RESOLVED lifecycle (feature work).**
 
 ## Findings
 
