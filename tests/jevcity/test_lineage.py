@@ -70,7 +70,7 @@ def test_override_carries_clause_attribution(client):
         },
     )
     assert resp.status_code == 200
-    record = resp.json()
+    record = resp.json()["override"]
     assert record["cited_clause"] == "R-AUTO-APPROVE-01"
     assert record["reason_code"] == "POLICY_CLAUSE"
 
@@ -95,7 +95,7 @@ def test_override_attribution_optional_for_compatibility(client):
         },
     )
     assert resp.status_code == 200
-    record = resp.json()
+    record = resp.json()["override"]
     assert record["cited_clause"] is None
     assert record["reason_code"] is None
 

@@ -280,6 +280,11 @@ export interface OverrideRecord {
   break_glass?: boolean;
 }
 
+export interface OverrideApplyResponse {
+  decision_id: string;
+  override: OverrideRecord;
+}
+
 export type OverrideReasonCode = 'POLICY_CLAUSE' | 'POLICY_GAP' | 'EXTERNAL_CONTEXT';
 
 export type ImpactTier = 'LOW' | 'HIGH' | 'BREAK_GLASS';

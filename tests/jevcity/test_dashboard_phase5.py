@@ -107,8 +107,8 @@ def test_dashboard_simulation_controls_flow():
         },
     )
     assert r_ovr.status_code == 200
-    assert r_ovr.json()["impact_tier"] == "BREAK_GLASS"
-    ovr_record = r_ovr.json()
+    assert r_ovr.json()["override"]["impact_tier"] == "BREAK_GLASS"
+    ovr_record = r_ovr.json()["override"]
     assert ovr_record["operator_id"] == "op-commander-09"
     assert ovr_record["previous_priority"] == dec_record["priority"]
 

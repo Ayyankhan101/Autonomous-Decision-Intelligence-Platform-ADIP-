@@ -29,7 +29,7 @@ from jevcity.schemas import (
     LayaMode,
     LayaModeRequest,
     LayaModeResponse,
-    OverrideRecord,
+    OverrideApplyResponse,
     OverrideRequest,
     PolicyPositionRequest,
     PolicyPositionResponse,
@@ -230,8 +230,15 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
         engine._processed = 0
         return SimulationActionResponse()
 
+    def _require_running() -> None:
+        """Inject endpoints are gated on an explicit pause; reads and
+        never-started dev/test sessions are not."""
+        if engine.simulation.paused:
+            raise HTTPException(status_code=409, detail="simulation paused; resume to inject")
+
     @app.post("/api/simulation/incident", response_model=SimulationActionResponse)
     def sim_incident(req: SimulationIncidentRequest) -> SimulationActionResponse:
+        _require_running()
         incident_id = engine.simulation.inject_incident(
             req.incident_type,
             req.zone,
@@ -247,6 +254,7 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
 
     @app.post("/api/simulation/bad-data", response_model=SimulationActionResponse)
     def sim_bad_data(req: SimulationBadDataRequest) -> SimulationActionResponse:
+        _require_running()
         try:
             incident_id = engine.simulation.inject_bad_data(req.mode, req.target_incident_id)
         except KeyError as exc:
@@ -258,6 +266,7 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
 
     @app.post("/api/simulation/sybil", response_model=SybilFloodResponse)
     def sim_sybil(req: SybilFloodRequest) -> SybilFloodResponse:
+        _require_running()
         incident_id, fake_sources = engine.simulation.inject_sybil(
             req.incident_type,
             req.zone,
@@ -273,6 +282,7 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
 
     @app.post("/api/simulation/second-emergency", response_model=SimulationActionResponse)
     def sim_second_emergency(req: SecondEmergencyRequest) -> SimulationActionResponse:
+        _require_running()
         incident_id = engine.simulation.second_emergency(req.incident_type, req.zone)
         records = engine.process_pending()
         return SimulationActionResponse(
@@ -281,8 +291,8 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
 
     # --- overrides (Invariant 7) ---------------------------------------
 
-    @app.post("/api/overrides", response_model=OverrideRecord)
-    def apply_override(req: OverrideRequest) -> OverrideRecord:
+    @app.post("/api/overrides", response_model=OverrideApplyResponse)
+    def apply_override(req: OverrideRequest) -> OverrideApplyResponse:
         try:
             record = engine.apply_override(req)
         except KeyError as exc:
@@ -290,7 +300,9 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
         assert record.override is not None
-        return record.override
+        return OverrideApplyResponse(
+            decision_id=record.decision_id, override=record.override
+        )
 
     @app.post(
         "/api/overrides/impact", response_model=ImpactPreviewResponse
@@ -389,6 +401,8 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
               response_model=VisionAttachResponse)
     def attach_image_to_incident(incident_id: str, req: VisionAttachRequest
                                  ) -> VisionAttachResponse:
+        if incident_id not in engine.simulation.incidents:
+            raise HTTPException(status_code=404, detail="incident_id not found")
         meta = image_store.meta(req.image_id)
         if meta is None:
             raise HTTPException(status_code=404, detail="image_id not found")
@@ -396,10 +410,7 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
             image_store.get_bytes(req.image_id) or b"",
             image_path=image_store.path(req.image_id),
         )
-        try:
-            attachment = engine.attach_image(incident_id, facts)
-        except KeyError as exc:
-            raise HTTPException(status_code=404, detail="incident_id not found") from exc
+        attachment = engine.attach_image(incident_id, facts)
         return VisionAttachResponse(incident_id=incident_id, vision=attachment)
 
     @app.post("/api/vision/mode", response_model=VisionModeResponse)
