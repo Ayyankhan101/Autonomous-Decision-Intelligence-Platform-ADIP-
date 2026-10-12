@@ -13,6 +13,7 @@ import type {
   VisionModeResponse,
   VisionRunMode,
   OverrideContextCode,
+  OverrideApplyResponse,
   OverrideType,
   PolicyPosition,
   PolicyPositionResponse,
@@ -209,8 +210,8 @@ export const api = {
     impact_ack?: boolean;
     context_code?: OverrideContextCode | null;
     break_glass?: boolean;
-  }) =>
-    fetchJson(`${API_BASE}/overrides`, {
+  }): Promise<OverrideApplyResponse> =>
+    fetchJson<OverrideApplyResponse>(`${API_BASE}/overrides`, {
       method: 'POST',
       body: JSON.stringify({
         operator_id: params.operator_id,

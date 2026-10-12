@@ -20,6 +20,7 @@ MODELS = {
     "state_payload": "StatePayload",
     "dashboard_payload": "DashboardPayload",
     "override_request": "OverrideRequest",
+    "override_apply_response": "OverrideApplyResponse",
     "impact_preview_request": "ImpactPreviewRequest",
     "impact_preview_response": "ImpactPreviewResponse",
     "audit_verify_response": "AuditVerifyResponse",

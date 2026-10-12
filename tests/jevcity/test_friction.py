@@ -94,8 +94,8 @@ def test_break_glass_requires_flag(client):
               "new_priority": "CRITICAL", "break_glass": True},
     )
     assert r2.status_code == 200
-    assert r2.json()["impact_tier"] == "BREAK_GLASS"
-    assert r2.json()["break_glass"] is True
+    assert r2.json()["override"]["impact_tier"] == "BREAK_GLASS"
+    assert r2.json()["override"]["break_glass"] is True
 
 
 def test_high_tier_requires_ack_and_context_code(client):
@@ -114,8 +114,8 @@ def test_high_tier_requires_ack_and_context_code(client):
         json={**base, "impact_ack": True, "context_code": "SCENE_REPORT"},
     )
     assert r.status_code == 200
-    assert r.json()["impact_tier"] == "HIGH"
-    assert r.json()["context_code"] == "SCENE_REPORT"
+    assert r.json()["override"]["impact_tier"] == "HIGH"
+    assert r.json()["override"]["context_code"] == "SCENE_REPORT"
 
 
 def test_dismiss_with_assigned_units_is_high(client):
@@ -158,14 +158,14 @@ def test_stray_new_priority_on_non_change_type_is_ignored(client):
               "context_code": OverrideContextCode.SCENE_REPORT.value},
     )
     assert r2.status_code == 200
-    assert r2.json()["impact_tier"] == "HIGH"
-    assert r2.json()["break_glass"] is False
+    assert r2.json()["override"]["impact_tier"] == "HIGH"
+    assert r2.json()["override"]["break_glass"] is False
     active = [
         d for d in client.get("/api/decisions").json()["decisions"]
         if d["state"] == "OVERRIDE_ACTIVE"
     ]
     assert len(active) == 1
-    assert active[0]["priority"] == r2.json()["previous_priority"]
+    assert active[0]["priority"] == r2.json()["override"]["previous_priority"]
 
 
 def test_low_tier_override_needs_no_extra_fields(client):
@@ -178,7 +178,7 @@ def test_low_tier_override_needs_no_extra_fields(client):
               "override_type": "MARK_DATA_UNTRUSTED", "reason": "sensor drift seen"},
     )
     assert r.status_code == 200
-    assert r.json()["impact_tier"] == "LOW"
+    assert r.json()["override"]["impact_tier"] == "LOW"
 
 
 def test_preview_is_read_only(client):

@@ -25,8 +25,9 @@ The loop stops after **two consecutive clean passes**.
 | Deeper pass | ECO switch, vision live-mode fail-closed, upload/attach idempotency (all clean) + feature: dashboard Vision Runtime control, `vision_mode` state field, test 333→334 | **PR #26** |
 | Optimization (tier 1) | suite 19→12.4s (parallel gate/ml selftests + duplicate eval_ml coverage dropped), engine latest-decision index (len-guarded), polling paused on hidden tab | **PR #27** |
 | Optimization (tier 2) | combined `GET /api/dashboard` bundle (5→1 request per poll), per-slice signature-skip state updates, test 334→335 | **PR #28** |
+| API-semantics sweep (loop 5) | 27-route edge-case sweep (validation, boundaries, friction tiers, what-if isolation, sybil trust, audit chain): 3 fixes — pause now gates inject endpoints (**409**), attach-image checks incident before image (404 order), `POST /api/overrides` returns `OverrideApplyResponse {decision_id, override}` so clients can track override chains; schema `override_apply_response.json` added; test 335→337 | **PR #31** |
 
-**Verdict: QA loop complete — 2 consecutive clean passes (loops 3 + 4); user-journey walkthrough clean after PR #25; deeper pass clean after PR #26.**
+**Verdict: QA loop 5 clean after fixes — validation layer, friction tiers, what-if sandbox isolation, sybil trust path, audit hash chain all verified sound; 3 semantic gaps fixed (pause enforcement, 404 ordering, override chain id).**
 
 ## Findings
 

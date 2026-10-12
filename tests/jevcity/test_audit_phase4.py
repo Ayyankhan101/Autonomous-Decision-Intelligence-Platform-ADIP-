@@ -135,7 +135,7 @@ def test_original_decision_visible_after_override(client):
               "reason": "field report contradicts severity"},
     )
     assert overridden.status_code == 200
-    assert overridden.json()["operator_id"] == "op-1"
+    assert overridden.json()["override"]["operator_id"] == "op-1"
 
     listed = client.get("/api/decisions").json()["decisions"]
     active = [d for d in listed if d["state"] == "OVERRIDE_ACTIVE"]

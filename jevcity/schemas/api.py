@@ -6,7 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from .audit import AuditEntry
-from .decision import DecisionRecord
+from .decision import DecisionRecord, OverrideRecord
 from .enums import (
     ImpactTier,
     IncidentType,
@@ -236,6 +236,17 @@ class ImpactPreviewResponse(BaseModel):
     requires_context_code: bool
     requires_break_glass: bool
     projected: dict[str, str | int | bool] = Field(default_factory=dict)
+
+
+class OverrideApplyResponse(BaseModel):
+    """POST /api/overrides result: the new override decision's id plus its audit
+    record. The override is an immutable NEW decision (previous id keeps its
+    original record); clients need the new id to track the override chain."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    decision_id: str
+    override: OverrideRecord
 
 
 class WhatIfRequest(BaseModel):

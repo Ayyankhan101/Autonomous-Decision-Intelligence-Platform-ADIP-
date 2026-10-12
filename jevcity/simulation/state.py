@@ -33,6 +33,7 @@ class SimulationState:
         self.generator = EventGenerator(self.session_rng, self.scenario_rng)
         self.pool = ResourcePool.default()
         self.running = False
+        self.paused = False
         self.raw_events: list[dict] = []
         self.events: list[EventEnvelope] = []
         self.incidents: dict[str, IncidentRecord] = {}
@@ -43,12 +44,15 @@ class SimulationState:
     def start(self, session_seed: int, scenario_seed: int) -> None:
         self.reset(SeedConfig(session_seed=session_seed, scenario_seed=scenario_seed))
         self.running = True
+        self.paused = False
 
     def pause(self) -> None:
         self.running = False
+        self.paused = True
 
     def resume(self) -> None:
         self.running = True
+        self.paused = False
 
     # --- event injection ----------------------------------------------
 

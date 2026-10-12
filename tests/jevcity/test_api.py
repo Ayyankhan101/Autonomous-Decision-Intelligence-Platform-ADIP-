@@ -80,9 +80,15 @@ def test_full_simulation_flow(client):
               "new_priority": "CRITICAL", "break_glass": True},
     )
     assert ok.status_code == 200
-    assert ok.json()["operator_id"] == "op-1"
-    assert ok.json()["impact_tier"] == "BREAK_GLASS"
-    assert ok.json()["break_glass"] is True
+    body = ok.json()
+    assert body["override"]["operator_id"] == "op-1"
+    assert body["override"]["impact_tier"] == "BREAK_GLASS"
+    assert body["override"]["break_glass"] is True
+    override_id = body["decision_id"]
+    assert override_id != decision_id
+    override_rec = client.get(f"/api/decisions/{override_id}").json()
+    assert override_rec["state"] == "OVERRIDE_ACTIVE"
+    assert override_rec["priority"] == "CRITICAL"
 
     # original decision still visible (append-only history)
     history = client.get("/api/decisions").json()["decisions"]
@@ -365,3 +371,41 @@ def test_dashboard_bundle_matches_single_endpoints(client):
     assert body["decisions"] == client.get("/api/decisions").json()
     assert body["resources"] == client.get("/api/resources").json()
     assert body["audit"] == client.get("/api/audit", params={"limit": 50}).json()
+
+
+def test_pause_blocks_injection_endpoints(client):
+    client.post("/api/simulation/start", json={"session_seed": 42, "scenario_seed": 7})
+    assert client.post("/api/simulation/pause").status_code == 200
+    inject = client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "fire", "zone": "north", "severity": "severe"},
+    )
+    assert inject.status_code == 409
+    assert "paused" in inject.json()["detail"]
+    bad = client.post("/api/simulation/bad-data", json={"mode": "missing_fields"})
+    assert bad.status_code == 409
+    sybil = client.post(
+        "/api/simulation/sybil",
+        json={"incident_type": "fire", "zone": "north", "severity": "severe"},
+    )
+    assert sybil.status_code == 409
+    second = client.post(
+        "/api/simulation/second-emergency",
+        json={"incident_type": "fire", "zone": "south"},
+    )
+    assert second.status_code == 409
+    assert client.post("/api/simulation/resume").status_code == 200
+    resumed = client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "fire", "zone": "north", "severity": "severe"},
+    )
+    assert resumed.status_code == 200
+
+
+def test_attach_image_unknown_incident_before_unknown_image(client):
+    client.post("/api/simulation/start", json={"session_seed": 42, "scenario_seed": 7})
+    r = client.post(
+        "/api/incidents/does-not-exist/images", json={"image_id": "no-such-image"}
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "incident_id not found"
