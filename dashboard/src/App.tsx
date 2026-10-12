@@ -125,7 +125,7 @@ export function App() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 max-w-7xl w-full mx-auto space-y-4">
+      <main className="flex-1 p-4 md:p-6 2xl:px-10 w-full space-y-4">
         {activeTab === 'command' && (
           <div className="space-y-4">
             {/* Live KPI strip — real telemetry from the polled feed */}
@@ -191,7 +191,7 @@ export function App() {
         )}
       </main>
 
-      {/* Human Override Modal (Invariant 7) */}
+      {/* Human Override Modal */}
       {selectedDecision && (
         <OverrideModal
           decision={selectedDecision}
@@ -202,6 +202,18 @@ export function App() {
           }}
         />
       )}
+
+      {/* Status bar — build/runtime meta, dim by design */}
+      <footer className="border-t border-slate-900 bg-slate-950/90 px-4 md:px-6 2xl:px-10 py-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-mono text-slate-600">
+        <span>ADIP v0.1.0</span>
+        <span>PORT 8200</span>
+        {state && (
+          <span>
+            Seeds S:{state.session_seed} / R:{state.scenario_seed}
+          </span>
+        )}
+        <span className="ml-auto">JevCity Command Center</span>
+      </footer>
     </div>
   );
 }
