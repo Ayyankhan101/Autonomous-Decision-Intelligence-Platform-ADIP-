@@ -162,7 +162,7 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ entries, newIds }) => {
 
                 {/* Expanded Details Drawer */}
                 {isExpanded && (
-                  <div className="bg-slate-900/90 border-t border-slate-800/80 p-3.5 space-y-3 text-xs font-mono animate-in fade-in duration-150">
+                  <div className="bg-slate-900/90 border-t border-slate-800/80 p-3.5 space-y-3 text-xs font-mono animate-fade-in">
                     {/* Reason */}
                     {entry.reason && (
                       <div>

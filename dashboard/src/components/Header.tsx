@@ -12,7 +12,6 @@ import {
   Pause,
   RefreshCw,
   Scale,
-  Sliders,
   Timer,
   Wifi,
   WifiOff,
@@ -97,13 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
           <Activity className="w-5 h-5 text-indigo-400 animate-pulse" />
         </div>
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-base font-bold tracking-tight text-white flex items-center gap-2">
-              JevCity <span className="text-xs px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800/50">ADIP v0.1.0</span>
-            </h1>
-            <span className="text-slate-500 text-xs">•</span>
-            <span className="text-xs font-mono text-slate-400">PORT 8200</span>
-          </div>
+          <h1 className="text-base font-bold tracking-tight text-white">JevCity</h1>
           <p className="text-xs text-slate-400">Autonomous Decision Intelligence Platform</p>
         </div>
       </div>
@@ -129,7 +122,7 @@ export const Header: React.FC<HeaderProps> = ({
             {state?.running ? (
               <>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                <span>LIVE</span>
+                <span>RUN</span>
               </>
             ) : (
               <>
@@ -139,15 +132,6 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
         </div>
-
-        {/* Seeds */}
-        {state && (
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-slate-950/60 border border-slate-800/80 rounded-md font-mono text-slate-400 text-xs">
-            <Sliders className="w-3.5 h-3.5 text-slate-400" />
-            <span>Seeds:</span>
-            <span className="text-slate-200">S:{state.session_seed} / R:{state.scenario_seed}</span>
-          </div>
-        )}
 
         {/* Policy Position Badge */}
         {state?.policy_position && (

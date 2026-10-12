@@ -142,7 +142,7 @@ export const WhatIfSandbox: React.FC<WhatIfSandboxProps> = ({ latestDecision }) 
 
       {/* Simulation Results Display */}
       {result ? (
-        <div className="space-y-4 animate-in fade-in duration-200">
+        <div className="space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-purple-400" />
