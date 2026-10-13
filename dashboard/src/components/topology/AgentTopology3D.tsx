@@ -46,9 +46,11 @@ function AwaitingTelemetry() {
   );
 }
 
-export function AgentTopology3D({ snapshot, onRefresh }: {
+export function AgentTopology3D({ snapshot, onRefresh, selectedIncidentId, onSelectIncident }: {
   snapshot: TopologyDashboardSnapshot;
   onRefresh: () => void;
+  selectedIncidentId: string | null;
+  onSelectIncident: (id: string | null) => void;
 }) {
   const setFromDashboard = useTopologyStore((s) => s.setFromDashboard);
   const agents = useTopologyStore((s) => s.agents);
@@ -75,11 +77,11 @@ export function AgentTopology3D({ snapshot, onRefresh }: {
             onPointerMissed={() => selectAgent(null)}
           >
             <Suspense fallback={null}>
-              <TopologyScene />
+              <TopologyScene selectedIncidentId={selectedIncidentId} onSelectIncident={onSelectIncident} />
             </Suspense>
           </Canvas>
         )}
-        {!empty && <Hud onRefresh={onRefresh} />}
+        {!empty && <Hud onRefresh={onRefresh} selectedIncidentId={selectedIncidentId} onSelectIncident={onSelectIncident} />}
         <div className="pointer-events-none absolute inset-0 z-30 scanlines" />
       </div>
     </TopologyErrorBoundary>

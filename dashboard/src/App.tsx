@@ -216,6 +216,8 @@ export function App() {
             <AgentTopology3D
               snapshot={{ state, incidents, decisions, resources, auditEntries }}
               onRefresh={refresh}
+              selectedIncidentId={selectedIncidentId}
+              onSelectIncident={(id) => setSelectedIncidentId(id)}
             />
           </Suspense>
         )}

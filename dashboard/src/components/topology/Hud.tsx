@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Activity,
   Cpu,
@@ -463,7 +463,14 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
   );
 }
 
-export function Hud({ onRefresh }: { onRefresh: () => void }) {
+export function Hud({ onRefresh, selectedIncidentId, onSelectIncident }: { onRefresh: () => void; selectedIncidentId: string | null; onSelectIncident: (id: string | null) => void }) {
+  useEffect(() => {
+    // selected incident changed
+  }, [selectedIncidentId]);
+  useEffect(() => {
+    // onSelectIncident changed
+  }, [onSelectIncident]);
+
   return (
     <>
       <HudHeader />

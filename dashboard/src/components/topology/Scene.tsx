@@ -291,7 +291,7 @@ function AssignmentEdge({ edge, speed }: { edge: TopologyEdge; speed: number }) 
   );
 }
 
-export function TopologyScene() {
+export function TopologyScene({ selectedIncidentId, onSelectIncident }: { selectedIncidentId: string | null; onSelectIncident: (id: string | null) => void }) {
   const agents = useTopologyStore((s) => s.agents);
   const incidents = useTopologyStore((s) => s.incidents);
   const edges = useTopologyStore((s) => s.edges);
@@ -311,6 +311,13 @@ export function TopologyScene() {
       acc.current = 0;
     }
   });
+
+  useEffect(() => {
+    // selected incident changed
+  }, [selectedIncidentId]);
+  useEffect(() => {
+    // onSelectIncident changed
+  }, [onSelectIncident]);
 
   return (
     <>
