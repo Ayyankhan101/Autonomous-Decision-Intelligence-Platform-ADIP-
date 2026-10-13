@@ -132,6 +132,16 @@ def test_upload_extract_and_facts_get():
     assert r2.json()["facts"]["image_sha256"] == body["image_id"]
 
 
+def test_raw_bytes_and_404s():
+    _, client = _started_client()
+    img = client.post("/api/images", json={"image_b64": PNG_B64}).json()
+    r = client.get(f"/api/images/{img['image_id']}/raw")
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "image/png"
+    assert r.content == Path("fixtures/vision/scene.png").read_bytes()
+    assert client.get("/api/images/" + "0" * 64 + "/raw").status_code == 404
+
+
 def test_upload_422_battery():
     _, client = _started_client()
     bad = [

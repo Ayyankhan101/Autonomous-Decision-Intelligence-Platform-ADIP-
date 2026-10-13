@@ -107,10 +107,12 @@ export const AuditChain: React.FC<AuditChainProps> = ({ entries, newIds }) => {
               </div>
               {i < window.length - 1 && (
                 <span
-                  className="text-[9px] font-mono text-slate-600 shrink-0"
+                  className="shrink-0 flex flex-col items-center gap-0.5"
                   title={entry.entry_hash}
                 >
-                  ▼
+                  <span className="w-px h-1.5 bg-slate-600" />
+                  <Link2 className="w-2.5 h-2.5 text-slate-600" />
+                  <span className="w-px h-1.5 bg-slate-600" />
                 </span>
               )}
             </div>

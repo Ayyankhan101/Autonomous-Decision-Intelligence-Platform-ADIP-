@@ -16,18 +16,21 @@ import type {
   DecisionState,
   IncidentRecord,
   Priority,
+  Resource,
 } from '../types/api';
 import { VisionEvidence } from './VisionEvidence';
 
 interface IncidentInspectorProps {
   incident: IncidentRecord | null;
   decision: DecisionRecord | null;
+  resources: Resource[];
   onOpenOverrideModal: () => void;
 }
 
 export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
   incident,
   decision,
+  resources,
   onOpenOverrideModal,
 }) => {
   const [advisoryVisible, setAdvisoryVisible] = useState(true);
@@ -44,6 +47,25 @@ export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
   const laya = decision?.laya;
   const signals = decision?.signals;
   const override = decision?.override;
+
+  const assignedUnits = resources.filter((r) =>
+    incident.assigned_resource_ids.includes(r.resource_id)
+  );
+
+  const ageSec = Math.max(
+    0,
+    Math.floor(
+      (new Date(incident.latest_simulated).getTime() -
+        new Date(incident.first_seen_simulated).getTime()) /
+        1000
+    )
+  );
+  const ageLabel =
+    ageSec < 60
+      ? `${ageSec}s`
+      : ageSec < 3600
+        ? `${Math.floor(ageSec / 60)}m ${ageSec % 60}s`
+        : `${Math.floor(ageSec / 3600)}h ${Math.floor((ageSec % 3600) / 60)}m`;
 
   const isDiverged =
     laya &&
@@ -120,10 +142,38 @@ export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
               UTC
             </span>
             <span>•</span>
+            <span className="text-slate-300">Open: {ageLabel}</span>
+            <span>•</span>
             <span>Reports: {incident.report_count}</span>
             <span>•</span>
             <span>Sources: {incident.source_ids.join(', ')}</span>
           </div>
+
+          {/* Assigned units — status + rough ETA from dispatch progression */}
+          {assignedUnits.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wide">
+                Assigned:
+              </span>
+              {assignedUnits.map((u) => (
+                <span
+                  key={u.resource_id}
+                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
+                    u.status === 'available'
+                      ? 'text-slate-300 bg-slate-800 border-slate-700'
+                      : u.status === 'assigned'
+                        ? 'text-sky-300 bg-sky-950/60 border-sky-800/60'
+                        : u.status === 'busy'
+                          ? 'text-emerald-300 bg-emerald-950/60 border-emerald-800/60'
+                          : 'text-red-300 bg-red-950/60 border-red-800/60'
+                  }`}
+                  title={u.type}
+                >
+                  {u.resource_id} · {u.status.replace('_', ' ')}
+                </span>
+              ))}
+            </div>
+          )}
           {incident.notes && (
             <div className="text-xs text-slate-400 mt-1 font-mono">
               <span className="text-slate-500">Notes:</span> {incident.notes}
@@ -154,7 +204,7 @@ export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-cyan-300 font-semibold text-xs">
               <Lock className="w-4 h-4 text-cyan-400" />
-              <span>ACTIVE HUMAN OVERRIDE IN EFFECT (Invariant 7)</span>
+              <span>ACTIVE HUMAN OVERRIDE IN EFFECT</span>
             </div>
             <span className="text-[10px] font-mono text-cyan-400">
               Op: {override.operator_id}
@@ -176,7 +226,7 @@ export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
           <div className="flex items-center gap-1.5">
             <Cpu className="w-3.5 h-3.5 text-indigo-400" />
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              Independent Upstream ML Signals (Invariant 10)
+              Independent Upstream ML Signals
             </h4>
           </div>
           <span className="text-[10px] text-slate-500 font-mono">
@@ -286,7 +336,7 @@ export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
               Deterministic policy finalized priority to{' '}
               <strong className="text-white font-mono">{decision?.priority}</strong>, modifying Laya&apos;s
               suggested priority of{' '}
-              <strong className="text-amber-300 font-mono">{laya?.suggested_priority}</strong>. Invariants have final authority.
+              <strong className="text-amber-300 font-mono">{laya?.suggested_priority}</strong>. Deterministic policy has final authority.
             </p>
           </div>
         </div>
@@ -440,7 +490,7 @@ export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
           </div>
 
           <div className="mt-3 pt-2 border-t border-slate-800/80 text-[10px] text-slate-500 font-mono">
-            Laya never finalizes decisions (Invariant 5)
+            Laya never finalizes decisions — policy authority
           </div>
         </div>
 

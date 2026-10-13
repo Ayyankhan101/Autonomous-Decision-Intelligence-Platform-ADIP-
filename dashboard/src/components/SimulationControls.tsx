@@ -3,12 +3,15 @@ import { useState } from 'react';
 import {
   Brain,
   Camera,
+  ChevronDown,
+  ChevronUp,
   Flame,
   Play,
   Pause,
   RotateCcw,
   Send,
   ShieldAlert,
+  Sliders,
   Users,
   Zap,
 } from 'lucide-react';
@@ -44,6 +47,7 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
   const [rSeed, setRSeed] = useState(scenarioSeed);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [harnessOpen, setHarnessOpen] = useState(false);
 
   // Inject incident form state
   const [incType, setIncType] = useState<IncidentType>('accident');
@@ -214,9 +218,8 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
       <div>
         <div className="flex items-center justify-between mb-2.5">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
-            Simulation Clock & Seeds
+            Simulation Control
           </h3>
-          <span className="text-[10px] font-mono text-slate-500">SeedConfig Invariant 11</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -243,29 +246,8 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset</span>
           </button>
-
-          <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-xs font-mono">
-            <span className="text-slate-400">S:</span>
-            <input
-              type="number"
-              value={sSeed}
-              onChange={(e) => setSSeed(Number(e.target.value))}
-              className="w-12 bg-transparent text-white focus:outline-none"
-              title="Session Seed"
-            />
-            <span className="text-slate-600">/</span>
-            <span className="text-slate-400">R:</span>
-            <input
-              type="number"
-              value={rSeed}
-              onChange={(e) => setRSeed(Number(e.target.value))}
-              className="w-12 bg-transparent text-white focus:outline-none"
-              title="Scenario Seed"
-            />
-          </div>
         </div>
 
-        {/* Live counters (previously fetched but never shown) */}
         <div className="flex items-center gap-3 mt-2 text-[11px] font-mono">
           <span className="text-slate-400">
             Incidents: <strong className="text-amber-300">{incidentCount}</strong>
@@ -349,7 +331,7 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
       <form onSubmit={handleInjectIncident} className="border-t border-slate-800/80 pt-3">
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 flex items-center gap-1.5">
           <Zap className="w-3.5 h-3.5 text-yellow-400" />
-          <span>Simulate Incident</span>
+          <span>Report Incident</span>
         </h4>
 
         <div className="grid grid-cols-2 gap-2 text-xs mb-2">
@@ -427,59 +409,94 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
           className="w-full py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center gap-1.5 shadow-sm transition-all"
         >
           <Send className="w-3.5 h-3.5" />
-          <span>Inject Incident</span>
+          <span>Submit Report</span>
         </button>
       </form>
 
-      {/* Bad Data & Adversarial Injection */}
+      {/* Test Harness — collapsed by default, dev/test controls live here */}
       <div className="border-t border-slate-800/80 pt-3">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 flex items-center gap-1.5">
-          <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
-          <span>Adversarial & Fault Injection</span>
-        </h4>
-
-        <div className="flex gap-2 mb-2">
-          <select
-            value={badDataMode}
-            onChange={(e) => setBadDataMode(e.target.value as InjectionMode)}
-            className="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-200 focus:border-rose-500 focus:outline-none"
-          >
-            <option value="adversarial_notes">Adversarial Notes (Prompt Injection)</option>
-            <option value="conflicting_reports">Conflicting Reports</option>
-            <option value="missing_fields">Missing Critical Fields</option>
-            <option value="out_of_range">Out-of-Range Coordinates</option>
-          </select>
-
-          <button
-            onClick={handleInjectBadData}
-            disabled={isSubmitting}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800/50 shadow-sm transition-all"
-          >
-            Inject Fault
-          </button>
-        </div>
-
-        {/* Second emergency trigger for contention */}
         <button
-          onClick={handleSecondEmergency}
-          disabled={isSubmitting}
-          className="w-full py-1.5 rounded-lg text-xs font-semibold bg-amber-950/70 hover:bg-amber-900/70 text-amber-300 border border-amber-800/50 flex items-center justify-center gap-1.5 shadow-sm transition-all mt-1"
-          title="Fires a major second emergency in North Sector to trigger resource contention"
+          onClick={() => setHarnessOpen((o) => !o)}
+          className="w-full flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-slate-200 transition-colors"
         >
-          <Flame className="w-3.5 h-3.5 text-amber-400" />
-          <span>Trigger Second Emergency (Contention Test)</span>
+          <span className="flex items-center gap-1.5">
+            <Sliders className="w-3.5 h-3.5 text-slate-500" />
+            Simulation Test Harness
+          </span>
+          {harnessOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
 
-        {/* Sybil flood — enhancement 1 adversarial scenario */}
-        <button
-          onClick={handleSybilFlood}
-          disabled={isSubmitting}
-          className="w-full py-1.5 rounded-lg text-xs font-semibold bg-fuchsia-950/70 hover:bg-fuchsia-900/70 text-fuchsia-300 border border-fuchsia-800/50 flex items-center justify-center gap-1.5 shadow-sm transition-all mt-1"
-          title="Floods one incident with 5 fabricated reports from fake identities; trust scoring flags them and down-weights the decision"
-        >
-          <Users className="w-3.5 h-3.5 text-fuchsia-400" />
-          <span>Sybil Flood (5 fake sources)</span>
-        </button>
+        {harnessOpen && (
+          <div className="mt-3 space-y-3 animate-fade-in">
+            <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-xs font-mono w-fit">
+              <span className="text-slate-400">S:</span>
+              <input
+                type="number"
+                value={sSeed}
+                onChange={(e) => setSSeed(Number(e.target.value))}
+                className="w-12 bg-transparent text-white focus:outline-none"
+                title="Session Seed"
+              />
+              <span className="text-slate-600">/</span>
+              <span className="text-slate-400">R:</span>
+              <input
+                type="number"
+                value={rSeed}
+                onChange={(e) => setRSeed(Number(e.target.value))}
+                className="w-12 bg-transparent text-white focus:outline-none"
+                title="Scenario Seed"
+              />
+            </div>
+
+            <div>
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+                <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+                <span>Adversarial & Fault Injection</span>
+              </h4>
+
+              <div className="flex gap-2 mb-2">
+                <select
+                  value={badDataMode}
+                  onChange={(e) => setBadDataMode(e.target.value as InjectionMode)}
+                  className="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:border-rose-500 focus:outline-none"
+                >
+                  <option value="adversarial_notes">Adversarial Notes (Prompt Injection)</option>
+                  <option value="conflicting_reports">Conflicting Reports</option>
+                  <option value="missing_fields">Missing Critical Fields</option>
+                  <option value="out_of_range">Out-of-Range Coordinates</option>
+                </select>
+
+                <button
+                  onClick={handleInjectBadData}
+                  disabled={isSubmitting}
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800/50 shadow-sm transition-all"
+                >
+                  Inject Fault
+                </button>
+              </div>
+
+              <button
+                onClick={handleSecondEmergency}
+                disabled={isSubmitting}
+                className="w-full py-1.5 rounded-lg text-[11px] font-semibold bg-amber-950/70 hover:bg-amber-900/70 text-amber-300 border border-amber-800/50 flex items-center justify-center gap-1.5 shadow-sm transition-all mt-1"
+                title="Fires a major second emergency in North Sector to trigger resource contention"
+              >
+                <Flame className="w-3.5 h-3.5 text-amber-400" />
+                <span>Trigger Second Emergency (Contention Test)</span>
+              </button>
+
+              <button
+                onClick={handleSybilFlood}
+                disabled={isSubmitting}
+                className="w-full py-1.5 rounded-lg text-[11px] font-semibold bg-fuchsia-950/70 hover:bg-fuchsia-900/70 text-fuchsia-300 border border-fuchsia-800/50 flex items-center justify-center gap-1.5 shadow-sm transition-all mt-1"
+                title="Floods one incident with 5 fabricated reports from fake identities; trust scoring flags them and down-weights the decision"
+              >
+                <Users className="w-3.5 h-3.5 text-fuchsia-400" />
+                <span>Sybil Flood (5 fake sources)</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

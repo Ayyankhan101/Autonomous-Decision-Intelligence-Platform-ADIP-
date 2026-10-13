@@ -7,7 +7,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -396,6 +396,17 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
         if meta is None:
             raise HTTPException(status_code=404, detail="image_id not found")
         return FactsResponse(image_id=image_id, facts=meta.facts)
+
+    @app.get("/api/images/{image_id}/raw")
+    def get_image_raw(image_id: str) -> Response:
+        meta = image_store.meta(image_id)
+        if meta is None:
+            raise HTTPException(status_code=404, detail="image_id not found")
+        data = image_store.get_bytes(image_id)
+        if data is None:
+            raise HTTPException(status_code=404, detail="image bytes not found")
+        return Response(content=data, media_type=meta.mime,
+                        headers={"Cache-Control": "public, max-age=86400"})
 
     @app.post("/api/incidents/{incident_id}/images",
               response_model=VisionAttachResponse)

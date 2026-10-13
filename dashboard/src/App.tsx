@@ -153,6 +153,7 @@ export function App() {
                 <IncidentInspector
                   incident={selectedIncident}
                   decision={selectedDecision}
+                  resources={resources}
                   onOpenOverrideModal={() => setIsOverrideModalOpen(true)}
                 />
               </div>

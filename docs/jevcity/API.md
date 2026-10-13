@@ -18,11 +18,13 @@ live loads lazily on the first decision), and
 2–10 fabricated reports from fake identities, feeding per-stream trust scoring), and
 `GET /api/dashboard` (optimization: one round trip per poll returning
 `{state, incidents, decisions, resources, audit}`).
-27 routes total (16 frozen + 11 additive), ledger asserted in
+28 routes total (16 frozen + 12 additive), ledger asserted in
 `tests/jevcity/test_audit_phase4.py::FROZEN_ROUTES`. Vision-evidence routes
-(4 additive, beyond the plan): `POST /api/images` (JSON base64 upload, ≤ 5 MB,
+(5 additive, beyond the plan): `POST /api/images` (JSON base64 upload, ≤ 5 MB,
 PNG/JPEG/WebP by magic bytes, extraction runs synchronously in the request),
-`GET /api/images/{image_id}/facts`, `POST /api/incidents/{incident_id}/images`
+`GET /api/images/{image_id}/facts`, `GET /api/images/{image_id}/raw`
+(original bytes for dashboard thumbnails; 404 if evicted from the in-memory
+store), `POST /api/incidents/{incident_id}/images`
 (attach — evidence on the incident record + `VISION_ATTACHED` audit entry),
 `POST /api/vision/mode` (hot-swap `mock | cache | live`).
 

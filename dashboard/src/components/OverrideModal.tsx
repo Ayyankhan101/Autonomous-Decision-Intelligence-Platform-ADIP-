@@ -99,7 +99,7 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!operatorId.trim()) {
-      setErrorMsg('Operator ID is required (Invariant 7)');
+      setErrorMsg('Operator ID is required');
       return;
     }
     if (!basis) {
@@ -109,7 +109,7 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
       return;
     }
     if (!reason.trim()) {
-      setErrorMsg('Justification reason is required (Invariant 7)');
+      setErrorMsg('Justification reason is required');
       return;
     }
     if (tier === 'BREAK_GLASS' && !breakGlass) {
@@ -179,7 +179,7 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               Apply Human Override
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800/40">
-                Invariant 7
+                Zero-trust friction
               </span>
             </h3>
             <p className="text-xs text-slate-400 font-mono">

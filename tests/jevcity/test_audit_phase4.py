@@ -57,6 +57,8 @@ FROZEN_ROUTES = {
     ("POST", "/api/what-if/run"),
     # Additive extension (optimization): combined dashboard poll bundle.
     ("GET", "/api/dashboard"),
+    # Additive extension (visual pass A3): raw image bytes for thumbnails.
+    ("GET", "/api/images/{image_id}/raw"),
 }
 
 

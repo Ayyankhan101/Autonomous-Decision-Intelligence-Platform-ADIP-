@@ -46,7 +46,7 @@ export const VisionEvidence: React.FC<Props> = ({ incidentId, vision }) => {
           <Camera className="w-3.5 h-3.5" /> VISION EVIDENCE
         </h4>
         <label className="cursor-pointer text-xs text-sky-400 hover:text-sky-300">
-          {isUploading ? 'Analyzing…' : 'Upload image'}
+          {isUploading ? 'Analyzing…' : 'Attach evidence'}
           <input
             type="file"
             accept="image/png,image/jpeg,image/webp"
@@ -58,20 +58,30 @@ export const VisionEvidence: React.FC<Props> = ({ incidentId, vision }) => {
       </div>
       {errorMsg && <p className="mt-2 text-xs text-red-400">{errorMsg}</p>}
       {vision ? (
-        <div className="mt-2 space-y-1 text-xs text-slate-300">
-          <p>
-            scene <span className="text-slate-100">{vision.facts.scene}</span> · damage{' '}
-            <span className="text-slate-100">{vision.facts.damage_severity}</span> ·
-            confidence {vision.facts.confidence['scene'] ?? '—'}
-          </p>
-          <p className="text-slate-500">
-            {vision.facts.model_id} @ {vision.facts.mode} ·{' '}
-            {vision.facts.status === 'ok' ? 'OK' : vision.facts.status}
-            {vision.facts.objects.length > 0 && <> · {vision.facts.objects.join(', ')}</>}
-          </p>
-          {vision.soft_findings.map((f) => (
-            <p key={f.code} className="text-amber-400">⚠ {f.message}</p>
-          ))}
+        <div className="mt-2 flex gap-3">
+          <img
+            src={`/api/images/${vision.image_id}/raw`}
+            alt="Vision evidence"
+            className="w-24 h-24 object-cover rounded-md border border-slate-700 bg-slate-950 shrink-0"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+          <div className="space-y-1 text-xs text-slate-300 min-w-0">
+            <p>
+              scene <span className="text-slate-100">{vision.facts.scene}</span> · damage{' '}
+              <span className="text-slate-100">{vision.facts.damage_severity}</span> ·
+              confidence {vision.facts.confidence['scene'] ?? '—'}
+            </p>
+            <p className="text-slate-500">
+              {vision.facts.model_id} @ {vision.facts.mode} ·{' '}
+              {vision.facts.status === 'ok' ? 'OK' : vision.facts.status}
+              {vision.facts.objects.length > 0 && <> · {vision.facts.objects.join(', ')}</>}
+            </p>
+            {vision.soft_findings.map((f) => (
+              <p key={f.code} className="text-amber-400">⚠ {f.message}</p>
+            ))}
+          </div>
         </div>
       ) : (
         <p className="mt-2 text-xs text-slate-500">

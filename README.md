@@ -74,7 +74,7 @@ flowchart TD
     OVR["OVERRIDE (E4)\nLOW | HIGH | BREAK_GLASS\nactor + reason · impact tiers"]:::decision
     WIF["WHAT-IF SANDBOX\ndry-run · isolated scope\nzero live writes"]:::decision
 
-    API["FastAPI :8200 · 27 routes"]:::infra
+    API["FastAPI :8200 · 28 routes"]:::infra
     DASH["Command Center (React)\n1.5 s poll · UTC clocks"]:::infra
 
     EVT --> VAL --> FEAT --> ML --> LAYA --> GUARD --> ALLOC --> DEC
