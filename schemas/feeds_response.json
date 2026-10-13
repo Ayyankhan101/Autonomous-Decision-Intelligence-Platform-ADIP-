@@ -1,0 +1,229 @@
+{
+  "$defs": {
+    "FeedAdvisory": {
+      "additionalProperties": false,
+      "description": "ReliefWeb situational advisory \u2014 context only, never an incident.",
+      "properties": {
+        "published": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Published"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "title": "FeedAdvisory",
+      "type": "object"
+    },
+    "FeedMode": {
+      "enum": [
+        "mock",
+        "live"
+      ],
+      "title": "FeedMode",
+      "type": "string"
+    },
+    "FeedStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "consecutive_failures": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Consecutive Failures",
+          "type": "integer"
+        },
+        "detail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Detail"
+        },
+        "events_last_poll": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Events Last Poll",
+          "type": "integer"
+        },
+        "last_poll": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Poll"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "ok": {
+          "title": "Ok",
+          "type": "boolean"
+        },
+        "total_events": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Total Events",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "ok"
+      ],
+      "title": "FeedStatus",
+      "type": "object"
+    },
+    "WeatherSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "flood_risk": {
+          "default": false,
+          "title": "Flood Risk",
+          "type": "boolean"
+        },
+        "precipitation_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Precipitation Mm"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summary"
+        },
+        "temperature_c": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature C"
+        },
+        "weather_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Weather Code"
+        },
+        "wind_speed_kmh": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Wind Speed Kmh"
+        }
+      },
+      "title": "WeatherSnapshot",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "GET /api/feeds \u2014 live-feed health (workstream B1).",
+  "properties": {
+    "advisories": {
+      "items": {
+        "$ref": "#/$defs/FeedAdvisory"
+      },
+      "title": "Advisories",
+      "type": "array"
+    },
+    "feeds": {
+      "items": {
+        "$ref": "#/$defs/FeedStatus"
+      },
+      "title": "Feeds",
+      "type": "array"
+    },
+    "mode": {
+      "$ref": "#/$defs/FeedMode"
+    },
+    "running": {
+      "title": "Running",
+      "type": "boolean"
+    },
+    "weather": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/WeatherSnapshot"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "mode",
+    "running",
+    "feeds"
+  ],
+  "title": "FeedsResponse",
+  "type": "object"
+}

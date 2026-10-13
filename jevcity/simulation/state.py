@@ -9,6 +9,7 @@ from jevcity.schemas import (
     IncidentRecord,
     IncidentType,
     InjectionMode,
+    ResourceType,
     SeverityHint,
     ValidationStatus,
     Zone,
@@ -23,7 +24,13 @@ from .seeds import SeedConfig, build_rngs
 
 
 class SimulationState:
-    def __init__(self, config: SeedConfig | None = None) -> None:
+    def __init__(
+        self,
+        config: SeedConfig | None = None,
+        *,
+        fleet: list[tuple[str, ResourceType, Zone, float]] | None = None,
+    ) -> None:
+        self._fleet_spec = fleet
         self.reset(config or SeedConfig())
 
     def reset(self, config: SeedConfig | None = None) -> None:
@@ -31,7 +38,10 @@ class SimulationState:
         self.session_rng, self.scenario_rng = build_rngs(self.config)
         self.clock = SimClock()
         self.generator = EventGenerator(self.session_rng, self.scenario_rng)
-        self.pool = ResourcePool.default()
+        self.pool = (
+            ResourcePool(self._fleet_spec) if self._fleet_spec
+            else ResourcePool.default()
+        )
         self.running = False
         self.paused = False
         self.raw_events: list[dict] = []

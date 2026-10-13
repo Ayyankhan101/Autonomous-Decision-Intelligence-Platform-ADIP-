@@ -142,6 +142,11 @@ class LayaMode(StrEnum):
     LIVE = "live"
 
 
+class FeedMode(StrEnum):
+    MOCK = "mock"
+    LIVE = "live"
+
+
 class LayaReasonCode(StrEnum):
     LAYA_TIMEOUT = "LAYA_TIMEOUT"
     LAYA_INVALID_RESPONSE = "LAYA_INVALID_RESPONSE"

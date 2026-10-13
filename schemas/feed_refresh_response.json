@@ -1,0 +1,21 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "events_ingested": {
+      "minimum": 0,
+      "title": "Events Ingested",
+      "type": "integer"
+    },
+    "feed_errors": {
+      "minimum": 0,
+      "title": "Feed Errors",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "events_ingested",
+    "feed_errors"
+  ],
+  "title": "FeedRefreshResponse",
+  "type": "object"
+}

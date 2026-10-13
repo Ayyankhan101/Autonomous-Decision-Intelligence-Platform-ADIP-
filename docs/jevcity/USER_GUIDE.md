@@ -214,7 +214,7 @@ Every row below is reproducible from a checked-in artifact — commands in the
 |---|---|
 | **Scope** | Phases 0–7 complete: pipeline, eval runner, serving, JevCity vertical slice, Command Center dashboard, demo runbook |
 | **Tests** | 335 model-free + 6 model-tier (live-checkpoint and vision smokes) = **341**; model-free suite runs in ~12 s |
-| **API** | **28 routes** (16 plan-frozen + 12 additive) on port 8200 — ledger: `tests/jevcity/test_audit_phase4.py::FROZEN_ROUTES` |
+| **API** | **30 routes** (16 plan-frozen + 14 additive) on port 8200 — ledger: `tests/jevcity/test_audit_phase4.py::FROZEN_ROUTES` |
 | **QA** | 4 black-box/browser loops + deeper pass (ECO switch, live-vision fail-closed, upload idempotency) — all clean; findings F-B1…F-B13 closed ([`QA.md`](QA.md)) |
 | **Delivery** | PRs **#18–28** merged: backlog cleared, user-journey + deeper QA passes, suite/polling optimizations (parallel test waves, combined `GET /api/dashboard` poll bundle, latest-decision index, hidden-tab pause) |
 | **Decision latency** | 61.6–93.6 ms per 3-question Laya decision on M1 Pro (`benchmarks/results/*.json`) — `laya-mlx==0.2.0`, in-process |

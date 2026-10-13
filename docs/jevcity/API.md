@@ -18,8 +18,13 @@ live loads lazily on the first decision), and
 2–10 fabricated reports from fake identities, feeding per-stream trust scoring), and
 `GET /api/dashboard` (optimization: one round trip per poll returning
 `{state, incidents, decisions, resources, audit}`).
-28 routes total (16 frozen + 12 additive), ledger asserted in
-`tests/jevcity/test_audit_phase4.py::FROZEN_ROUTES`. Vision-evidence routes
+30 routes total (16 frozen + 14 additive), ledger asserted in
+`tests/jevcity/test_audit_phase4.py::FROZEN_ROUTES`. Live feeds (workstream B1,
+additive): `GET /api/feeds` — feed health + weather snapshot + advisories;
+`POST /api/feeds/refresh` — force one poll cycle. Env `JEVCITY_FEED_MODE=mock|live`
+(live wires the Peshawar fleet, resets the sim clock to wall-clock UTC, and
+starts a 5-min `FeedManager` daemon). Feeds hit free no-key public APIs only
+(Open-Meteo, USGS, GDACS, ReliefWeb). Vision-evidence routes
 (5 additive, beyond the plan): `POST /api/images` (JSON base64 upload, ≤ 5 MB,
 PNG/JPEG/WebP by magic bytes, extraction runs synchronously in the request),
 `GET /api/images/{image_id}/facts`, `GET /api/images/{image_id}/raw`
@@ -40,6 +45,7 @@ store), `POST /api/incidents/{incident_id}/images`
 | GET | `/api/resources` | `ResourceListResponse` |
 | GET | `/api/audit?limit=100` | `AuditListResponse` — entries newest-first |
 | GET | `/api/dashboard?audit_limit=100` | `DashboardPayload` — combined poll bundle: `state` + `incidents` + `decisions` + `resources` + `audit` in one response (optimization: 5 round trips → 1) |
+| GET | `/api/feeds` | `FeedsResponse` — live-feed health (per-feed ok/fail/counts), current weather snapshot, latest ReliefWeb advisories (workstream B1; empty when `JEVCITY_FEED_MODE=mock`) |
 
 ## Simulation controls
 
@@ -55,6 +61,20 @@ store), `POST /api/incidents/{incident_id}/images`
 | POST | `/api/simulation/second-emergency` | `{incident_type?, zone?}` |
 
 All control responses: `SimulationActionResponse {ok, incident_id, decision_ids}`.
+
+## Live feeds (workstream B1)
+
+| Method | Path | Body / notes |
+|--------|------|--------------|
+| POST | `/api/feeds/refresh` | — force one synchronous poll cycle across all feeds; response `FeedRefreshResponse {events_ingested, feed_errors}`. **409** when `JEVCITY_FEED_MODE=mock`. |
+
+Feeds (all free, no API key): Open-Meteo weather (flood-risk flag at ≥7.5 mm/h →
+synthetic flood suggestion in the lowest zone), USGS seismic (bbox-filtered
+M≥4.0 → honest `traffic_spike` mapping with magnitude/distance notes — the
+IncidentType enum is frozen), GDACS orange/red FL+EQ within 300 km, ReliefWeb
+Pakistan disaster list (advisories for the dashboard context strip, never
+incidents). The `FeedManager` daemon polls on a jittered ~5-min cycle with a
+circuit breaker (3 consecutive failures → hold open, probe every 5th cycle).
 
 ## Governance
 

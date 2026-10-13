@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from .audit import AuditEntry
 from .decision import DecisionRecord, OverrideRecord
 from .enums import (
+    FeedMode,
     ImpactTier,
     IncidentType,
     InjectionMode,
@@ -42,6 +43,7 @@ class StatePayload(BaseModel):
     laya_mode: str
     last_laya_status: str | None = None
     vision_mode: str = "mock"
+    feed_mode: FeedMode = FeedMode.MOCK
     policy_position: PolicyPosition = PolicyPosition.RESPONSE_TIME
     objective_weights: dict[str, float] = Field(default_factory=dict)
     audit_write_failed: bool = Field(
@@ -121,6 +123,58 @@ class LayaModeResponse(BaseModel):
 
     previous_mode: LayaMode
     mode: LayaMode
+
+
+class FeedStatus(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    ok: bool
+    last_poll: datetime | None = None
+    consecutive_failures: int = Field(default=0, ge=0)
+    events_last_poll: int = Field(default=0, ge=0)
+    total_events: int = Field(default=0, ge=0)
+    detail: str | None = None
+
+
+class WeatherSnapshot(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    temperature_c: float | None = None
+    precipitation_mm: float | None = None
+    wind_speed_kmh: float | None = None
+    weather_code: int | None = None
+    summary: str | None = None
+    flood_risk: bool = False
+
+
+class FeedAdvisory(BaseModel):
+    """ReliefWeb situational advisory — context only, never an incident."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: str
+    url: str | None = None
+    published: datetime | None = None
+
+
+class FeedsResponse(BaseModel):
+    """GET /api/feeds — live-feed health (workstream B1)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    mode: FeedMode
+    running: bool
+    feeds: list[FeedStatus]
+    weather: WeatherSnapshot | None = None
+    advisories: list[FeedAdvisory] = Field(default_factory=list)
+
+
+class FeedRefreshResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    events_ingested: int = Field(ge=0)
+    feed_errors: int = Field(ge=0)
 
 
 class SimulationStartRequest(BaseModel):

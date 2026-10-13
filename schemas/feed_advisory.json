@@ -1,0 +1,40 @@
+{
+  "additionalProperties": false,
+  "description": "ReliefWeb situational advisory \u2014 context only, never an incident.",
+  "properties": {
+    "published": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Published"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Url"
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "title": "FeedAdvisory",
+  "type": "object"
+}

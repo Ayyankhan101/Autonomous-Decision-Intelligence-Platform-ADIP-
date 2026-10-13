@@ -41,6 +41,11 @@ MODELS = {
     "vision_attach_response": "VisionAttachResponse",
     "vision_mode_request": "VisionModeRequest",
     "vision_mode_response": "VisionModeResponse",
+    "feed_status": "FeedStatus",
+    "weather_snapshot": "WeatherSnapshot",
+    "feed_advisory": "FeedAdvisory",
+    "feeds_response": "FeedsResponse",
+    "feed_refresh_response": "FeedRefreshResponse",
 }
 
 
