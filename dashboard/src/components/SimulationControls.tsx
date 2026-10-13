@@ -31,6 +31,7 @@ interface SimulationControlsProps {
   onRefresh: () => void;
   layaMode?: string;
   visionMode?: string;
+  isLive?: boolean;
 }
 
 export const SimulationControls: React.FC<SimulationControlsProps> = ({
@@ -42,6 +43,7 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
   onRefresh,
   layaMode = 'mock',
   visionMode = 'mock',
+  isLive = false,
 }) => {
   const [sSeed, setSSeed] = useState(sessionSeed);
   const [rSeed, setRSeed] = useState(scenarioSeed);
@@ -327,11 +329,11 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
         </div>
       </div>
 
-      {/* Inject Incident Form */}
+      {/* Inject Incident Form — live mode labels it Manual Report */}
       <form onSubmit={handleInjectIncident} className="border-t border-slate-800/80 pt-3">
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 flex items-center gap-1.5">
           <Zap className="w-3.5 h-3.5 text-yellow-400" />
-          <span>Report Incident</span>
+          <span>{isLive ? 'Manual Report' : 'Report Incident'}</span>
         </h4>
 
         <div className="grid grid-cols-2 gap-2 text-xs mb-2">
@@ -428,25 +430,32 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
 
         {harnessOpen && (
           <div className="mt-3 space-y-3 animate-fade-in">
-            <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-xs font-mono w-fit">
-              <span className="text-slate-400">S:</span>
-              <input
-                type="number"
-                value={sSeed}
-                onChange={(e) => setSSeed(Number(e.target.value))}
-                className="w-12 bg-transparent text-white focus:outline-none"
-                title="Session Seed"
-              />
-              <span className="text-slate-600">/</span>
-              <span className="text-slate-400">R:</span>
-              <input
-                type="number"
-                value={rSeed}
-                onChange={(e) => setRSeed(Number(e.target.value))}
-                className="w-12 bg-transparent text-white focus:outline-none"
-                title="Scenario Seed"
-              />
-            </div>
+            {!isLive && (
+              <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-xs font-mono w-fit">
+                <span className="text-slate-400">S:</span>
+                <input
+                  type="number"
+                  value={sSeed}
+                  onChange={(e) => setSSeed(Number(e.target.value))}
+                  className="w-12 bg-transparent text-white focus:outline-none"
+                  title="Session Seed"
+                />
+                <span className="text-slate-600">/</span>
+                <span className="text-slate-400">R:</span>
+                <input
+                  type="number"
+                  value={rSeed}
+                  onChange={(e) => setRSeed(Number(e.target.value))}
+                  className="w-12 bg-transparent text-white focus:outline-none"
+                  title="Scenario Seed"
+                />
+              </div>
+            )}
+            {isLive && (
+              <div className="bg-cyan-950/40 border border-cyan-500/30 rounded-lg px-2.5 py-1.5 text-xs font-mono text-cyan-200">
+                Live mode — seeds disabled; clock is wall-clock (PKT).
+              </div>
+            )}
 
             <div>
               <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
@@ -494,6 +503,12 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
                 <Users className="w-3.5 h-3.5 text-fuchsia-400" />
                 <span>Sybil Flood (5 fake sources)</span>
               </button>
+
+              {/* Honest labeling — persistent dim note (workstream B3) */}
+              <div className="mt-2 bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-slate-500 leading-relaxed">
+                Incident stream = live environmental feeds + manual reports; traffic synthetic
+                (weather-modulated); Rescue 1122 CPS integration pending — no public API.
+              </div>
             </div>
           </div>
         )}

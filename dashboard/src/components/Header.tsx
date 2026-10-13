@@ -49,6 +49,20 @@ export const Header: React.FC<HeaderProps> = ({
   const agoSec =
     lastUpdatedAt != null ? Math.max(0, Math.round((now - lastUpdatedAt) / 1000)) : null;
 
+  const isLive = state?.feed_mode === 'live';
+
+  const formatPktTime = (isoString?: string) => {
+    if (!isoString) return '--:--:--';
+    try {
+      const d = new Date(isoString);
+      // PKT (UTC+5)
+      const pkTime = new Date(d.getTime() + 5 * 3600 * 1000);
+      return pkTime.toISOString().replace('T', ' ').substring(0, 19) + ' PKT';
+    } catch {
+      return isoString;
+    }
+  };
+
   const formatSimTime = (isoString?: string) => {
     if (!isoString) return '--:--:--';
     try {
@@ -103,34 +117,42 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Center status indicators */}
       <div className="flex flex-wrap items-center gap-2.5 text-xs">
-        {/* Sim Clock */}
+        {/* Sim Clock — live mode shows wall-clock PKT from reset clock */}
         <div className="flex items-center gap-2 px-3 py-1 bg-slate-950/80 border border-slate-800 rounded-md font-mono">
           <Clock className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="text-slate-400">Sim Clock:</span>
+          <span className="text-slate-400">{isLive ? 'Wall Clock:' : 'Sim Clock:'}</span>
           <span className="font-semibold text-cyan-300">
-            {formatSimTime(state?.simulated_time)}
+            {isLive ? formatPktTime(state?.simulated_time) : formatSimTime(state?.simulated_time)}
           </span>
-          <button
-            onClick={onTogglePlayPause}
-            className={`ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wide flex items-center gap-1 transition-colors ${
-              state?.running
-                ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30'
-                : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30'
-            }`}
-            title={state?.running ? 'Pause simulation' : 'Resume simulation'}
-          >
-            {state?.running ? (
-              <>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                <span>RUN</span>
-              </>
-            ) : (
-              <>
-                <Pause className="w-2.5 h-2.5" />
-                <span>PAUSED</span>
-              </>
-            )}
-          </button>
+          {!isLive && (
+            <button
+              onClick={onTogglePlayPause}
+              className={`ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wide flex items-center gap-1 transition-colors ${
+                state?.running
+                  ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30'
+                  : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30'
+              }`}
+              title={state?.running ? 'Pause simulation' : 'Resume simulation'}
+            >
+              {state?.running ? (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span>RUN</span>
+                </>
+              ) : (
+                <>
+                  <Pause className="w-2.5 h-2.5" />
+                  <span>PAUSED</span>
+                </>
+              )}
+            </button>
+          )}
+          {isLive && (
+            <span className="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wide flex items-center gap-1 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+              <span>LIVE</span>
+            </span>
+          )}
         </div>
 
         {/* Policy Position Badge */}

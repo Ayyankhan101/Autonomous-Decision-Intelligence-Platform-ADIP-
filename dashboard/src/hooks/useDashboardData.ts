@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import type {
   AuditEntry,
   DecisionRecord,
+  FeedsResponse,
   IncidentRecord,
   LatencyPoint,
   NewIds,
@@ -29,6 +30,7 @@ export function useDashboardData(pollIntervalMs = 1500) {
   });
   const [latencySeries, setLatencySeries] = useState<LatencyPoint[]>([]);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
+  const [feeds, setFeeds] = useState<FeedsResponse | null>(null);
 
   const prevIdsRef = useRef<{
     decisions: Set<string>;
@@ -62,6 +64,14 @@ export function useDashboardData(pollIntervalMs = 1500) {
       setIsConnected(true);
       setLastError(null);
       setLastUpdatedAt(Date.now());
+
+      // Poll feeds endpoint alongside dashboard (workstream B3)
+      try {
+        const feedsRes = await api.getFeeds();
+        setFeeds(feedsRes);
+      } catch {
+        // non-fatal: feeds endpoint down; keep last snapshot or null
+      }
 
       // NEW-row flash: set-diff against previous poll (skip first poll: no baseline)
       const prev = prevIdsRef.current;
@@ -179,6 +189,7 @@ export function useDashboardData(pollIntervalMs = 1500) {
     newIds,
     latencySeries,
     lastUpdatedAt,
+    feeds,
     refresh: manualRefresh,
   };
 }

@@ -79,6 +79,11 @@ Pakistan disaster list (advisories for the dashboard context strip, never
 incidents). The `FeedManager` daemon polls on a jittered ~5-min cycle with a
 circuit breaker (3 consecutive failures → hold open, probe every 5th cycle).
 
+**Honest labeling (live mode):** Incident stream = live environmental feeds +
+manual reports; traffic synthetic (weather-modulated); Rescue 1122 CPS
+integration pending — no public API. Station coords static until real GPS
+telemetry is available.
+
 ## Governance
 
 | Method | Path | Notes |
