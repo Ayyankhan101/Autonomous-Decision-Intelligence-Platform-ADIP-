@@ -128,6 +128,47 @@ export interface StatePayload {
   policy_position?: PolicyPosition;
   objective_weights?: Record<string, number>;
   audit_write_failed?: boolean;
+  feed_mode?: 'mock' | 'live';
+}
+
+export type FeedMode = 'mock' | 'live';
+
+export interface FeedStatus {
+  name: string;
+  ok: boolean;
+  last_poll?: string | null;
+  consecutive_failures: number;
+  events_last_poll: number;
+  total_events: number;
+  detail?: string | null;
+}
+
+export interface WeatherSnapshot {
+  temperature_c?: number | null;
+  precipitation_mm?: number | null;
+  wind_speed_kmh?: number | null;
+  weather_code?: number | null;
+  summary?: string | null;
+  flood_risk: boolean;
+}
+
+export interface FeedAdvisory {
+  title: string;
+  url?: string | null;
+  published?: string | null;
+}
+
+export interface FeedsResponse {
+  mode: FeedMode;
+  running: boolean;
+  feeds: FeedStatus[];
+  weather?: WeatherSnapshot | null;
+  advisories: FeedAdvisory[];
+}
+
+export interface FeedRefreshResponse {
+  events_ingested: number;
+  feed_errors: number;
 }
 
 export interface Resource {

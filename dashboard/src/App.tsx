@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useDashboardData } from './hooks/useDashboardData';
 import { Header } from './components/Header';
 import { KpiStrip } from './components/KpiStrip';
+import { ContextStrip } from './components/ContextStrip';
 import { MapLayer } from './components/MapLayer';
 import { IncidentInspector } from './components/IncidentInspector';
 import { SimulationControls } from './components/SimulationControls';
@@ -30,6 +31,7 @@ export function App() {
     newIds,
     latencySeries,
     lastUpdatedAt,
+    feeds,
     refresh,
   } = useDashboardData(1500);
 
@@ -137,6 +139,9 @@ export function App() {
               latencySeries={latencySeries}
             />
 
+            {/* Live feed context strip (weather / GDACS / ReliefWeb) — renders only in live mode */}
+            <ContextStrip feeds={feeds} />
+
             {/* Top: Map Layer & Resource Deployment Grid */}
             <MapLayer
               incidents={incidents}
@@ -168,6 +173,7 @@ export function App() {
                   onRefresh={refresh}
                   layaMode={state?.laya_mode ?? 'mock'}
                   visionMode={state?.vision_mode ?? 'mock'}
+                  isLive={state?.feed_mode === 'live'}
                 />
 
                 <PolicySandbox

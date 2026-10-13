@@ -27,6 +27,8 @@ import type {
   WhatIfResult,
   WhatIfScenario,
   Zone,
+  FeedsResponse,
+  FeedRefreshResponse,
 } from '../types/api';
 
 const API_BASE = '/api';
@@ -64,6 +66,11 @@ export const api = {
 
   getDashboard: (auditLimit = 100): Promise<DashboardResponse> =>
     fetchJson<DashboardResponse>(`${API_BASE}/dashboard?audit_limit=${auditLimit}`),
+
+  // --- Live feeds (workstream B3) ---
+  getFeeds: () => fetchJson<FeedsResponse>(`${API_BASE}/feeds`),
+  refreshFeeds: (): Promise<FeedRefreshResponse> =>
+    fetchJson<FeedRefreshResponse>(`${API_BASE}/feeds/refresh`, { method: 'POST' }),
 
   // --- Vision evidence ---
   uploadImage: (imageB64: string, filename?: string): Promise<UploadResponse> =>
