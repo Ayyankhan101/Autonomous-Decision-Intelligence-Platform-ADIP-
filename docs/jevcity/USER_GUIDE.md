@@ -27,6 +27,29 @@ Preparing a demo? See [`DEMO_RUNBOOK.md`](DEMO_RUNBOOK.md).
 
 ---
 
+## Live mode (workstream B)
+
+Run against real free public feeds (no API key):
+
+```bash
+JEVCITY_FEED_MODE=live uv run uvicorn jevcity.api.app:app --port 8200
+```
+
+What changes in live mode:
+
+- **Header**: wall-clock PKT (UTC+5) replaces simulated clock; cyan LIVE badge; seeds hidden.
+- **ContextStrip** (under KPIs): weather chip (temp/precip/flood risk), GDACS chip (alerts), last ReliefWeb advisory.
+- **Incident stream**: Open-Meteo (weather → flood), USGS (seismic → traffic_spike), GDACS (orange/red FL/EQ within 300 km); ReliefWeb advisories for context only.
+- **Station coords**: 17 Peshawar units at real Rescue 1122 / fire-station / police-post coords (static until real GPS telemetry available).
+- **Inject form**: labelled "Manual Report" — same validation + trust path.
+- **Circuit breaker**: 3 consecutive feed failures → held open, probe after cooldown; dashboard shows feed status honestly, never fakes green.
+
+Honest labeling: traffic synthetic (weather-modulated); Rescue 1122 CPS integration pending — no public API.
+
+Mock mode (`JEVCITY_FEED_MODE=mock`, default) keeps the full deterministic seeded pipeline for demos, evals, and CI.
+
+---
+
 ## What JevCity is
 
 A seeded, deterministic simulation city feeds incidents through this pipeline

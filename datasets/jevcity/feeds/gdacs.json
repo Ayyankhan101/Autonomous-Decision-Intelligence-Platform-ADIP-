@@ -1,0 +1,16 @@
+{
+  "features": [
+    {
+      "properties": {"alertId": "FL123", "eventType": "FL", "alertLevel": "red", "country": "PK"},
+      "geometry": {"coordinates": [71.50, 33.90]}
+    },
+    {
+      "properties": {"alertId": "EQ999", "eventType": "EQ", "alertLevel": "orange", "country": "AF"},
+      "geometry": {"coordinates": [71.0, 34.5]}
+    },
+    {
+      "properties": {"alertId": "FAR1", "eventType": "FL", "alertLevel": "red", "country": "ID"},
+      "geometry": {"coordinates": [120.0, -5.0]}
+    }
+  ]
+}

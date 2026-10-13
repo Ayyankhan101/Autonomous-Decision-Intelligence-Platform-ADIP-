@@ -1,0 +1,16 @@
+{
+  "features": [
+    {
+      "properties": {"id": "us1000abcd", "mag": 4.8, "place": "12km NE of Peshawar", "time": 1758960000000},
+      "geometry": {"coordinates": [71.65, 34.05, 10.0]}
+    },
+    {
+      "properties": {"id": "far000", "mag": 5.0, "place": "Somewhere", "time": 1758960000000},
+      "geometry": {"coordinates": [100.0, 40.0, 10.0]}
+    },
+    {
+      "properties": {"id": "small0", "mag": 2.9, "place": "Nearby", "time": 1758960000000},
+      "geometry": {"coordinates": [71.58, 34.01, 5.0]}
+    }
+  ]
+}
