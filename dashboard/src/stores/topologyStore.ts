@@ -68,17 +68,19 @@ function incidentPosition(i: IncidentRecord): [number, number, number] {
   return [x, 0.08, z];
 }
 
-const LEVEL_BY_STATE: Record<string, LogLevel> = {
-  ACCEPTED: 'ok',
-  AUTO_ACCEPTED: 'ok',
-  PENDING_OVERRIDE: 'warn',
-  OVERRIDE_ACCEPTED: 'warn',
-  CONTENTION_ESCALATION: 'error',
-  REJECTED_INPUT: 'error',
-};
+
 
 function levelFromOverride(d: DecisionRecord): LogLevel {
-  return d.override ? 'warn' : (LEVEL_BY_STATE[d.state] ?? 'info');
+  if (d.override) return 'warn';
+  switch (d.state) {
+    case 'AUTO_APPROVED': return 'ok';
+    case 'HOLD_FOR_HUMAN': return 'warn';
+    case 'REJECTED_INPUT': return 'error';
+    case 'CONTENTION_ESCALATION': return 'error';
+    case 'OVERRIDE_ACTIVE': return 'warn';
+    case 'MODEL_DEGRADED': return 'warn';
+    default: return 'info';
+  }
 }
 
 function fmtTime(iso: string): string {

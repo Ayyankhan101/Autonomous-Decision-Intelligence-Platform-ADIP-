@@ -9,6 +9,7 @@ import { useTopologyStore } from '../../stores/topologyStore';
 import { ZoneFloor } from './ZoneFloor';
 import type { TopologyAgent, TopologyEdge, TopologyIncident } from '../../types/topology';
 import type { ResourceType } from '../../types/api';
+import { DECISION_STATE_THEME, PRIORITY_COLOR } from './theme';
 
 const STATUS_EMISSIVE: Record<string, string> = {
   available: '#10b981',
@@ -17,12 +18,7 @@ const STATUS_EMISSIVE: Record<string, string> = {
   offline: '#475569',
 };
 
-const PRIORITY_COLOR: Record<string, string> = {
-  LOW: '#94a3b8',
-  MEDIUM: '#38bdf8',
-  HIGH: '#f59e0b',
-  CRITICAL: '#f43f5e',
-};
+
 
 const TYPE_GEOMETRY: Record<ResourceType, 'capsule' | 'box' | 'dodeca' | 'torus' | 'cylinder'> = {
   ambulance: 'capsule',
@@ -241,14 +237,7 @@ function IncidentNode({
   );
 }
 
-const EDGE_STATE_COLOR: Record<string, string> = {
-  ACCEPTED: '#22d3ee',
-  AUTO_ACCEPTED: '#22d3ee',
-  PENDING_OVERRIDE: '#f59e0b',
-  OVERRIDE_ACCEPTED: '#f59e0b',
-  CONTENTION_ESCALATION: '#f43f5e',
-  REJECTED_INPUT: '#f43f5e',
-};
+
 
 function hashPhase(key: string): number {
   let h = 0;
@@ -261,7 +250,7 @@ function AssignmentEdge({ edge, speed }: { edge: TopologyEdge; speed: number }) 
   const pulseRef = useRef<THREE.Mesh>(null);
   const tRef = useRef(hashPhase(edge.key));
   const color = edge.priority ? (PRIORITY_COLOR[edge.priority] ?? '#64748b') : '#64748b';
-  const lineColor = EDGE_STATE_COLOR[edge.state ?? ''] ?? color;
+  const lineColor = DECISION_STATE_THEME[edge.state ?? 'AUTO_APPROVED'].color ?? color;
   const points = useMemo(
     () => [new THREE.Vector3(...edge.from), new THREE.Vector3(...edge.to)],
     [edge.from, edge.to],
