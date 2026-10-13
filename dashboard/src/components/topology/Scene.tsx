@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { Grid } from '@react-three/drei';
 import { useTopologyStore } from '../../stores/topologyStore';
 import { ZoneFloor } from './ZoneFloor';
 import type { TopologyAgent, TopologyEdge, TopologyIncident } from '../../types/topology';
@@ -321,6 +322,15 @@ export function TopologyScene() {
       <pointLight position={[12, 8, -10]} intensity={25} color="#f43f5e" />
 
       <Stars radius={80} depth={40} count={2500} factor={3} saturation={0} fade speed={0.6} />
+      <Grid
+        infiniteGrid
+        fadeDistance={50}
+        fadeStrength={0.5}
+        cellSize={10}
+        sectionSize={120}
+        uniform-grid-color="#22d3ee"
+        uniform-grid-color-dim="#0d1321"
+      />
       <ZoneFloor />
 
       {edges.map((e) => (

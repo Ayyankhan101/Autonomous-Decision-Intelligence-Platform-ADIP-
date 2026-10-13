@@ -117,7 +117,7 @@ interface TopologyState {
   setSimSpeed: (s: number) => void;
   setVisualPaused: (p: boolean) => void;
   setFps: (f: number) => void;
-  jitterLoads: () => void;
+  
   flashAnomaly: (incidentId: string) => void;
   pushLog: (line: LogLine) => void;
 }
@@ -259,20 +259,7 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
   setVisualPaused: (p) => set({ visualPaused: p }),
   setFps: (f) => set({ fps: f }),
 
-  jitterLoads: () => {
-    const { visualPaused, agents } = get();
-    if (visualPaused) return;
-    const next = agents.map((a) => {
-      if (a.status === 'offline') return a;
-      const jitter = (Math.random() - 0.5) * 10;
-      const load = Math.min(100, Math.max(0, baseLoad(a.status) + jitter));
-      return load === a.processingLoad ? a : { ...a, processingLoad: load };
-    });
-    const computeLoad = next.length
-      ? Math.round(next.reduce((s, a) => s + a.processingLoad, 0) / next.length)
-      : 0;
-    set({ agents: next, computeLoad });
-  },
+  
 
   flashAnomaly: (incidentId) => {
     set({ anomalyFlashId: incidentId });

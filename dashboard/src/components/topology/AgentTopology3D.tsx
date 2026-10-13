@@ -51,9 +51,6 @@ export function AgentTopology3D({ snapshot, onRefresh }: {
   onRefresh: () => void;
 }) {
   const setFromDashboard = useTopologyStore((s) => s.setFromDashboard);
-  const jitterLoads = useTopologyStore((s) => s.jitterLoads);
-  const simSpeed = useTopologyStore((s) => s.simSpeed);
-  const visualPaused = useTopologyStore((s) => s.visualPaused);
   const agents = useTopologyStore((s) => s.agents);
   const selectAgent = useTopologyStore((s) => s.selectAgent);
 
@@ -61,11 +58,7 @@ export function AgentTopology3D({ snapshot, onRefresh }: {
     setFromDashboard(snapshot);
   }, [snapshot, setFromDashboard]);
 
-  useEffect(() => {
-    if (visualPaused) return;
-    const interval = window.setInterval(jitterLoads, Math.max(400, 1600 / simSpeed));
-    return () => window.clearInterval(interval);
-  }, [jitterLoads, simSpeed, visualPaused]);
+  
 
   const empty = agents.length === 0;
 

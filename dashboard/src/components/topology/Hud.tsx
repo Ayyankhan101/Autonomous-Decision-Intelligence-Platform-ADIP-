@@ -94,7 +94,7 @@ function HudHeader() {
             <Activity className="w-3 h-3" /> {fps} FPS
           </div>
           <div className="flex items-center justify-end gap-1.5">
-            <Gauge className="w-3 h-3" /> {computeLoad}% load
+            <Gauge className="w-3 h-3" /> {computeLoad}% UTILISATION (est.)
           </div>
           <div className="flex items-center justify-end gap-1.5 text-[9px] text-slate-500">
             <Cpu className="w-3 h-3" /> agent telemetry (derived)
@@ -266,8 +266,7 @@ function TelemetryPanel() {
           Task: <span className="text-slate-200">{agent.currentTask ?? '—'}</span>
         </div>
         <div className="text-slate-400">
-          Load: <span className="text-cyan-300">{Math.round(agent.processingLoad)}%</span>
-          <span className="ml-2 text-slate-600">(derived from status)</span>
+          
         </div>
         <div className="text-slate-400">
           Confidence:{' '}
