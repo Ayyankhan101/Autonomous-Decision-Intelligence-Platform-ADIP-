@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { useDashboardData } from './hooks/useDashboardData';
 import { Header } from './components/Header';
 import { KpiStrip } from './components/KpiStrip';
@@ -13,6 +13,12 @@ import { AuditTrail } from './components/AuditTrail';
 import { WhatIfSandbox } from './components/WhatIfSandbox';
 import { AlertTriangle, ShieldAlert, WifiOff } from 'lucide-react';
 import { api } from './services/api';
+
+const AgentTopology3D = lazy(() =>
+  import('./components/topology/AgentTopology3D').then((m) => ({
+    default: m.AgentTopology3D,
+  })),
+);
 
 export function App() {
   const {
@@ -35,7 +41,9 @@ export function App() {
     refresh,
   } = useDashboardData(1500);
 
-  const [activeTab, setActiveTab] = useState<'command' | 'whatif' | 'audit'>('command');
+  const [activeTab, setActiveTab] = useState<
+    'command' | 'whatif' | 'audit' | 'topology'
+  >('command');
   const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
 
   const contentionCount = new Set(
@@ -195,6 +203,21 @@ export function App() {
             <AuditChain entries={auditEntries} newIds={newIds} />
             <AuditTrail entries={auditEntries} newIds={newIds} />
           </>
+        )}
+
+        {activeTab === 'topology' && (
+          <Suspense
+            fallback={
+              <div className="h-[calc(100vh-11rem)] min-h-[420px] flex items-center justify-center font-mono text-xs text-slate-500 tracking-widest">
+                LOADING 3D TOPOLOGY…
+              </div>
+            }
+          >
+            <AgentTopology3D
+              snapshot={{ state, incidents, decisions, resources, auditEntries }}
+              onRefresh={refresh}
+            />
+          </Suspense>
         )}
       </main>
 

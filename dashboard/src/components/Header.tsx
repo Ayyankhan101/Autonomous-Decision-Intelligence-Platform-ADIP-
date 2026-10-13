@@ -9,6 +9,7 @@ import {
   Cpu,
   FileText,
   Leaf,
+  Network,
   Pause,
   RefreshCw,
   Scale,
@@ -18,12 +19,14 @@ import {
 } from 'lucide-react';
 import type { StatePayload } from '../types/api';
 
+export type DashboardTab = 'command' | 'whatif' | 'audit' | 'topology';
+
 interface HeaderProps {
   state: StatePayload | null;
   isConnected: boolean;
   isRefreshing: boolean;
-  activeTab: 'command' | 'whatif' | 'audit';
-  setActiveTab: (tab: 'command' | 'whatif' | 'audit') => void;
+  activeTab: DashboardTab;
+  setActiveTab: (tab: DashboardTab) => void;
   onRefresh: () => void;
   onTogglePlayPause: () => void;
   lastUpdatedAt?: number | null;
@@ -244,6 +247,17 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <FileText className="w-3.5 h-3.5" />
             <span>Audit Trail</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('topology')}
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${
+              activeTab === 'topology'
+                ? 'bg-cyan-600 text-white shadow'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <Network className="w-3.5 h-3.5" />
+            <span>Topology</span>
           </button>
         </div>
 
