@@ -87,6 +87,7 @@ export function AgentTopology3D({ snapshot, onRefresh }: {
           </Canvas>
         )}
         {!empty && <Hud onRefresh={onRefresh} />}
+        <div className="pointer-events-none absolute inset-0 z-30 scanlines" />
       </div>
     </TopologyErrorBoundary>
   );
