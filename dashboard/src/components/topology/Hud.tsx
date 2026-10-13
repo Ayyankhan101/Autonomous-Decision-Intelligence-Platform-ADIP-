@@ -446,6 +446,155 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
         <div className="text-[8px] text-slate-600 font-mono -mt-0.5">
           visual sim only — backend control in Command tab
         </div>
+        <div className="flex gap-1 pt-1">
+          <button
+            type="button"
+            onClick={() => api.injectBadData({ mode: 'missing_fields' })}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Inject missing fields"
+          >
+            mf
+          </button>
+          <button
+            type="button"
+            onClick={() => api.injectBadData({ mode: 'out_of_range' })}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Inject out-of-range data"
+          >
+            or
+          </button>
+          <button
+            type="button"
+            onClick={() => api.injectBadData({ mode: 'conflicting_reports' })}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Inject conflicting reports"
+          >
+            cr
+          </button>
+          <button
+            type="button"
+            onClick={() => api.injectSecondEmergency()}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Inject second emergency"
+          >
+            se
+          </button>
+          <button
+            type="button"
+            onClick={() => api.injectSybil()}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Inject Sybil flood"
+          >
+            sy
+          </button>
+        </div>
+        <div className="flex gap-1 pt-1">
+          <button
+            type="button"
+            onClick={() => api.policyPosition('RESPONSE_TIME')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Policy: Response Time"
+          >
+            RESPONSE_TIME
+          </button>
+          <button
+            type="button"
+            onClick={() => api.policyPosition('EQUITY')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Policy: Equity"
+          >
+            EQUITY
+          </button>
+          <button
+            type="button"
+            onClick={() => api.policyPosition('ECO')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Policy: Eco"
+          >
+            ECO
+          </button>
+        </div>
+        <div className="flex gap-1 pt-1">
+          <button
+            type="button"
+            onClick={() => api.setLayaMode('mock')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Laya mode: mock"
+          >
+            mock
+          </button>
+          <button
+            type="button"
+            onClick={() => api.setLayaMode('cache')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Laya mode: cache"
+          >
+            cache
+          </button>
+          <button
+            type="button"
+            onClick={() => api.setLayaMode('live')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Laya mode: live"
+          >
+            live
+          </button>
+        </div>
+        <div className="flex gap-1 pt-1">
+          <button
+            type="button"
+            onClick={() => api.setLayaMode('mock')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Laya mode: mock"
+          >
+            mock
+          </button>
+          <button
+            type="button"
+            onClick={() => api.setLayaMode('cache')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Laya mode: cache"
+          >
+            cache
+          </button>
+          <button
+            type="button"
+            onClick={() => api.setLayaMode('live')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Laya mode: live"
+          >
+            live
+          </button>
+        </div>
+        <div className="flex gap-1 pt-1">
+          <button
+            type="button"
+            onClick={() => api.setVisionMode('mock')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Vision mode: mock"
+          >
+            mock
+          </button>
+          <button
+            type="button"
+            onClick={() => api.setVisionMode('cache')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Vision mode: cache"
+          >
+            cache
+          </button>
+          <button
+            type="button"
+            onClick={() => api.setVisionMode('live')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Vision mode: live"
+          >
+            live
+          </button>
+        </div>
+        <div className="text-[8px] text-slate-600 font-mono -mt-0.5">
+          visual sim only — backend control in Command tab
+        </div>
         <button
           type="button"
           onClick={handleInject}
