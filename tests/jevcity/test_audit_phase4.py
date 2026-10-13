@@ -59,6 +59,9 @@ FROZEN_ROUTES = {
     ("GET", "/api/dashboard"),
     # Additive extension (visual pass A3): raw image bytes for thumbnails.
     ("GET", "/api/images/{image_id}/raw"),
+    # Additive extension (live feeds B1): feed health + force-refresh.
+    ("GET", "/api/feeds"),
+    ("POST", "/api/feeds/refresh"),
 }
 
 

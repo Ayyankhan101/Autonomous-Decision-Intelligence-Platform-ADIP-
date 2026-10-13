@@ -639,6 +639,14 @@
       "title": "DecisionState",
       "type": "string"
     },
+    "FeedMode": {
+      "enum": [
+        "mock",
+        "live"
+      ],
+      "title": "FeedMode",
+      "type": "string"
+    },
     "ImpactTier": {
       "enum": [
         "LOW",
@@ -1332,6 +1340,10 @@
           "minimum": 0,
           "title": "Decision Count",
           "type": "integer"
+        },
+        "feed_mode": {
+          "$ref": "#/$defs/FeedMode",
+          "default": "mock"
         },
         "incident_count": {
           "minimum": 0,

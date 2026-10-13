@@ -4,6 +4,8 @@ Run: uvicorn jevcity.api.app:app --port 8200
 """
 from __future__ import annotations
 
+import os
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
@@ -15,6 +17,7 @@ from jevcity.audit.log import AuditLog
 from jevcity.decision_engine.engine import JevCityEngine
 from jevcity.decision_engine.laya_adapter.adapter import LayaAdapter
 from jevcity.decision_engine.policy_position import weights_for
+from jevcity.feeds import FeedManager, GdacsFeed, ReliefWebFeed, SeismicFeed, WeatherFeed
 from jevcity.ingestion.trust import TrustRegistry
 from jevcity.schemas import (
     AuditListResponse,
@@ -22,6 +25,9 @@ from jevcity.schemas import (
     DashboardPayload,
     DecisionListResponse,
     DecisionRecord,
+    FeedMode,
+    FeedRefreshResponse,
+    FeedsResponse,
     IncidentListResponse,
     IncidentResponse,
     ImpactPreviewRequest,
@@ -51,6 +57,7 @@ from jevcity.schemas import (
     VisionMode,
     VisionModeRequest,
     VisionModeResponse,
+    WeatherSnapshot,
     WhatIfRequest,
     WhatIfResult,
 )
@@ -67,8 +74,20 @@ def build_engine(
     audit_path: str = ":memory:",
     session_seed: int = 42,
     scenario_seed: int = 7,
+    feed_mode: FeedMode | None = None,
 ) -> JevCityEngine:
-    simulation = SimulationState(SeedConfig(session_seed, scenario_seed))
+    if feed_mode is None:
+        feed_mode = FeedMode(os.environ.get("JEVCITY_FEED_MODE", "mock"))
+    if feed_mode is FeedMode.LIVE:
+        from jevcity.simulation.resource_pool import PESHAWAR_FLEET
+
+        simulation = SimulationState(
+            SeedConfig(session_seed, scenario_seed),
+            fleet=PESHAWAR_FLEET,
+        )
+        simulation.clock.reset(start=datetime.now(UTC))
+    else:
+        simulation = SimulationState(SeedConfig(session_seed, scenario_seed))
     return JevCityEngine(
         simulation,
         adapter=LayaAdapter(mode=mode),
@@ -90,6 +109,24 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
     sandbox_store: dict[str, WhatIfResult] = {}
     vision_analyzer = VisionAnalyzer(mode=VisionMode.MOCK)
     image_store = ImageStore(Path("datasets/vision/images"))
+
+    feed_mode = FeedMode(os.environ.get("JEVCITY_FEED_MODE", "mock"))
+    feed_manager: FeedManager | None = None
+    if feed_mode is FeedMode.LIVE:
+        import httpx as _httpx
+
+        _client = _httpx.Client(timeout=10.0)
+        feed_manager = FeedManager(
+            pollers=[
+                WeatherFeed(_client),
+                SeismicFeed(_client),
+                GdacsFeed(_client),
+                ReliefWebFeed(_client),
+            ],
+            target=engine.simulation,
+            cycle_seconds=300.0,
+            client=_client,
+        )
 
     def _decisions_for(incident_id: str) -> list[DecisionRecord]:
         return [d for d in engine.decision_history if d.incident_id == incident_id]
@@ -119,6 +156,7 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
                 else None
             ),
             vision_mode=vision_analyzer.mode.value,
+            feed_mode=feed_mode,
             policy_position=engine.policy_position,
             objective_weights=weights_for(engine.policy_position),
             audit_write_failed=engine.audit_write_failed,
@@ -372,6 +410,40 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
         if result is None:
             raise HTTPException(404, f"unknown sandbox {sandbox_id}")
         return result
+
+    # --- Live feeds (workstream B1) -------------------------------------
+
+    @app.get("/api/feeds", response_model=FeedsResponse)
+    def get_feeds() -> FeedsResponse:
+        weather = None
+        advisories: list = []
+        statuses = []
+        if feed_manager is not None:
+            statuses = feed_manager.snapshots()
+            weather_feed = next(
+                (p for p in feed_manager.pollers if p.name == "weather"), None
+            )
+            if weather_feed is not None and getattr(weather_feed, "last_snapshot", None):
+                weather = WeatherSnapshot(**weather_feed.last_snapshot)
+            relief = next(
+                (p for p in feed_manager.pollers if p.name == "reliefweb"), None
+            )
+            if relief is not None:
+                advisories = list(getattr(relief, "advisories", []))
+        return FeedsResponse(
+            mode=feed_mode,
+            running=feed_manager is not None,
+            feeds=statuses,
+            weather=weather,
+            advisories=advisories,
+        )
+
+    @app.post("/api/feeds/refresh", response_model=FeedRefreshResponse)
+    def refresh_feeds() -> FeedRefreshResponse:
+        if feed_manager is None:
+            raise HTTPException(409, "feeds not running (JEVCITY_FEED_MODE=mock)")
+        ingested, errors = feed_manager.poll_once()
+        return FeedRefreshResponse(events_ingested=ingested, feed_errors=errors)
 
     # --- Vision evidence (additive beyond the frozen 16) ----------------
 

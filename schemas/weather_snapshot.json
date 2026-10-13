@@ -1,0 +1,72 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "flood_risk": {
+      "default": false,
+      "title": "Flood Risk",
+      "type": "boolean"
+    },
+    "precipitation_mm": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Precipitation Mm"
+    },
+    "summary": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Summary"
+    },
+    "temperature_c": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Temperature C"
+    },
+    "weather_code": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Weather Code"
+    },
+    "wind_speed_kmh": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Wind Speed Kmh"
+    }
+  },
+  "title": "WeatherSnapshot",
+  "type": "object"
+}

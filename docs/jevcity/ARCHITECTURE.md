@@ -216,7 +216,7 @@ namespace (Inv 6/15).
 
 React + TypeScript + Vite + Tailwind app in `dashboard/`, built to `dashboard/dist` and
 served by the API at `/` (`StaticFiles` mount, skipped when `dist` is absent; `/api/*`
-routes unaffected — the 16 frozen routes plus 12 additive are the full ledger). CORS middleware allows the Vite dev
+routes unaffected — the 16 frozen routes plus 14 additive are the full ledger). CORS middleware allows the Vite dev
 origin (`:5173`/`:3000`, wildcard in dev). Data layer polls `/api/state`, `/api/incidents`,
 `/api/decisions`, `/api/resources`, `/api/audit` every **1.5 s**.
 

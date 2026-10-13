@@ -26,18 +26,59 @@ _DEFAULT_FLEET: list[tuple[str, ResourceType, Zone, float]] = [
     ("tmu-02", ResourceType.TRAFFIC_MANAGEMENT_UNIT, Zone.NORTH, 0.3),
 ]
 
+# Peshawar live-mode fleet (workstream B1): 17 units at real station coords.
+# Callsigns mirror the config/peshawar_zones.json station ids.
+PESHAWAR_FLEET: list[tuple[str, ResourceType, Zone, float]] = [
+    ("amb-hbt-01", ResourceType.AMBULANCE, Zone.SOUTH, 0.6),
+    ("amb-cnt-01", ResourceType.AMBULANCE, Zone.CENTRAL, 0.6),
+    ("amb-nsh-01", ResourceType.AMBULANCE, Zone.NORTH, 0.4),
+    ("amb-mrd-01", ResourceType.AMBULANCE, Zone.EAST, 0.4),
+    ("amb-pbi-01", ResourceType.AMBULANCE, Zone.WEST, 0.3),
+    ("fire-cnt-01", ResourceType.FIRE_TRUCK, Zone.CENTRAL, 0.5),
+    ("fire-hbt-01", ResourceType.FIRE_TRUCK, Zone.SOUTH, 0.5),
+    ("fire-cnt-02", ResourceType.FIRE_TRUCK, Zone.NORTH, 0.4),
+    ("pol-cnt-01", ResourceType.POLICE_UNIT, Zone.CENTRAL, 0.6),
+    ("pol-hbt-01", ResourceType.POLICE_UNIT, Zone.SOUTH, 0.5),
+    ("pol-nsh-01", ResourceType.POLICE_UNIT, Zone.NORTH, 0.4),
+    ("pol-mrd-01", ResourceType.POLICE_UNIT, Zone.EAST, 0.4),
+    ("pol-pbi-01", ResourceType.POLICE_UNIT, Zone.WEST, 0.3),
+    ("fld-sdt-01", ResourceType.FLOOD_RESPONSE_UNIT, Zone.SOUTH, 0.5),
+    ("fld-cnt-01", ResourceType.FLOOD_RESPONSE_UNIT, Zone.CENTRAL, 0.5),
+    ("tmu-cnt-01", ResourceType.TRAFFIC_MANAGEMENT_UNIT, Zone.CENTRAL, 0.6),
+    ("tmu-nsh-01", ResourceType.TRAFFIC_MANAGEMENT_UNIT, Zone.NORTH, 0.4),
+]
+
 
 class ResourcePool:
-    def __init__(self, resources: list[Resource] | None = None) -> None:
-        fleet = resources if resources is not None else [
-            Resource(resource_id=rid, type=t, zone=z, eco_score=eco)
-            for rid, t, z, eco in _DEFAULT_FLEET
-        ]
+    def __init__(
+        self,
+        resources: list[Resource] | list[tuple[str, ResourceType, Zone, float]] | None = None,
+    ) -> None:
+        if resources is None:
+            fleet = [
+                Resource(resource_id=rid, type=t, zone=z, eco_score=eco)
+                for rid, t, z, eco in _DEFAULT_FLEET
+            ]
+        elif resources and isinstance(resources[0], tuple):
+            fleet = [
+                Resource(resource_id=rid, type=t, zone=z, eco_score=eco)
+                for rid, t, z, eco in resources  # type: ignore[misc]
+            ]
+        else:
+            fleet = list(resources)  # type: ignore[arg-type]
         self._by_id: dict[str, Resource] = {r.resource_id: r for r in fleet}
 
     @classmethod
     def default(cls) -> ResourcePool:
         return cls()
+
+    @classmethod
+    def peshawar(cls) -> ResourcePool:
+        """Live-mode fleet at real Peshawar station coords (workstream B1)."""
+        return cls([
+            Resource(resource_id=rid, type=t, zone=z, eco_score=eco)
+            for rid, t, z, eco in PESHAWAR_FLEET
+        ])
 
     def all(self) -> list[Resource]:
         return list(self._by_id.values())

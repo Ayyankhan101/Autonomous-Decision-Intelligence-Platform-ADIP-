@@ -1,5 +1,13 @@
 {
   "$defs": {
+    "FeedMode": {
+      "enum": [
+        "mock",
+        "live"
+      ],
+      "title": "FeedMode",
+      "type": "string"
+    },
     "PolicyPosition": {
       "enum": [
         "RESPONSE_TIME",
@@ -44,6 +52,10 @@
       "minimum": 0,
       "title": "Decision Count",
       "type": "integer"
+    },
+    "feed_mode": {
+      "$ref": "#/$defs/FeedMode",
+      "default": "mock"
     },
     "incident_count": {
       "minimum": 0,
