@@ -25,6 +25,14 @@ class Resource(BaseModel):
     zone: Zone
     status: ResourceStatus = ResourceStatus.AVAILABLE
     assigned_incident_id: str | None = None
+    lat: float | None = Field(
+        default=None, ge=-90, le=90,
+        description="Live-mode station latitude (workstream B2); None in mock mode.",
+    )
+    lon: float | None = Field(
+        default=None, ge=-180, le=180,
+        description="Live-mode station longitude (workstream B2); None in mock mode.",
+    )
     eco_score: float = Field(
         default=0.0,
         ge=0.0,
@@ -62,4 +70,14 @@ class IncidentRecord(BaseModel):
         default=None,
         description="Vision evidence attached post-decision (display + soft "
         "flags only; never writes severity).",
+    )
+    lat: float | None = Field(
+        default=None, ge=-90, le=90,
+        description="Incident latitude (workstream B2): real coords from live "
+        "feeds, zone-centroid jitter in mock mode.",
+    )
+    lon: float | None = Field(
+        default=None, ge=-180, le=180,
+        description="Incident longitude (workstream B2): real coords from live "
+        "feeds, zone-centroid jitter in mock mode.",
     )

@@ -335,3 +335,65 @@ def test_live_mode_uses_peshawar_fleet_and_wall_clock():
     # live clock starts near wall-clock (not the sim epoch)
     assert engine.simulation.clock.now.year == 2026
     assert engine.simulation.clock.now.month == 10
+
+
+# --- B2: zone placement ----------------------------------------------------
+
+def test_peshawar_pool_stations_have_coords():
+    pool = ResourcePool.peshawar()
+    res = pool.get("amb-hbt-01")
+    assert res is not None
+    assert res.lat is not None and res.lon is not None
+    # Hayatabad ambulance station coords (real, workstream B1)
+    assert abs(res.lat - 33.9895) < 1e-6
+    assert abs(res.lon - 71.5700) < 1e-6
+
+
+def test_default_pool_resources_have_no_coords():
+    pool = ResourcePool.default()
+    res = pool.get("amb-01")
+    assert res is not None
+    assert res.lat is None and res.lon is None
+
+
+def test_inject_incident_with_lat_lon():
+    sim = SimulationState()
+    inc_id = sim.inject_incident(
+        IncidentType.FLOOD, Zone.SOUTH, lat=34.008, lon=71.578
+    )
+    rec = sim.incidents[inc_id]
+    assert rec.lat == 34.008
+    assert rec.lon == 71.578
+
+
+def test_inject_incident_without_lat_lon():
+    sim = SimulationState()
+    inc_id = sim.inject_incident(IncidentType.FIRE, Zone.CENTRAL)
+    rec = sim.incidents[inc_id]
+    # mock mode: zone centroid + jitter (not None — Location requires lat/lon)
+    assert rec.lat is not None
+    assert rec.lon is not None
+    assert 33.995 < rec.lat < 34.020  # near central centroid 34.007 (±0.008)
+    assert 71.565 < rec.lon < 71.585  # near central centroid 71.575 (±0.008)
+
+
+def test_live_incident_route_accepts_lat_lon(monkeypatch):
+    import jevcity.feeds.base as base_mod
+
+    monkeypatch.setenv("JEVCITY_FEED_MODE", "live")
+    handler = lambda req: httpx.Response(200, json=OPEN_METEO_CALM_JSON)  # noqa: E731
+    mock_client = httpx.Client(transport=httpx.MockTransport(handler))
+    monkeypatch.setattr(base_mod.httpx, "Client", lambda **kw: mock_client)
+
+    engine = build_engine(feed_mode=FeedMode.LIVE)
+    engine.simulation.start(42, 7)  # resume: inject requires running
+    client = TestClient(create_app(engine))
+    r = client.post(
+        "/api/simulation/incident",
+        json={"incident_type": "flood", "zone": "south", "lat": 34.008, "lon": 71.578},
+    )
+    assert r.status_code == 200
+    inc_id = r.json()["incident_id"]
+    rec = engine.simulation.incidents[inc_id]
+    assert rec.lat == 34.008
+    assert rec.lon == 71.578

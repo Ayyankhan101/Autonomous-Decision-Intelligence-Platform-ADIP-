@@ -48,6 +48,27 @@ PESHAWAR_FLEET: list[tuple[str, ResourceType, Zone, float]] = [
     ("tmu-nsh-01", ResourceType.TRAFFIC_MANAGEMENT_UNIT, Zone.NORTH, 0.4),
 ]
 
+# resource_id → (lat, lon) from config/peshawar_zones.json (workstream B2).
+_PESHAWAR_STATION_COORDS: dict[str, tuple[float, float]] = {
+    "amb-hbt-01": (33.9895, 71.5700),
+    "amb-cnt-01": (34.0070, 71.5760),
+    "amb-nsh-01": (34.0400, 71.5600),
+    "amb-mrd-01": (34.0120, 71.6400),
+    "amb-pbi-01": (34.0180, 71.4900),
+    "fire-cnt-01": (34.0055, 71.5720),
+    "fire-hbt-01": (33.9900, 71.5730),
+    "fire-cnt-02": (34.0340, 71.5600),
+    "pol-cnt-01": (34.0090, 71.5740),
+    "pol-hbt-01": (33.9930, 71.5850),
+    "pol-nsh-01": (34.0360, 71.5680),
+    "pol-mrd-01": (34.0150, 71.6500),
+    "pol-pbi-01": (34.0200, 71.4950),
+    "fld-sdt-01": (33.9700, 71.5650),
+    "fld-cnt-01": (34.0030, 71.5650),
+    "tmu-cnt-01": (34.0100, 71.5800),
+    "tmu-nsh-01": (34.0330, 71.5500),
+}
+
 
 class ResourcePool:
     def __init__(
@@ -76,7 +97,11 @@ class ResourcePool:
     def peshawar(cls) -> ResourcePool:
         """Live-mode fleet at real Peshawar station coords (workstream B1)."""
         return cls([
-            Resource(resource_id=rid, type=t, zone=z, eco_score=eco)
+            Resource(
+                resource_id=rid, type=t, zone=z, eco_score=eco,
+                lat=_PESHAWAR_STATION_COORDS[rid][0],
+                lon=_PESHAWAR_STATION_COORDS[rid][1],
+            )
             for rid, t, z, eco in PESHAWAR_FLEET
         ])
 

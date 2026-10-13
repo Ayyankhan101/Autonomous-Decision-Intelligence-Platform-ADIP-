@@ -21,6 +21,16 @@ _TRAFFIC = ["free_flow", "moderate", "high", "gridlock"]
 
 _SEVERITY_RANK = [SeverityHint.MINOR, SeverityHint.MODERATE, SeverityHint.SEVERE]
 
+# Zone centroids (mirror frontend peshawarZones.ts / config/peshawar_zones.json).
+# Mock incidents jitter around these; live-mode feeds pass real lat/lon override.
+_ZONE_CENTROIDS: dict[Zone, tuple[float, float]] = {
+    Zone.CENTRAL: (34.007, 71.575),
+    Zone.NORTH: (34.036, 71.565),
+    Zone.SOUTH: (33.979, 71.565),
+    Zone.EAST: (34.010, 71.640),
+    Zone.WEST: (34.015, 71.495),
+}
+
 
 class EventGenerator:
     def __init__(self, session_rng: random.Random, scenario_rng: random.Random) -> None:
@@ -48,6 +58,8 @@ class EventGenerator:
         incident_id: str | None = None,
         notes: str | None = None,
         severity_jitter: bool = True,
+        lat: float | None = None,
+        lon: float | None = None,
     ) -> EventEnvelope:
         if when is None:
             raise ValueError("when (simulated time) is required — never use wall clock")
@@ -55,6 +67,12 @@ class EventGenerator:
         attributes = self._attributes_for(incident_type, chosen)
         if notes is not None:
             attributes.notes = notes
+        # Default: zone centroid + jitter (mock mode). Live feeds pass real coords.
+        base_lat, base_lon = _ZONE_CENTROIDS.get(zone, (34.008, 71.578))
+        if lat is None:
+            lat = round(base_lat + self.session_rng.uniform(-0.008, 0.008), 4)
+        if lon is None:
+            lon = round(base_lon + self.session_rng.uniform(-0.008, 0.008), 4)
         return EventEnvelope(
             event_id=self.next_event_id(),
             incident_id=incident_id or self.next_incident_id(),
@@ -64,8 +82,8 @@ class EventGenerator:
             ingest_time=when,
             location=Location(
                 zone=zone,
-                lat=round(51.50 + self.session_rng.uniform(-0.05, 0.05), 3),
-                lon=round(-0.14 + self.session_rng.uniform(-0.05, 0.05), 3),
+                lat=round(lat if lat is not None else 51.50 + self.session_rng.uniform(-0.05, 0.05), 3),
+                lon=round(lon if lon is not None else -0.14 + self.session_rng.uniform(-0.05, 0.05), 3),
                 road_segment_id=f"rs-{self.session_rng.randint(1, 99):02d}",
             ),
             reported_attributes=attributes,

@@ -24,7 +24,10 @@ additive): `GET /api/feeds` — feed health + weather snapshot + advisories;
 `POST /api/feeds/refresh` — force one poll cycle. Env `JEVCITY_FEED_MODE=mock|live`
 (live wires the Peshawar fleet, resets the sim clock to wall-clock UTC, and
 starts a 5-min `FeedManager` daemon). Feeds hit free no-key public APIs only
-(Open-Meteo, USGS, GDACS, ReliefWeb). Vision-evidence routes
+(Open-Meteo, USGS, GDACS, ReliefWeb). Workstream B2: `SimulationIncidentRequest`
+gains optional `lat`/`lon` (None → zone-centroid + jitter); `IncidentRecord` and
+`Resource` responses gain `lat`/`lon` (live: station coords; mock: centroid).
+Vision-evidence routes
 (5 additive, beyond the plan): `POST /api/images` (JSON base64 upload, ≤ 5 MB,
 PNG/JPEG/WebP by magic bytes, extraction runs synchronously in the request),
 `GET /api/images/{image_id}/facts`, `GET /api/images/{image_id}/raw`

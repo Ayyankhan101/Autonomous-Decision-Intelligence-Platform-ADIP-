@@ -55,6 +55,36 @@
       "title": "Eco Score",
       "type": "number"
     },
+    "lat": {
+      "anyOf": [
+        {
+          "maximum": 90,
+          "minimum": -90,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Live-mode station latitude (workstream B2); None in mock mode.",
+      "title": "Lat"
+    },
+    "lon": {
+      "anyOf": [
+        {
+          "maximum": 180,
+          "minimum": -180,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Live-mode station longitude (workstream B2); None in mock mode.",
+      "title": "Lon"
+    },
     "resource_id": {
       "title": "Resource Id",
       "type": "string"

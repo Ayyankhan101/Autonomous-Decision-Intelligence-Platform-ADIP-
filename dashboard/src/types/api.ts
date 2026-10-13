@@ -136,6 +136,8 @@ export interface Resource {
   zone: Zone;
   status: ResourceStatus;
   assigned_incident_id?: string | null;
+  lat?: number | null;
+  lon?: number | null;
 }
 
 export interface IncidentRecord {
@@ -152,6 +154,8 @@ export interface IncidentRecord {
   notes?: string | null;
   severity_hint?: 'minor' | 'moderate' | 'severe' | null;
   vision?: VisionAttachment | null;
+  lat?: number | null;
+  lon?: number | null;
 }
 
 export type VisionStatus = 'ok' | 'unavailable' | 'invalid_response';
