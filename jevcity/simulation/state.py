@@ -29,8 +29,10 @@ class SimulationState:
         config: SeedConfig | None = None,
         *,
         fleet: list[tuple[str, ResourceType, Zone, float]] | None = None,
+        peshawar: bool = False,
     ) -> None:
         self._fleet_spec = fleet
+        self._peshawar = peshawar
         self.reset(config or SeedConfig())
 
     def reset(self, config: SeedConfig | None = None) -> None:
@@ -38,10 +40,12 @@ class SimulationState:
         self.session_rng, self.scenario_rng = build_rngs(self.config)
         self.clock = SimClock()
         self.generator = EventGenerator(self.session_rng, self.scenario_rng)
-        self.pool = (
-            ResourcePool(self._fleet_spec) if self._fleet_spec
-            else ResourcePool.default()
-        )
+        if self._peshawar:
+            self.pool = ResourcePool.peshawar()
+        elif self._fleet_spec:
+            self.pool = ResourcePool(self._fleet_spec)
+        else:
+            self.pool = ResourcePool.default()
         self.running = False
         self.paused = False
         self.raw_events: list[dict] = []
@@ -76,6 +80,8 @@ class SimulationState:
         notes: str | None = None,
         multi_report: bool = False,
         bad_data_mode: InjectionMode | None = None,
+        lat: float | None = None,
+        lon: float | None = None,
     ) -> str:
         self.clock.tick()
         event = self.generator.make_incident(
@@ -86,6 +92,8 @@ class SimulationState:
             when=self.clock.now,
             notes=notes,
             incident_id=self._next_unique_incident_id(),
+            lat=lat,
+            lon=lon,
         )
         raw = event.model_dump(mode="json")
         if bad_data_mode is not None:
@@ -213,6 +221,8 @@ class SimulationState:
                 report_count=1,
                 notes=event.reported_attributes.notes,
                 severity_hint=event.reported_attributes.severity,
+                lat=event.location.lat,
+                lon=event.location.lon,
             )
         else:
             existing.latest_simulated = event.simulated_time

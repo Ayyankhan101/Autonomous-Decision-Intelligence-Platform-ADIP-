@@ -262,6 +262,21 @@
     "incident_type": {
       "$ref": "#/$defs/IncidentType"
     },
+    "lat": {
+      "anyOf": [
+        {
+          "maximum": 90,
+          "minimum": -90,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Incident latitude (workstream B2): real coords from live feeds, zone-centroid jitter in mock mode.",
+      "title": "Lat"
+    },
     "latest_simulated": {
       "format": "date-time",
       "title": "Latest Simulated",
@@ -270,6 +285,21 @@
     "lifecycle": {
       "$ref": "#/$defs/IncidentLifecycle",
       "default": "detected"
+    },
+    "lon": {
+      "anyOf": [
+        {
+          "maximum": 180,
+          "minimum": -180,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Incident longitude (workstream B2): real coords from live feeds, zone-centroid jitter in mock mode.",
+      "title": "Lon"
     },
     "notes": {
       "anyOf": [

@@ -92,6 +92,17 @@ interface FlightLine {
   positions: [number, number][];
 }
 
+function markerPos(
+  zone: Zone,
+  id: string,
+  lat?: number | null,
+  lon?: number | null,
+  spread?: number,
+): [number, number] {
+  if (lat != null && lon != null) return [lat, lon];
+  return jitteredPosition(zone, id, spread);
+}
+
 export const PeshawarMap: React.FC<PeshawarMapProps> = ({
   incidents,
   decisions,
@@ -121,7 +132,10 @@ export const PeshawarMap: React.FC<PeshawarMapProps> = ({
           if (!unit || !inc || unit.zone === inc.zone) continue;
           newFlights.push({
             key: `${unitId}-${incId}-${Date.now()}`,
-            positions: [jitteredPosition(unit.zone, unitId), jitteredPosition(inc.zone, incId)],
+            positions: [
+              markerPos(unit.zone, unitId, unit.lat, unit.lon, 0.006),
+              markerPos(inc.zone, incId, inc.lat, inc.lon),
+            ],
           });
         }
         if (newFlights.length > 0) {
@@ -199,7 +213,7 @@ export const PeshawarMap: React.FC<PeshawarMapProps> = ({
       {resources.map((r) => (
         <Marker
           key={r.resource_id}
-          position={jitteredPosition(r.zone, r.resource_id, 0.006)}
+          position={markerPos(r.zone, r.resource_id, r.lat, r.lon, 0.006)}
           icon={unitIcon(r)}
           zIndexOffset={-100}
         />
@@ -207,7 +221,7 @@ export const PeshawarMap: React.FC<PeshawarMapProps> = ({
       {incidents.map((inc) => (
         <Marker
           key={inc.incident_id}
-          position={jitteredPosition(inc.zone, inc.incident_id)}
+          position={markerPos(inc.zone, inc.incident_id, inc.lat, inc.lon)}
           icon={incidentIcon(
             inc,
             decisionByIncident.get(inc.incident_id),

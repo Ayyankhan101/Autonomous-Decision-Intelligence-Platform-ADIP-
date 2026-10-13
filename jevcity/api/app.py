@@ -79,11 +79,9 @@ def build_engine(
     if feed_mode is None:
         feed_mode = FeedMode(os.environ.get("JEVCITY_FEED_MODE", "mock"))
     if feed_mode is FeedMode.LIVE:
-        from jevcity.simulation.resource_pool import PESHAWAR_FLEET
-
         simulation = SimulationState(
             SeedConfig(session_seed, scenario_seed),
-            fleet=PESHAWAR_FLEET,
+            peshawar=True,
         )
         simulation.clock.reset(start=datetime.now(UTC))
     else:
@@ -284,6 +282,8 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
             source_id=req.source_id,
             notes=req.notes,
             multi_report=req.multi_report,
+            lat=req.lat,
+            lon=req.lon,
         )
         records = engine.process_pending()
         return SimulationActionResponse(

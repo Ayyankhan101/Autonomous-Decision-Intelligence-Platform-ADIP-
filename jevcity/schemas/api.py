@@ -205,6 +205,14 @@ class SimulationIncidentRequest(BaseModel):
     source_id: str = "sensor-auto-01"
     notes: str | None = Field(default=None, max_length=500)
     multi_report: bool = False
+    lat: float | None = Field(
+        default=None, ge=-90, le=90,
+        description="Optional real coord (workstream B2); None = zone-centroid jitter.",
+    )
+    lon: float | None = Field(
+        default=None, ge=-180, le=180,
+        description="Optional real coord (workstream B2); None = zone-centroid jitter.",
+    )
 
 
 class SimulationBadDataRequest(BaseModel):
