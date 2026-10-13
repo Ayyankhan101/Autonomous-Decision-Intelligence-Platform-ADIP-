@@ -77,7 +77,6 @@ export const WhatIfSandbox: React.FC<WhatIfSandboxProps> = ({ latestDecision }) 
                 Counterfactual What-If Sandbox
               </h3>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/50">
-                Invariants 6 & 15
               </span>
             </div>
             <p className="text-xs text-slate-400">
@@ -194,20 +193,22 @@ export const WhatIfSandbox: React.FC<WhatIfSandboxProps> = ({ latestDecision }) 
                 <div className="space-y-2.5 text-xs font-mono">
                   <div className="flex justify-between">
                     <span className="text-slate-400">Priority:</span>
-                    <span className="font-bold text-slate-100">{latestDecision?.priority || 'CRITICAL'}</span>
+                    <span className="font-bold text-slate-100">{latestDecision?.priority ?? '—'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Decision State:</span>
-                    <span className="font-bold text-emerald-400">{latestDecision?.state || 'AUTO_APPROVED'}</span>
+                    <span className="font-bold text-emerald-400">{latestDecision?.state ?? '—'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Laya Advisory:</span>
-                    <span className="text-purple-300">{latestDecision?.laya?.suggested_priority || 'HIGH'}</span>
+                    <span className="text-purple-300">{latestDecision?.laya?.suggested_priority ?? '—'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Dispatched Units:</span>
                     <span className="text-slate-200">
-                      {latestDecision?.assigned_resource_ids.join(', ') || 'amb-01, pol-01'}
+                      {latestDecision && latestDecision.assigned_resource_ids.length > 0
+                        ? latestDecision.assigned_resource_ids.join(', ')
+                        : '—'}
                     </span>
                   </div>
                 </div>

@@ -54,7 +54,7 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ entries, newIds }) => {
               </span>
             </h3>
             <p className="text-xs text-slate-400 font-mono">
-              Append-only SQLite • Hash-linked SHA-256 blocks (Phase 4)
+              Append-only SQLite • Hash-linked SHA-256 blocks
             </p>
           </div>
         </div>
@@ -223,7 +223,7 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ entries, newIds }) => {
                       <div className="bg-purple-950/20 border border-purple-900/40 p-2.5 rounded-lg space-y-1.5">
                         <div className="flex items-center gap-1.5 text-purple-300 font-bold text-[11px]">
                           <Brain className="w-3.5 h-3.5 text-purple-400" />
-                          <span>Recorded Laya Advisory Metadata (Phase 4 Block)</span>
+                          <span>Recorded Laya Advisory Metadata</span>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[10px] text-slate-300">
                           <div>
