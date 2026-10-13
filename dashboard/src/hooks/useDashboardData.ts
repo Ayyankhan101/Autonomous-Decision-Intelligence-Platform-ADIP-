@@ -38,10 +38,17 @@ export function useDashboardData(pollIntervalMs = 1500) {
     audit: Set<string>;
   }>({ decisions: new Set(), incidents: new Set(), audit: new Set() });
   const sigRef = useRef<Record<string, string>>({});
+  const inFlightRef = useRef(false);
+  const seqRef = useRef(0);
+  const lastDecCountRef = useRef(-1);
 
   const fetchAll = useCallback(async () => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+    const mySeq = ++seqRef.current;
     try {
       const bundle = await api.getDashboard(50);
+      if (mySeq !== seqRef.current) return;
       const incsRes = bundle.incidents.incidents;
       const decsRes = bundle.decisions.decisions;
       const resRes = bundle.resources.resources;
@@ -68,7 +75,7 @@ export function useDashboardData(pollIntervalMs = 1500) {
       // Poll feeds endpoint alongside dashboard (workstream B3)
       try {
         const feedsRes = await api.getFeeds();
-        setFeeds(feedsRes);
+        if (mySeq === seqRef.current) setFeeds(feedsRes);
       } catch {
         // non-fatal: feeds endpoint down; keep last snapshot or null
       }
@@ -92,12 +99,13 @@ export function useDashboardData(pollIntervalMs = 1500) {
         audit: auditIds,
       };
 
-      // Laya latency ring buffer (real per-decision latency_ms; no wall-clock)
+      // Laya latency ring buffer — only push when decision count changes (avoids duplicate points)
       const latencies = decsRes
         .slice(-20)
         .map((d) => d.laya?.latency_ms)
         .filter((v): v is number => typeof v === 'number' && v >= 0);
-      if (latencies.length > 0) {
+      if (latencies.length > 0 && decsRes.length !== lastDecCountRef.current) {
+        lastDecCountRef.current = decsRes.length;
         const avg = latencies.reduce((a, b) => a + b, 0) / latencies.length;
         setLatencySeries((prevSeries) => [
           ...prevSeries.slice(-(LATENCY_RING_MAX - 1)),
@@ -113,11 +121,17 @@ export function useDashboardData(pollIntervalMs = 1500) {
           }
           return prevSel;
         });
+      } else {
+        setSelectedIncidentId(null);
       }
     } catch (err: unknown) {
+      if (mySeq !== seqRef.current) return;
       setIsConnected(false);
       const msg = err instanceof Error ? err.message : String(err);
       setLastError(msg);
+      setNewIds({ decisions: [], incidents: [], audit: [] });
+    } finally {
+      inFlightRef.current = false;
     }
   }, []);
 

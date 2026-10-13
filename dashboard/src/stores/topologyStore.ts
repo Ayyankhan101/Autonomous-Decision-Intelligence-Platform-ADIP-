@@ -117,7 +117,6 @@ interface TopologyState {
   setSimSpeed: (s: number) => void;
   setVisualPaused: (p: boolean) => void;
   setFps: (f: number) => void;
-  
   flashAnomaly: (incidentId: string) => void;
   pushLog: (line: LogLine) => void;
 }
@@ -200,8 +199,21 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
     });
 
     const incidentById = new Map(tIncidents.map((i) => [i.id, i]));
-    const edges: TopologyEdge[] = [];
+
+    // Only keep the latest decision per incident to avoid stale duplicate edges
+    const latestDecisionByIncident = new Map<string, DecisionRecord>();
     for (const d of decisions) {
+      const existing = latestDecisionByIncident.get(d.incident_id);
+      if (
+        !existing ||
+        d.decision_time_simulated > existing.decision_time_simulated
+      ) {
+        latestDecisionByIncident.set(d.incident_id, d);
+      }
+    }
+
+    const edges: TopologyEdge[] = [];
+    for (const d of latestDecisionByIncident.values()) {
       const inc = incidentById.get(d.incident_id);
       if (!inc) continue;
       for (const rid of d.assigned_resource_ids) {
@@ -220,20 +232,23 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
     const decisionLogs: LogLine[] = decisions.slice(-30).map((d) => ({
       key: `d:${d.decision_id}`,
       ts: fmtTime(d.decision_time_simulated),
+      sortKey: new Date(d.decision_time_simulated).getTime(),
       level: levelFromOverride(d),
       text: `decision ${d.decision_id} · ${d.incident_id} · ${d.priority} · ${d.state}`,
     }));
 
-    const auditLogs: LogLine[] = auditEntries.slice(-15).map((a: AuditEntry) => ({
+    // Backend returns audit newest-first; take first 15 (most recent)
+    const auditLogs: LogLine[] = auditEntries.slice(0, 15).map((a: AuditEntry) => ({
       key: `a:${a.entry_id}`,
       ts: fmtTime(a.timestamp),
+      sortKey: new Date(a.timestamp).getTime(),
       level: a.action.includes('OVERRIDE') ? 'warn' : 'info',
       text: `audit ${a.action} · ${a.actor} · ${a.decision_id ?? a.entry_id}`,
     }));
 
     const localLogs = get().logs.filter((l) => l.key.startsWith('local:'));
     const merged = [...localLogs, ...decisionLogs, ...auditLogs]
-      .sort((x, y) => y.ts.localeCompare(x.ts))
+      .sort((x, y) => (y.sortKey ?? 0) - (x.sortKey ?? 0))
       .slice(0, MAX_LOGS);
 
     const loads = agents.map((a) => a.processingLoad);
@@ -259,8 +274,6 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
   setVisualPaused: (p) => set({ visualPaused: p }),
   setFps: (f) => set({ fps: f }),
 
-  
-
   flashAnomaly: (incidentId) => {
     set({ anomalyFlashId: incidentId });
     window.setTimeout(() => {
@@ -269,5 +282,7 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
   },
 
   pushLog: (line) =>
-    set((s) => ({ logs: [line, ...s.logs].slice(0, MAX_LOGS) })),
+    set((s) => ({
+      logs: [{ ...line, sortKey: line.sortKey ?? Date.now() }, ...s.logs].slice(0, MAX_LOGS),
+    })),
 }));

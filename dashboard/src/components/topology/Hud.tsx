@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Activity,
   Cpu,
@@ -360,6 +360,30 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
   const [injecting, setInjecting] = useState(false);
   const [injectError, setInjectError] = useState<string | null>(null);
 
+  const handleQuickAction = async (
+    fn: () => Promise<unknown>,
+    label: string,
+  ) => {
+    try {
+      await fn();
+      pushLog({
+        key: `local:qa:${Date.now()}`,
+        ts: new Date().toISOString().slice(11, 19),
+        level: 'ok',
+        text: `${label} applied`,
+      });
+      onRefresh();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      pushLog({
+        key: `local:qa-err:${Date.now()}`,
+        ts: new Date().toISOString().slice(11, 19),
+        level: 'error',
+        text: `${label} failed — ${msg}`,
+      });
+    }
+  };
+
   const handleInject = async () => {
     setInjecting(true);
     setInjectError(null);
@@ -449,7 +473,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
         <div className="flex gap-1 pt-1">
           <button
             type="button"
-            onClick={() => api.injectBadData({ mode: 'missing_fields' })}
+            onClick={() => handleQuickAction(() => api.injectBadData({ mode: 'missing_fields' }), 'inject missing_fields')}
             className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
             title="Inject missing fields"
           >
@@ -457,7 +481,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
           </button>
           <button
             type="button"
-            onClick={() => api.injectBadData({ mode: 'out_of_range' })}
+            onClick={() => handleQuickAction(() => api.injectBadData({ mode: 'out_of_range' }), 'inject out_of_range')}
             className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
             title="Inject out-of-range data"
           >
@@ -465,7 +489,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
           </button>
           <button
             type="button"
-            onClick={() => api.injectBadData({ mode: 'conflicting_reports' })}
+            onClick={() => handleQuickAction(() => api.injectBadData({ mode: 'conflicting_reports' }), 'inject conflicting_reports')}
             className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
             title="Inject conflicting reports"
           >
@@ -473,7 +497,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
           </button>
           <button
             type="button"
-            onClick={() => api.injectSecondEmergency()}
+            onClick={() => handleQuickAction(() => api.injectSecondEmergency(), 'inject second emergency')}
             className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
             title="Inject second emergency"
           >
@@ -481,7 +505,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
           </button>
           <button
             type="button"
-            onClick={() => api.injectSybil()}
+            onClick={() => handleQuickAction(() => api.injectSybil(), 'inject sybil flood')}
             className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
             title="Inject Sybil flood"
           >
@@ -491,7 +515,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
         <div className="flex gap-1 pt-1">
           <button
             type="button"
-            onClick={() => api.policyPosition('RESPONSE_TIME')}
+            onClick={() => handleQuickAction(() => api.policyPosition('RESPONSE_TIME'), 'policy → RESPONSE_TIME')}
             className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
             title="Policy: Response Time"
           >
@@ -499,7 +523,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
           </button>
           <button
             type="button"
-            onClick={() => api.policyPosition('EQUITY')}
+            onClick={() => handleQuickAction(() => api.policyPosition('EQUITY'), 'policy → EQUITY')}
             className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
             title="Policy: Equity"
           >
@@ -507,7 +531,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
           </button>
           <button
             type="button"
-            onClick={() => api.policyPosition('ECO')}
+            onClick={() => handleQuickAction(() => api.policyPosition('ECO'), 'policy → ECO')}
             className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
             title="Policy: Eco"
           >
@@ -517,7 +541,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
         <div className="flex gap-1 pt-1">
           <button
             type="button"
-            onClick={() => api.setLayaMode('mock')}
+            onClick={() => handleQuickAction(() => api.setLayaMode('mock'), 'laya mode → mock')}
             className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
             title="Laya mode: mock"
           >
@@ -525,7 +549,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
           </button>
           <button
             type="button"
-            onClick={() => api.setLayaMode('cache')}
+            onClick={() => handleQuickAction(() => api.setLayaMode('cache'), 'laya mode → cache')}
             className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
             title="Laya mode: cache"
           >
@@ -533,7 +557,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
           </button>
           <button
             type="button"
-            onClick={() => api.setLayaMode('live')}
+            onClick={() => handleQuickAction(() => api.setLayaMode('live'), 'laya mode → live')}
             className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
             title="Laya mode: live"
           >
@@ -543,33 +567,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
         <div className="flex gap-1 pt-1">
           <button
             type="button"
-            onClick={() => api.setLayaMode('mock')}
-            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
-            title="Laya mode: mock"
-          >
-            mock
-          </button>
-          <button
-            type="button"
-            onClick={() => api.setLayaMode('cache')}
-            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
-            title="Laya mode: cache"
-          >
-            cache
-          </button>
-          <button
-            type="button"
-            onClick={() => api.setLayaMode('live')}
-            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
-            title="Laya mode: live"
-          >
-            live
-          </button>
-        </div>
-        <div className="flex gap-1 pt-1">
-          <button
-            type="button"
-            onClick={() => api.setVisionMode('mock')}
+            onClick={() => handleQuickAction(() => api.setVisionMode('mock'), 'vision mode → mock')}
             className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
             title="Vision mode: mock"
           >
@@ -577,7 +575,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
           </button>
           <button
             type="button"
-            onClick={() => api.setVisionMode('cache')}
+            onClick={() => handleQuickAction(() => api.setVisionMode('cache'), 'vision mode → cache')}
             className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
             title="Vision mode: cache"
           >
@@ -585,15 +583,12 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
           </button>
           <button
             type="button"
-            onClick={() => api.setVisionMode('live')}
+            onClick={() => handleQuickAction(() => api.setVisionMode('live'), 'vision mode → live')}
             className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
             title="Vision mode: live"
           >
             live
           </button>
-        </div>
-        <div className="text-[8px] text-slate-600 font-mono -mt-0.5">
-          visual sim only — backend control in Command tab
         </div>
         <button
           type="button"
@@ -612,14 +607,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
   );
 }
 
-export function Hud({ onRefresh, selectedIncidentId, onSelectIncident }: { onRefresh: () => void; selectedIncidentId: string | null; onSelectIncident: (id: string | null) => void }) {
-  useEffect(() => {
-    // selected incident changed
-  }, [selectedIncidentId]);
-  useEffect(() => {
-    // onSelectIncident changed
-  }, [onSelectIncident]);
-
+export function Hud({ onRefresh }: { onRefresh: () => void; selectedIncidentId: string | null; onSelectIncident: (id: string | null) => void }) {
   return (
     <>
       <HudHeader />

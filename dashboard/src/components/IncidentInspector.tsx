@@ -655,7 +655,7 @@ export const IncidentInspector: React.FC<IncidentInspectorProps> = ({
           </div>
           <div className="flex flex-wrap gap-1.5">
             {Object.entries(decision.trust.source_scores).map(([src, score]) => {
-              const flagged = decision.trust!.flagged_sources.includes(src);
+              const flagged = decision.trust?.flagged_sources.includes(src) ?? false;
               return (
                 <span
                   key={src}

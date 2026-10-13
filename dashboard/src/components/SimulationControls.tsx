@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Brain,
   Camera,
@@ -62,16 +62,29 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
   const [badDataMode, setBadDataMode] = useState<InjectionMode>('adversarial_notes');
 
   // Laya runtime mode toggle (demo-liveness)
-  const [modeTarget, setModeTarget] = useState<'mock' | 'cache' | 'live'>(
-    layaMode as 'mock' | 'cache' | 'live',
-  );
-  const [visionTarget, setVisionTarget] = useState<'mock' | 'cache' | 'live'>(
-    visionMode as 'mock' | 'cache' | 'live',
-  );
+  // Derived during render: sync with server state when props change
+  const [modeTargetOverride, setModeTarget] = useState<'mock' | 'cache' | 'live' | null>(null);
+  const [visionTargetOverride, setVisionTarget] = useState<'mock' | 'cache' | 'live' | null>(null);
+  const modeTarget = modeTargetOverride ?? (layaMode as 'mock' | 'cache' | 'live');
+  const visionTarget = visionTargetOverride ?? (visionMode as 'mock' | 'cache' | 'live');
+
+  // Reset override when server state matches (e.g. after Hud quick-mode button)
+  if (modeTargetOverride !== null && modeTargetOverride === layaMode) {
+    setModeTarget(null);
+  }
+  if (visionTargetOverride !== null && visionTargetOverride === visionMode) {
+    setVisionTarget(null);
+  }
+
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, []);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setMessage({ text, type });
-    setTimeout(() => setMessage(null), 4000);
+    toastTimerRef.current = setTimeout(() => setMessage(null), 4000);
   };
 
   const hasSessionData = incidentCount > 0 || decisionCount > 0;

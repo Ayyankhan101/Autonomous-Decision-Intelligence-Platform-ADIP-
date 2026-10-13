@@ -113,8 +113,10 @@ export const PeshawarMap: React.FC<PeshawarMapProps> = ({
 }) => {
   const prevAssignRef = React.useRef<Map<string, string>>(new Map());
   const [flights, setFlights] = React.useState<FlightLine[]>([]);
+  const flightTimersRef = React.useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   useEffect(() => {
+    const timers = flightTimersRef.current;
     const raf = requestAnimationFrame(() => {
       const current = new Map<string, string>();
       for (const d of decisions) {
@@ -141,15 +143,21 @@ export const PeshawarMap: React.FC<PeshawarMapProps> = ({
         if (newFlights.length > 0) {
           setFlights((f) => [...f.slice(-3), ...newFlights]);
           for (const nf of newFlights) {
-            setTimeout(() => {
+            const t = setTimeout(() => {
+              timers.delete(nf.key);
               setFlights((cur) => cur.filter((x) => x.key !== nf.key));
             }, 1600);
+            timers.set(nf.key, t);
           }
         }
       }
       prevAssignRef.current = current;
     });
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      for (const t of timers.values()) clearTimeout(t);
+      timers.clear();
+    };
   }, [decisions, resources, incidents]);
 
   const incidentByZone = useMemo(() => {

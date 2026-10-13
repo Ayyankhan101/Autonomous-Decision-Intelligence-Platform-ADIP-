@@ -60,8 +60,6 @@ export function AgentTopology3D({ snapshot, onRefresh, selectedIncidentId, onSel
     setFromDashboard(snapshot);
   }, [snapshot, setFromDashboard]);
 
-  
-
   const empty = agents.length === 0;
 
   return (
@@ -74,10 +72,13 @@ export function AgentTopology3D({ snapshot, onRefresh, selectedIncidentId, onSel
             camera={{ position: [0, 16, 19], fov: 50 }}
             dpr={[1, 1.75]}
             gl={{ antialias: true, powerPreference: 'high-performance' }}
-            onPointerMissed={() => selectAgent(null)}
+            onPointerMissed={() => {
+              selectAgent(null);
+              document.body.style.cursor = 'auto';
+            }}
           >
             <Suspense fallback={null}>
-              <TopologyScene selectedIncidentId={selectedIncidentId} onSelectIncident={onSelectIncident} />
+              <TopologyScene />
             </Suspense>
           </Canvas>
         )}
