@@ -110,10 +110,34 @@ function AgentMatrix() {
   const selectedAgentId = useTopologyStore((s) => s.selectedAgentId);
   const selectAgent = useTopologyStore((s) => s.selectAgent);
 
+  const counts = agents.reduce(
+    (acc, a) => {
+      acc[a.status] += 1;
+      return acc;
+    },
+    { available: 0, assigned: 0, busy: 0, offline: 0 } as Record<string, number>,
+  );
+
   return (
     <Pane className="absolute top-20 left-3 w-56 max-h-[calc(100%-11rem)] overflow-y-auto z-10">
-      <div className="px-3 py-2 border-b border-cyan-500/20 text-[10px] font-mono tracking-widest text-cyan-300">
-        AGENT MATRIX ({agents.length})
+      <div className="px-3 py-2 border-b border-cyan-500/20">
+        <div className="text-[10px] font-mono tracking-widest text-cyan-300">
+          AGENT MATRIX ({agents.length})
+        </div>
+        <div className="mt-1 flex flex-wrap gap-1 text-[8px] font-mono">
+          <span className="px-1 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+            {counts.available} idle
+          </span>
+          <span className="px-1 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+            {counts.assigned} assigned
+          </span>
+          <span className="px-1 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            {counts.busy} busy
+          </span>
+          <span className="px-1 rounded bg-slate-600/20 text-slate-400 border border-slate-600/40">
+            {counts.offline} off
+          </span>
+        </div>
       </div>
       <ul className="divide-y divide-slate-800/60">
         {agents.map((a) => (
