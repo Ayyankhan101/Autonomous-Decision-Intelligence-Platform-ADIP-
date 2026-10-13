@@ -29,6 +29,19 @@ fallback_rule, human_required}.
 Guardrail order: hard reject → model failure → signal combination (2-signal CRITICAL rule)
 → Laya advisory handling → data-quality hold → confidence gates → allocation → record.
 
+## Live-feed layer (workstream B)
+
+```
+Open-Meteo ──┐ weather → flood (≥7.5mm/h) ──► SimulationState.append_replay
+USGS ────────┤ seismic → traffic_spike (M≥4.0, Peshawar bbox) ──►
+GDACS ───────┤ orange/red FL+EQ within 300 km ──►
+ReliefWeb ───┘ advisories (context only, never incidents)
+```
+
+- `FeedManager` daemon thread cycles every ~5 min (jittered); per-feed health + circuit breaker (3 failures → hold open, probe after cooldown).
+- `JEVCITY_FEED_MODE=live` wires `ResourcePool.peshawar()` (17 units at real station coords), resets `SimClock` to wall-clock UTC, starts the daemon. Env `mock` (default) keeps the deterministic seeded pipeline.
+- Station coords static until real GPS telemetry is available; traffic synthetic (weather-modulated); Rescue 1122 CPS integration pending — no public API.
+
 ## Enhancements E1–E4 + demo-liveness
 
 - **E1 trust scoring** — per-stream veracity from report history; mean veracity < 0.7
