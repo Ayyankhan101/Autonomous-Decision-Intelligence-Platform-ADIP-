@@ -97,6 +97,8 @@ export interface TopologyDashboardSnapshot {
   auditEntries: AuditEntry[];
 }
 
+export type RenderQuality = 'high' | 'medium' | 'low';
+
 interface TopologyState {
   agents: TopologyAgent[];
   incidents: TopologyIncident[];
@@ -112,11 +114,16 @@ interface TopologyState {
   feedMode: string;
   simulatedTime: string;
   running: boolean;
+  quality: RenderQuality;
+  qualityAuto: boolean;
+  reducedMotion: boolean;
   setFromDashboard: (snap: TopologyDashboardSnapshot) => void;
   selectAgent: (id: string | null) => void;
   setSimSpeed: (s: number) => void;
   setVisualPaused: (p: boolean) => void;
   setFps: (f: number) => void;
+  setQuality: (q: RenderQuality) => void;
+  setReducedMotion: (b: boolean) => void;
   flashAnomaly: (incidentId: string) => void;
   pushLog: (line: LogLine) => void;
 }
@@ -138,6 +145,9 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
   feedMode: 'mock',
   simulatedTime: '',
   running: false,
+  quality: 'high',
+  qualityAuto: true,
+  reducedMotion: false,
 
   setFromDashboard: ({ state, incidents, decisions, resources, auditEntries }) => {
     const openIncidents = incidents.filter((i) => i.lifecycle !== 'resolved');
@@ -273,6 +283,8 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
   setSimSpeed: (s) => set({ simSpeed: s }),
   setVisualPaused: (p) => set({ visualPaused: p }),
   setFps: (f) => set({ fps: f }),
+  setQuality: (q) => set({ quality: q, qualityAuto: false }),
+  setReducedMotion: (b) => set({ reducedMotion: b }),
 
   flashAnomaly: (incidentId) => {
     set({ anomalyFlashId: incidentId });

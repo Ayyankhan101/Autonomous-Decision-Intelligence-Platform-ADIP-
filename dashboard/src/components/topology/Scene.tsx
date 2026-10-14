@@ -93,10 +93,18 @@ function AgentNode({
   const matRef = useRef<THREE.MeshStandardMaterial>(null);
   const groupRef = useRef<THREE.Group>(null);
   const selectAgent = useTopologyStore((s) => s.selectAgent);
+  const reducedMotion = useTopologyStore((s) => s.reducedMotion);
   const hovering = useRef(false);
   const phase = useMemo(() => hashPhase(agent.id) * Math.PI * 2, [agent.id]);
 
   useFrame((state, delta) => {
+    if (reducedMotion) {
+      if (matRef.current) {
+        matRef.current.emissiveIntensity = selected ? 1.8 : 0.7 + agent.processingLoad / 180;
+      }
+      if (ringRef.current) ringRef.current.scale.setScalar(selected ? 1.7 : 0);
+      return;
+    }
     if (groupRef.current) {
       groupRef.current.position.y =
         agent.position[1] + Math.sin(state.clock.elapsedTime * 1.4 + phase) * 0.08;
@@ -201,8 +209,13 @@ function IncidentNode({
   const sirenA = useRef<THREE.Mesh>(null);
   const sirenB = useRef<THREE.Mesh>(null);
   const matRef = useRef<THREE.MeshStandardMaterial>(null);
+  const reducedMotion = useTopologyStore((s) => s.reducedMotion);
 
   useFrame((state, delta) => {
+    if (reducedMotion) {
+      if (matRef.current) matRef.current.emissiveIntensity = flashing ? 3.4 : 1.2;
+      return;
+    }
     if (meshRef.current) meshRef.current.rotation.y += delta * 0.8;
     if (matRef.current) {
       const target = flashing ? 3.4 : 1.2 + Math.sin(state.clock.elapsedTime * 3) * 0.25;
@@ -239,7 +252,7 @@ function IncidentNode({
         <sphereGeometry args={[0.07, 8, 8]} />
         <meshBasicMaterial color="#38bdf8" />
       </mesh>
-      {flashing ? <Shockwave color="#f43f5e" /> : null}
+      {flashing && !reducedMotion ? <Shockwave color="#f43f5e" /> : null}
     </group>
   );
 }
@@ -291,6 +304,14 @@ function AssignmentEdge({ edge, speed }: { edge: TopologyEdge; speed: number }) 
   );
 }
 
+const QUALITY_DPR: Record<string, [number, number]> = {
+  high: [1, 1.75],
+  medium: [1, 1.25],
+  low: [1, 1],
+};
+
+const QUALITY_STARS: Record<string, number> = { high: 2500, medium: 1000, low: 0 };
+
 export function TopologyScene() {
   const agents = useTopologyStore((s) => s.agents);
   const incidents = useTopologyStore((s) => s.incidents);
@@ -299,18 +320,41 @@ export function TopologyScene() {
   const anomalyFlashId = useTopologyStore((s) => s.anomalyFlashId);
   const simSpeed = useTopologyStore((s) => s.simSpeed);
   const setFps = useTopologyStore((s) => s.setFps);
+  const quality = useTopologyStore((s) => s.quality);
+  const reducedMotion = useTopologyStore((s) => s.reducedMotion);
   const frames = useRef(0);
   const acc = useRef(0);
+  const lowFpsStrikes = useRef(0);
 
   useFrame((_, delta) => {
     frames.current += 1;
     acc.current += delta;
     if (acc.current >= 0.5) {
-      setFps(Math.round(frames.current / acc.current));
+      const fps = Math.round(frames.current / acc.current);
+      setFps(fps);
       frames.current = 0;
       acc.current = 0;
+
+      const { qualityAuto, quality: q, pushLog } = useTopologyStore.getState();
+      if (fps < 30) lowFpsStrikes.current += 1;
+      else lowFpsStrikes.current = 0;
+      if (qualityAuto && lowFpsStrikes.current >= 6) {
+        const next = q === 'high' ? 'medium' : q === 'medium' ? 'low' : null;
+        if (next) {
+          useTopologyStore.setState({ quality: next });
+          pushLog({
+            key: `local:q:auto:${Date.now()}`,
+            ts: new Date().toISOString().slice(11, 19),
+            level: 'warn',
+            text: `render quality auto-downgraded → ${next} (fps ${fps})`,
+          });
+        }
+        lowFpsStrikes.current = 0;
+      }
     }
   });
+
+  const starCount = QUALITY_STARS[quality] ?? 2500;
 
   return (
     <>
@@ -321,7 +365,9 @@ export function TopologyScene() {
       <pointLight position={[-14, 10, 12]} intensity={40} color="#6366f1" />
       <pointLight position={[12, 8, -10]} intensity={25} color="#f43f5e" />
 
-      <Stars radius={80} depth={40} count={2500} factor={3} saturation={0} fade speed={0.6} />
+      {starCount > 0 && (
+        <Stars radius={80} depth={40} count={starCount} factor={3} saturation={0} fade speed={0.6} />
+      )}
       <Grid
         infiniteGrid
         fadeDistance={50}
@@ -350,14 +396,16 @@ export function TopologyScene() {
         <IncidentNode key={i.id} incident={i} flashing={anomalyFlashId === i.id} />
       ))}
 
-      <ContactShadows
-        position={[0, -0.05, 0]}
-        opacity={0.55}
-        scale={60}
-        blur={2.2}
-        far={12}
-        color="#000000"
-      />
+      {quality !== 'low' && (
+        <ContactShadows
+          position={[0, -0.05, 0]}
+          opacity={0.55}
+          scale={60}
+          blur={2.2}
+          far={12}
+          color="#000000"
+        />
+      )}
 
       <OrbitControls
         enableDamping
@@ -367,11 +415,13 @@ export function TopologyScene() {
         maxPolarAngle={Math.PI / 2.1}
         makeDefault
         target={[0, 0.5, 0]}
-        autoRotate={selectedAgentId == null}
+        autoRotate={selectedAgentId == null && !reducedMotion}
         autoRotateSpeed={0.35}
       />
 
-      <BloomRig />
+      {quality !== 'low' && <BloomRig />}
     </>
   );
 }
+
+export const TOPOLOGY_DPR = QUALITY_DPR;

@@ -1,6 +1,6 @@
 import { Component, Suspense, useEffect, type ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { TopologyScene } from './Scene';
+import { TopologyScene, TOPOLOGY_DPR } from './Scene';
 import { Hud } from './Hud';
 import { useTopologyStore } from '../../stores/topologyStore';
 import type { TopologyDashboardSnapshot } from '../../stores/topologyStore';
@@ -55,22 +55,35 @@ export function AgentTopology3D({ snapshot, onRefresh, selectedIncidentId, onSel
   const setFromDashboard = useTopologyStore((s) => s.setFromDashboard);
   const agents = useTopologyStore((s) => s.agents);
   const selectAgent = useTopologyStore((s) => s.selectAgent);
+  const quality = useTopologyStore((s) => s.quality);
+  const setReducedMotion = useTopologyStore((s) => s.setReducedMotion);
 
   useEffect(() => {
     setFromDashboard(snapshot);
   }, [snapshot, setFromDashboard]);
 
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [setReducedMotion]);
+
   const empty = agents.length === 0;
 
   return (
     <TopologyErrorBoundary>
-      <div className="relative w-full h-[calc(100vh-11rem)] min-h-[420px] overflow-hidden rounded-lg border border-slate-900">
+      <div
+        id="topology-viewport"
+        className="relative w-full h-[calc(100vh-11rem)] min-h-[420px] overflow-hidden rounded-lg border border-slate-900"
+      >
         {empty ? (
           <AwaitingTelemetry />
         ) : (
           <Canvas
             camera={{ position: [0, 16, 19], fov: 50 }}
-            dpr={[1, 1.75]}
+            dpr={TOPOLOGY_DPR[quality] ?? TOPOLOGY_DPR.high}
             gl={{ antialias: true, powerPreference: 'high-performance' }}
             onPointerMissed={() => {
               selectAgent(null);
