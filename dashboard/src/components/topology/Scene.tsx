@@ -35,7 +35,7 @@ function BloomRig() {
     const c = new EffectComposer(gl);
     c.addPass(new RenderPass(scene, camera));
     const bloom = new UnrealBloomPass(
-      new THREE.Vector2(size.width, size.height),
+      new THREE.Vector2(1, 1),
       0.85,
       0.45,
       0.18,
@@ -73,6 +73,12 @@ function UnitGeometry({ type }: { type: ResourceType }) {
   }
 }
 
+function hashPhase(key: string): number {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0;
+  return ((h >>> 0) % 1000) / 1000;
+}
+
 function AgentNode({
   agent,
   selected,
@@ -88,7 +94,7 @@ function AgentNode({
   const groupRef = useRef<THREE.Group>(null);
   const selectAgent = useTopologyStore((s) => s.selectAgent);
   const hovering = useRef(false);
-  const phase = useMemo(() => Math.random() * Math.PI * 2, []);
+  const phase = useMemo(() => hashPhase(agent.id) * Math.PI * 2, [agent.id]);
 
   useFrame((state, delta) => {
     if (groupRef.current) {
@@ -239,12 +245,6 @@ function IncidentNode({
 }
 
 
-
-function hashPhase(key: string): number {
-  let h = 0;
-  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0;
-  return ((h >>> 0) % 1000) / 1000;
-}
 
 function AssignmentEdge({ edge, speed }: { edge: TopologyEdge; speed: number }) {
   const lineRef = useRef<THREE.Mesh>(null);

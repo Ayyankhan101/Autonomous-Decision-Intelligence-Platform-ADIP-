@@ -35,6 +35,10 @@ const LEVEL_COLOR: Record<string, string> = {
   error: 'text-rose-400',
 };
 
+function nowIsoTs(): string {
+  return new Date().toISOString().slice(11, 19);
+}
+
 function Pane({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div
@@ -224,8 +228,8 @@ function TelemetryPanel() {
         break_glass: preview.requires_break_glass,
       });
       pushLog({
-        key: `local:ov:${agent.lastDecisionId}:${Date.now()}`,
-        ts: new Date().toISOString().slice(11, 19),
+        key: `local:ov:${agent.lastDecisionId}`,
+        ts: nowIsoTs(),
         level: 'warn',
         text: `OVERRIDE applied · ${agent.lastDecisionId} · operator topology-hud · tier ${preview.tier}`,
       });
@@ -368,7 +372,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
       await fn();
       pushLog({
         key: `local:qa:${Date.now()}`,
-        ts: new Date().toISOString().slice(11, 19),
+        ts: nowIsoTs(),
         level: 'ok',
         text: `${label} applied`,
       });
@@ -377,7 +381,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
       const msg = e instanceof Error ? e.message : String(e);
       pushLog({
         key: `local:qa-err:${Date.now()}`,
-        ts: new Date().toISOString().slice(11, 19),
+        ts: nowIsoTs(),
         level: 'error',
         text: `${label} failed — ${msg}`,
       });
@@ -392,7 +396,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
       if (res.incident_id) flashAnomaly(res.incident_id);
       pushLog({
         key: `local:inj:${Date.now()}`,
-        ts: new Date().toISOString().slice(11, 19),
+        ts: nowIsoTs(),
         level: 'error',
         text: `malicious anomaly injected · adversarial_notes · ${res.incident_id ?? 'pending incident'} · ${res.decision_ids.length} decision(s) queued`,
       });
@@ -402,7 +406,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
       setInjectError(msg);
       pushLog({
         key: `local:inj-err:${Date.now()}`,
-        ts: new Date().toISOString().slice(11, 19),
+        ts: nowIsoTs(),
         level: 'error',
         text: `anomaly injection rejected — ${msg}`,
       });
