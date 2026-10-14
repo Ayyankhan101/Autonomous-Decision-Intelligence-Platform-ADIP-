@@ -35,7 +35,7 @@ function BloomRig() {
     const c = new EffectComposer(gl);
     c.addPass(new RenderPass(scene, camera));
     const bloom = new UnrealBloomPass(
-      new THREE.Vector2(1, 1),
+      new THREE.Vector2(64, 64),
       0.85,
       0.45,
       0.18,
