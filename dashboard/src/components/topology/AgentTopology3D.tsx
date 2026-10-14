@@ -78,23 +78,20 @@ export function AgentTopology3D({ snapshot, onRefresh, selectedIncidentId, onSel
         id="topology-viewport"
         className="relative w-full h-[calc(100vh-11rem)] min-h-[420px] overflow-hidden rounded-lg border border-slate-900"
       >
-        {empty ? (
-          <AwaitingTelemetry />
-        ) : (
-          <Canvas
-            camera={{ position: [0, 16, 19], fov: 50 }}
-            dpr={TOPOLOGY_DPR[quality] ?? TOPOLOGY_DPR.high}
-            gl={{ antialias: true, powerPreference: 'high-performance' }}
-            onPointerMissed={() => {
-              selectAgent(null);
-              document.body.style.cursor = 'auto';
-            }}
-          >
-            <Suspense fallback={null}>
-              <TopologyScene />
-            </Suspense>
-          </Canvas>
-        )}
+        {empty && <AwaitingTelemetry />}
+        <Canvas
+          camera={{ position: [0, 16, 19], fov: 50 }}
+          dpr={TOPOLOGY_DPR[quality] ?? TOPOLOGY_DPR.high}
+          gl={{ antialias: true, powerPreference: 'high-performance' }}
+          onPointerMissed={() => {
+            selectAgent(null);
+            document.body.style.cursor = 'auto';
+          }}
+        >
+          <Suspense fallback={null}>
+            {!empty && <TopologyScene />}
+          </Suspense>
+        </Canvas>
         {!empty && <Hud onRefresh={onRefresh} selectedIncidentId={selectedIncidentId} onSelectIncident={onSelectIncident} />}
         <div className="pointer-events-none absolute inset-0 z-30 scanlines" />
       </div>

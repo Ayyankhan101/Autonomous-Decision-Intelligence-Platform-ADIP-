@@ -374,8 +374,8 @@ export function TopologyScene() {
         fadeStrength={0.5}
         cellSize={10}
         sectionSize={120}
-        uniform-grid-color="#22d3ee"
-        uniform-grid-color-dim="#0d1321"
+        cellColor="#22d3ee"
+        sectionColor="#0d1321"
       />
       <ZoneFloor />
 
