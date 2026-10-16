@@ -1,6 +1,6 @@
 import { Component, Suspense, useEffect, type ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { TopologyScene } from './Scene';
+import { TopologyScene, TOPOLOGY_DPR } from './Scene';
 import { Hud } from './Hud';
 import { useTopologyStore } from '../../stores/topologyStore';
 import type { TopologyDashboardSnapshot } from '../../stores/topologyStore';
@@ -46,47 +46,53 @@ function AwaitingTelemetry() {
   );
 }
 
-export function AgentTopology3D({ snapshot, onRefresh }: {
+export function AgentTopology3D({ snapshot, onRefresh, selectedIncidentId, onSelectIncident }: {
   snapshot: TopologyDashboardSnapshot;
   onRefresh: () => void;
+  selectedIncidentId: string | null;
+  onSelectIncident: (id: string | null) => void;
 }) {
   const setFromDashboard = useTopologyStore((s) => s.setFromDashboard);
-  const jitterLoads = useTopologyStore((s) => s.jitterLoads);
-  const simSpeed = useTopologyStore((s) => s.simSpeed);
-  const visualPaused = useTopologyStore((s) => s.visualPaused);
   const agents = useTopologyStore((s) => s.agents);
   const selectAgent = useTopologyStore((s) => s.selectAgent);
+  const quality = useTopologyStore((s) => s.quality);
+  const setReducedMotion = useTopologyStore((s) => s.setReducedMotion);
 
   useEffect(() => {
     setFromDashboard(snapshot);
   }, [snapshot, setFromDashboard]);
 
   useEffect(() => {
-    if (visualPaused) return;
-    const interval = window.setInterval(jitterLoads, Math.max(400, 1600 / simSpeed));
-    return () => window.clearInterval(interval);
-  }, [jitterLoads, simSpeed, visualPaused]);
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [setReducedMotion]);
 
   const empty = agents.length === 0;
 
   return (
     <TopologyErrorBoundary>
-      <div className="relative w-full h-[calc(100vh-11rem)] min-h-[420px] overflow-hidden rounded-lg border border-slate-900">
-        {empty ? (
-          <AwaitingTelemetry />
-        ) : (
-          <Canvas
-            camera={{ position: [0, 16, 19], fov: 50 }}
-            dpr={[1, 1.75]}
-            gl={{ antialias: true, powerPreference: 'high-performance' }}
-            onPointerMissed={() => selectAgent(null)}
-          >
-            <Suspense fallback={null}>
-              <TopologyScene />
-            </Suspense>
-          </Canvas>
-        )}
-        {!empty && <Hud onRefresh={onRefresh} />}
+      <div
+        id="topology-viewport"
+        className="relative w-full h-[calc(100vh-11rem)] min-h-[420px] overflow-hidden rounded-lg border border-slate-900"
+      >
+        {empty && <AwaitingTelemetry />}
+        <Canvas
+          camera={{ position: [0, 16, 19], fov: 50 }}
+          dpr={TOPOLOGY_DPR[quality] ?? TOPOLOGY_DPR.high}
+          gl={{ antialias: true, powerPreference: 'high-performance' }}
+          onPointerMissed={() => {
+            selectAgent(null);
+            document.body.style.cursor = 'auto';
+          }}
+        >
+          <Suspense fallback={null}>
+            {!empty && <TopologyScene />}
+          </Suspense>
+        </Canvas>
+        {!empty && <Hud onRefresh={onRefresh} selectedIncidentId={selectedIncidentId} onSelectIncident={onSelectIncident} />}
         <div className="pointer-events-none absolute inset-0 z-30 scanlines" />
       </div>
     </TopologyErrorBoundary>

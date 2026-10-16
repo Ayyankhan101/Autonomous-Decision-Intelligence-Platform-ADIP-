@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState } from 'react';
+import { Suspense, lazy, useState, useMemo } from 'react';
 import { useDashboardData } from './hooks/useDashboardData';
 import { Header } from './components/Header';
 import { KpiStrip } from './components/KpiStrip';
@@ -45,6 +45,19 @@ export function App() {
     'command' | 'whatif' | 'audit' | 'topology'
   >('command');
   const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
+  const [playPauseError, setPlayPauseError] = useState<string | null>(null);
+
+  // Close override modal when selected decision disappears (e.g. after reset)
+  // Derived during render instead of effect to avoid cascading renders
+  if (!selectedDecision && isOverrideModalOpen) {
+    setIsOverrideModalOpen(false);
+  }
+
+  // Memoize snapshot so AgentTopology3D effect doesn't re-fire every poll
+  const snapshot = useMemo(
+    () => ({ state, incidents, decisions, resources, auditEntries }),
+    [state, incidents, decisions, resources, auditEntries],
+  );
 
   const contentionCount = new Set(
     decisions.filter((d) => d.state === 'CONTENTION_ESCALATION').map((d) => d.incident_id),
@@ -58,6 +71,7 @@ export function App() {
 
   const handleTogglePlayPause = async () => {
     if (!state) return;
+    setPlayPauseError(null);
     try {
       if (state.running) {
         await api.pauseSimulation();
@@ -65,8 +79,8 @@ export function App() {
         await api.resumeSimulation();
       }
       refresh();
-    } catch {
-      // handled by hook on next tick
+    } catch (err) {
+      setPlayPauseError(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -90,11 +104,21 @@ export function App() {
           <div className="flex items-center gap-2">
             <WifiOff className="w-4 h-4 text-red-400 animate-pulse" />
             <span>
-              <strong>BACKEND UNREACHABLE:</strong> Failed to connect to JevCity API at{' '}
-              <code>http://localhost:8200</code>. Ensure the backend server is running.
+              <strong>BACKEND UNREACHABLE:</strong> Failed to connect to JevCity API.
+              Ensure the backend server is running.
             </span>
           </div>
           {lastError && <span className="text-[10px] text-red-400">({lastError})</span>}
+        </div>
+      )}
+
+      {/* Play/pause error feedback */}
+      {playPauseError && (
+        <div className="bg-amber-950/80 border-b border-amber-500/50 px-4 py-1.5 text-xs font-mono text-amber-200 flex items-center gap-2">
+          <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+          <span>
+            <strong>SIM CONTROL:</strong> {playPauseError}
+          </span>
         </div>
       )}
 
@@ -214,8 +238,10 @@ export function App() {
             }
           >
             <AgentTopology3D
-              snapshot={{ state, incidents, decisions, resources, auditEntries }}
+              snapshot={snapshot}
               onRefresh={refresh}
+              selectedIncidentId={selectedIncidentId}
+              onSelectIncident={(id) => setSelectedIncidentId(id)}
             />
           </Suspense>
         )}

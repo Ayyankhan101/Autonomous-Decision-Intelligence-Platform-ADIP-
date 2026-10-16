@@ -13,22 +13,21 @@ const CHAIN_LEN = 8;
 
 export const AuditChain: React.FC<AuditChainProps> = ({ entries, newIds }) => {
   const [verify, setVerify] = useState<AuditVerifyResponse | null>(null);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  // API returns newest first; show the most recent CHAIN_LEN
-  const window = entries.slice(0, CHAIN_LEN);
+  // API returns newest first; reverse so chain draws genesis → head top-to-bottom
+  const window = entries.slice(0, CHAIN_LEN).reverse();
 
   const handleVerify = async () => {
     setIsVerifying(true);
+    setVerifyError(null);
     try {
       const res = await api.auditVerify();
       setVerify(res);
-    } catch {
-      setVerify({
-        ok: false,
-        entry_count: -1,
-        broken_at: null,
-      });
+    } catch (e) {
+      setVerify(null);
+      setVerifyError(e instanceof Error ? e.message : 'verify failed');
     } finally {
       setIsVerifying(false);
     }
@@ -57,6 +56,13 @@ export const AuditChain: React.FC<AuditChainProps> = ({ entries, newIds }) => {
         </button>
       </div>
 
+      {verifyError && (
+        <div className="mb-3 p-2.5 rounded-lg border text-xs font-mono flex items-center gap-2 bg-red-950/80 text-red-200 border-red-500/60">
+          <ShieldX className="w-4 h-4 text-red-400 shrink-0" />
+          <span>VERIFY FAILED — {verifyError}</span>
+        </div>
+      )}
+
       {verify && (
         <div
           className={`mb-3 p-2.5 rounded-lg border text-xs font-mono flex items-center gap-2 ${
@@ -73,9 +79,7 @@ export const AuditChain: React.FC<AuditChainProps> = ({ entries, newIds }) => {
           <span>
             {verify.ok
               ? `CHAIN INTACT — ${verify.entry_count} entries rehashed, genesis → head verified`
-              : verify.entry_count < 0
-                ? 'VERIFY FAILED — backend unreachable'
-                : `CHAIN BROKEN at entry #${verify.broken_at} of ${verify.entry_count}`}
+              : `CHAIN BROKEN at entry #${verify.broken_at} of ${verify.entry_count}`}
           </span>
         </div>
       )}

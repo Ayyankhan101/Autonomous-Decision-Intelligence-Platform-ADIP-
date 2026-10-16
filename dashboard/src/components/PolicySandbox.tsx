@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Scale, Leaf, Timer, RefreshCw } from 'lucide-react';
 import { api } from '../services/api';
 import type { PolicyPosition } from '../types/api';
@@ -64,14 +64,20 @@ export const PolicySandbox: React.FC<PolicySandboxProps> = ({
   const [reoptimise, setReoptimise] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, []);
 
   const target = pending ?? position;
   const activeDef = POSITIONS.find((p) => p.key === target) ?? POSITIONS[0];
   const weights = objectiveWeights ?? activeDef.weights;
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setMessage({ text, type });
-    setTimeout(() => setMessage(null), 5000);
+    toastTimerRef.current = setTimeout(() => setMessage(null), 5000);
   };
 
   const handleApply = async () => {

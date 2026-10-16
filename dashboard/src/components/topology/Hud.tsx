@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Activity,
   Cpu,
   Gauge,
+  Maximize2,
+  Minimize2,
   ScrollText,
   OctagonPause,
   Play,
@@ -35,6 +37,10 @@ const LEVEL_COLOR: Record<string, string> = {
   error: 'text-rose-400',
 };
 
+function nowIsoTs(): string {
+  return new Date().toISOString().slice(11, 19);
+}
+
 function Pane({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div
@@ -52,6 +58,25 @@ function HudHeader() {
   const feedMode = useTopologyStore((s) => s.feedMode);
   const simulatedTime = useTopologyStore((s) => s.simulatedTime);
   const running = useTopologyStore((s) => s.running);
+  const quality = useTopologyStore((s) => s.quality);
+  const qualityAuto = useTopologyStore((s) => s.qualityAuto);
+  const setQuality = useTopologyStore((s) => s.setQuality);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(document.fullscreenElement != null);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    const el = document.getElementById('topology-viewport');
+    if (!document.fullscreenElement) {
+      el?.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
 
   const clock = simulatedTime
     ? `${simulatedTime.slice(11, 19)}${feedMode === 'live' ? ' PKT' : ''}`
@@ -88,13 +113,46 @@ function HudHeader() {
       </Pane>
 
       <Pane className="absolute top-3 right-3 px-4 py-2.5 z-10 text-right">
-        <div className="text-sm font-mono text-cyan-300 tabular-nums tracking-wider">{clock}</div>
+        <div className="flex items-center justify-end gap-2">
+          <div className="text-sm font-mono text-cyan-300 tabular-nums tracking-wider">{clock}</div>
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen topology'}
+            className="p-1 rounded border border-slate-700 text-slate-400 hover:text-cyan-300 hover:border-cyan-500/50"
+          >
+            {isFullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
+          </button>
+        </div>
         <div className="mt-1 text-[10px] font-mono text-slate-400 space-y-0.5">
           <div className="flex items-center justify-end gap-1.5">
             <Activity className="w-3 h-3" /> {fps} FPS
           </div>
           <div className="flex items-center justify-end gap-1.5">
-            <Gauge className="w-3 h-3" /> {computeLoad}% load
+            <Gauge className="w-3 h-3" /> {computeLoad}% UTILISATION (est.)
+          </div>
+          <div className="flex items-center justify-end gap-1.5">
+            <span className="text-slate-500">GFX</span>
+            {(['high', 'medium', 'low'] as const).map((q) => (
+              <button
+                key={q}
+                type="button"
+                onClick={() => setQuality(q)}
+                className={`px-1 py-px rounded text-[8px] font-mono border ${
+                  quality === q
+                    ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-300'
+                    : 'border-slate-700 text-slate-500 hover:text-slate-300'
+                }`}
+                title={`Render quality: ${q}`}
+              >
+                {q === 'high' ? 'HI' : q === 'medium' ? 'MD' : 'LO'}
+              </button>
+            ))}
+            {qualityAuto && (
+              <span className="text-[8px] text-emerald-400/80" title="Auto-downgrade active">
+                AUTO
+              </span>
+            )}
           </div>
           <div className="flex items-center justify-end gap-1.5 text-[9px] text-slate-500">
             <Cpu className="w-3 h-3" /> agent telemetry (derived)
@@ -224,8 +282,8 @@ function TelemetryPanel() {
         break_glass: preview.requires_break_glass,
       });
       pushLog({
-        key: `local:ov:${agent.lastDecisionId}:${Date.now()}`,
-        ts: new Date().toISOString().slice(11, 19),
+        key: `local:ov:${agent.lastDecisionId}`,
+        ts: nowIsoTs(),
         level: 'warn',
         text: `OVERRIDE applied · ${agent.lastDecisionId} · operator topology-hud · tier ${preview.tier}`,
       });
@@ -264,10 +322,6 @@ function TelemetryPanel() {
         </div>
         <div className="text-slate-400">
           Task: <span className="text-slate-200">{agent.currentTask ?? '—'}</span>
-        </div>
-        <div className="text-slate-400">
-          Load: <span className="text-cyan-300">{Math.round(agent.processingLoad)}%</span>
-          <span className="ml-2 text-slate-600">(derived from status)</span>
         </div>
         <div className="text-slate-400">
           Confidence:{' '}
@@ -361,6 +415,30 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
   const [injecting, setInjecting] = useState(false);
   const [injectError, setInjectError] = useState<string | null>(null);
 
+  const handleQuickAction = async (
+    fn: () => Promise<unknown>,
+    label: string,
+  ) => {
+    try {
+      await fn();
+      pushLog({
+        key: `local:qa:${Date.now()}`,
+        ts: nowIsoTs(),
+        level: 'ok',
+        text: `${label} applied`,
+      });
+      onRefresh();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      pushLog({
+        key: `local:qa-err:${Date.now()}`,
+        ts: nowIsoTs(),
+        level: 'error',
+        text: `${label} failed — ${msg}`,
+      });
+    }
+  };
+
   const handleInject = async () => {
     setInjecting(true);
     setInjectError(null);
@@ -369,7 +447,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
       if (res.incident_id) flashAnomaly(res.incident_id);
       pushLog({
         key: `local:inj:${Date.now()}`,
-        ts: new Date().toISOString().slice(11, 19),
+        ts: nowIsoTs(),
         level: 'error',
         text: `malicious anomaly injected · adversarial_notes · ${res.incident_id ?? 'pending incident'} · ${res.decision_ids.length} decision(s) queued`,
       });
@@ -379,7 +457,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
       setInjectError(msg);
       pushLog({
         key: `local:inj-err:${Date.now()}`,
-        ts: new Date().toISOString().slice(11, 19),
+        ts: nowIsoTs(),
         level: 'error',
         text: `anomaly injection rejected — ${msg}`,
       });
@@ -447,6 +525,126 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
         <div className="text-[8px] text-slate-600 font-mono -mt-0.5">
           visual sim only — backend control in Command tab
         </div>
+        <div className="flex gap-1 pt-1">
+          <button
+            type="button"
+            onClick={() => handleQuickAction(() => api.injectBadData({ mode: 'missing_fields' }), 'inject missing_fields')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Inject missing fields"
+          >
+            mf
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickAction(() => api.injectBadData({ mode: 'out_of_range' }), 'inject out_of_range')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Inject out-of-range data"
+          >
+            or
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickAction(() => api.injectBadData({ mode: 'conflicting_reports' }), 'inject conflicting_reports')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Inject conflicting reports"
+          >
+            cr
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickAction(() => api.injectSecondEmergency(), 'inject second emergency')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Inject second emergency"
+          >
+            se
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickAction(() => api.injectSybil(), 'inject sybil flood')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Inject Sybil flood"
+          >
+            sy
+          </button>
+        </div>
+        <div className="flex gap-1 pt-1">
+          <button
+            type="button"
+            onClick={() => handleQuickAction(() => api.policyPosition('RESPONSE_TIME'), 'policy → RESPONSE_TIME')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Policy: Response Time"
+          >
+            RESPONSE_TIME
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickAction(() => api.policyPosition('EQUITY'), 'policy → EQUITY')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Policy: Equity"
+          >
+            EQUITY
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickAction(() => api.policyPosition('ECO'), 'policy → ECO')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Policy: Eco"
+          >
+            ECO
+          </button>
+        </div>
+        <div className="flex gap-1 pt-1">
+          <button
+            type="button"
+            onClick={() => handleQuickAction(() => api.setLayaMode('mock'), 'laya mode → mock')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Laya mode: mock"
+          >
+            mock
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickAction(() => api.setLayaMode('cache'), 'laya mode → cache')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Laya mode: cache"
+          >
+            cache
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickAction(() => api.setLayaMode('live'), 'laya mode → live')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Laya mode: live"
+          >
+            live
+          </button>
+        </div>
+        <div className="flex gap-1 pt-1">
+          <button
+            type="button"
+            onClick={() => handleQuickAction(() => api.setVisionMode('mock'), 'vision mode → mock')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Vision mode: mock"
+          >
+            mock
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickAction(() => api.setVisionMode('cache'), 'vision mode → cache')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Vision mode: cache"
+          >
+            cache
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickAction(() => api.setVisionMode('live'), 'vision mode → live')}
+            className="px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 text-slate-400"
+            title="Vision mode: live"
+          >
+            live
+          </button>
+        </div>
         <button
           type="button"
           onClick={handleInject}
@@ -464,7 +662,7 @@ function BottomTicker({ onRefresh }: { onRefresh: () => void }) {
   );
 }
 
-export function Hud({ onRefresh }: { onRefresh: () => void }) {
+export function Hud({ onRefresh }: { onRefresh: () => void; selectedIncidentId: string | null; onSelectIncident: (id: string | null) => void }) {
   return (
     <>
       <HudHeader />

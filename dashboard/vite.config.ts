@@ -17,4 +17,26 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: 'vendor-react',
+              test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+            },
+            {
+              name: 'vendor-three',
+              test: /node_modules[\\/](three|@react-three|three-stdlib|maath|camera-controls|suspend-react|its-fine|zustand)[\\/]/,
+            },
+            {
+              name: 'vendor-leaflet',
+              test: /node_modules[\\/](leaflet|react-leaflet)[\\/]/,
+            },
+          ],
+        },
+      },
+    },
+  },
 })

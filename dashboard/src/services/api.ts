@@ -36,6 +36,7 @@ const API_BASE = '/api';
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     ...options,
+    signal: options?.signal ?? AbortSignal.timeout(10_000),
     headers: {
       'Content-Type': 'application/json',
       ...options?.headers,
@@ -50,10 +51,10 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
       // ignore json parse error
     }
     if (res.status >= 500) {
-      throw new Error(`[${res.status}] AUDIT WRITE FAILED or server error: ${detail}`);
+      throw new Error(`[${res.status}] server error: ${detail}`);
     }
     if (res.status === 404) {
-      throw new Error(`[404] SANDBOX EXPIRED or resource not found: ${detail}`);
+      throw new Error(`[404] not found: ${detail}`);
     }
     throw new Error(`[${res.status}] ${detail}`);
   }

@@ -90,7 +90,7 @@ export const KpiStrip: React.FC<KpiStripProps> = ({
 }) => {
   const open = state?.open_incident_count ?? incidents.length;
   const total = resources.length || 1;
-  const busy = resources.filter((r) => r.status !== 'available').length;
+  const busy = resources.filter((r) => r.status === 'assigned' || r.status === 'busy').length;
   const utilPct = Math.round((busy / total) * 100);
   const latencies = latencySeries.map((p) => p.v);
   const lastLatency = latencies.length > 0 ? latencies[latencies.length - 1] : null;

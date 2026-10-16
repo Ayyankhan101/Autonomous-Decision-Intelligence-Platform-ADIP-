@@ -44,6 +44,7 @@ export type LogLevel = 'info' | 'ok' | 'warn' | 'error';
 export interface LogLine {
   key: string;
   ts: string;
+  sortKey?: number;
   level: LogLevel;
   text: string;
 }

@@ -179,6 +179,7 @@ export interface Resource {
   assigned_incident_id?: string | null;
   lat?: number | null;
   lon?: number | null;
+  eco_score?: number | null;
 }
 
 export interface IncidentRecord {
@@ -248,24 +249,24 @@ export interface VisionAttachResponse {
   vision: VisionAttachment;
 }
 
+export type ModelStatus = 'ok' | 'error' | 'timeout' | 'invalid_input';
+
 export interface ModelOutput {
+  status: ModelStatus;
+  model_name: string;
   model_version: string;
-  status: 'ok' | 'error' | 'timeout';
-  prediction: unknown;
-  confidence: number;
-  latency_ms: number;
+  prediction?: string | null;
+  confidence?: number | null;
   error_code?: string | null;
+  latency_ms: number;
+  explanation_factors: string[];
 }
 
 export interface AnomalyOutput {
+  data_quality_anomaly: boolean;
   data_quality_score: number;
-  data_quality_reasons: string[];
   situational_anomaly: boolean;
-  situational_reasons: string[];
-  hard_rejected: boolean;
-  status: string;
-  latency_ms: number;
-  model_version: string;
+  reasons: string[];
 }
 
 export interface SeveritySignal {

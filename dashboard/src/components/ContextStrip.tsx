@@ -55,9 +55,9 @@ export const ContextStrip: React.FC<ContextStripProps> = ({ feeds }) => {
           title={gdacs.detail || undefined}
         >
           {gdacs.ok ? (
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+            <Info className="w-3.5 h-3.5 text-cyan-400" />
           ) : (
-            <Info className="w-3.5 h-3.5 text-amber-500" />
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
           )}
           <span className="uppercase tracking-wider">GDACS</span>
           {gdacs.ok ? (

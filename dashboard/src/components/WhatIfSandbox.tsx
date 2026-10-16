@@ -47,8 +47,9 @@ export const WhatIfSandbox: React.FC<WhatIfSandboxProps> = ({ latestDecision }) 
       setVerifyState('ok');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setVerifyState(msg.includes('[404]') ? 'expired' : 'error');
-      if (!msg.includes('[404]')) setErrorMsg(msg);
+      const isNotFound = /\[404\]/.test(msg);
+      setVerifyState(isNotFound ? 'expired' : 'error');
+      if (!isNotFound) setErrorMsg(msg);
     }
   };
 

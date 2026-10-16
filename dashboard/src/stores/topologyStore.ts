@@ -68,17 +68,19 @@ function incidentPosition(i: IncidentRecord): [number, number, number] {
   return [x, 0.08, z];
 }
 
-const LEVEL_BY_STATE: Record<string, LogLevel> = {
-  ACCEPTED: 'ok',
-  AUTO_ACCEPTED: 'ok',
-  PENDING_OVERRIDE: 'warn',
-  OVERRIDE_ACCEPTED: 'warn',
-  CONTENTION_ESCALATION: 'error',
-  REJECTED_INPUT: 'error',
-};
+
 
 function levelFromOverride(d: DecisionRecord): LogLevel {
-  return d.override ? 'warn' : (LEVEL_BY_STATE[d.state] ?? 'info');
+  if (d.override) return 'warn';
+  switch (d.state) {
+    case 'AUTO_APPROVED': return 'ok';
+    case 'HOLD_FOR_HUMAN': return 'warn';
+    case 'REJECTED_INPUT': return 'error';
+    case 'CONTENTION_ESCALATION': return 'error';
+    case 'OVERRIDE_ACTIVE': return 'warn';
+    case 'MODEL_DEGRADED': return 'warn';
+    default: return 'info';
+  }
 }
 
 function fmtTime(iso: string): string {
@@ -95,6 +97,8 @@ export interface TopologyDashboardSnapshot {
   auditEntries: AuditEntry[];
 }
 
+export type RenderQuality = 'high' | 'medium' | 'low';
+
 interface TopologyState {
   agents: TopologyAgent[];
   incidents: TopologyIncident[];
@@ -110,12 +114,16 @@ interface TopologyState {
   feedMode: string;
   simulatedTime: string;
   running: boolean;
+  quality: RenderQuality;
+  qualityAuto: boolean;
+  reducedMotion: boolean;
   setFromDashboard: (snap: TopologyDashboardSnapshot) => void;
   selectAgent: (id: string | null) => void;
   setSimSpeed: (s: number) => void;
   setVisualPaused: (p: boolean) => void;
   setFps: (f: number) => void;
-  jitterLoads: () => void;
+  setQuality: (q: RenderQuality) => void;
+  setReducedMotion: (b: boolean) => void;
   flashAnomaly: (incidentId: string) => void;
   pushLog: (line: LogLine) => void;
 }
@@ -137,6 +145,9 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
   feedMode: 'mock',
   simulatedTime: '',
   running: false,
+  quality: 'high',
+  qualityAuto: true,
+  reducedMotion: false,
 
   setFromDashboard: ({ state, incidents, decisions, resources, auditEntries }) => {
     const openIncidents = incidents.filter((i) => i.lifecycle !== 'resolved');
@@ -198,8 +209,21 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
     });
 
     const incidentById = new Map(tIncidents.map((i) => [i.id, i]));
-    const edges: TopologyEdge[] = [];
+
+    // Only keep the latest decision per incident to avoid stale duplicate edges
+    const latestDecisionByIncident = new Map<string, DecisionRecord>();
     for (const d of decisions) {
+      const existing = latestDecisionByIncident.get(d.incident_id);
+      if (
+        !existing ||
+        d.decision_time_simulated > existing.decision_time_simulated
+      ) {
+        latestDecisionByIncident.set(d.incident_id, d);
+      }
+    }
+
+    const edges: TopologyEdge[] = [];
+    for (const d of latestDecisionByIncident.values()) {
       const inc = incidentById.get(d.incident_id);
       if (!inc) continue;
       for (const rid of d.assigned_resource_ids) {
@@ -218,20 +242,23 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
     const decisionLogs: LogLine[] = decisions.slice(-30).map((d) => ({
       key: `d:${d.decision_id}`,
       ts: fmtTime(d.decision_time_simulated),
+      sortKey: new Date(d.decision_time_simulated).getTime(),
       level: levelFromOverride(d),
       text: `decision ${d.decision_id} · ${d.incident_id} · ${d.priority} · ${d.state}`,
     }));
 
-    const auditLogs: LogLine[] = auditEntries.slice(-15).map((a: AuditEntry) => ({
+    // Backend returns audit newest-first; take first 15 (most recent)
+    const auditLogs: LogLine[] = auditEntries.slice(0, 15).map((a: AuditEntry) => ({
       key: `a:${a.entry_id}`,
       ts: fmtTime(a.timestamp),
+      sortKey: new Date(a.timestamp).getTime(),
       level: a.action.includes('OVERRIDE') ? 'warn' : 'info',
       text: `audit ${a.action} · ${a.actor} · ${a.decision_id ?? a.entry_id}`,
     }));
 
     const localLogs = get().logs.filter((l) => l.key.startsWith('local:'));
     const merged = [...localLogs, ...decisionLogs, ...auditLogs]
-      .sort((x, y) => y.ts.localeCompare(x.ts))
+      .sort((x, y) => (y.sortKey ?? 0) - (x.sortKey ?? 0))
       .slice(0, MAX_LOGS);
 
     const loads = agents.map((a) => a.processingLoad);
@@ -256,21 +283,8 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
   setSimSpeed: (s) => set({ simSpeed: s }),
   setVisualPaused: (p) => set({ visualPaused: p }),
   setFps: (f) => set({ fps: f }),
-
-  jitterLoads: () => {
-    const { visualPaused, agents } = get();
-    if (visualPaused) return;
-    const next = agents.map((a) => {
-      if (a.status === 'offline') return a;
-      const jitter = (Math.random() - 0.5) * 10;
-      const load = Math.min(100, Math.max(0, baseLoad(a.status) + jitter));
-      return load === a.processingLoad ? a : { ...a, processingLoad: load };
-    });
-    const computeLoad = next.length
-      ? Math.round(next.reduce((s, a) => s + a.processingLoad, 0) / next.length)
-      : 0;
-    set({ agents: next, computeLoad });
-  },
+  setQuality: (q) => set({ quality: q, qualityAuto: false }),
+  setReducedMotion: (b) => set({ reducedMotion: b }),
 
   flashAnomaly: (incidentId) => {
     set({ anomalyFlashId: incidentId });
@@ -280,5 +294,7 @@ export const useTopologyStore = create<TopologyState>((set, get) => ({
   },
 
   pushLog: (line) =>
-    set((s) => ({ logs: [line, ...s.logs].slice(0, MAX_LOGS) })),
+    set((s) => ({
+      logs: [{ ...line, sortKey: line.sortKey ?? Date.now() }, ...s.logs].slice(0, MAX_LOGS),
+    })),
 }));
