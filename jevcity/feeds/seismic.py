@@ -6,7 +6,6 @@ magnitude and distance in notes. No invented earthquake type.
 """
 from __future__ import annotations
 
-import math
 from datetime import datetime, timezone
 
 from jevcity.schemas import (
@@ -20,22 +19,13 @@ from jevcity.schemas import (
     Zone,
 )
 
-from .base import FeedError
+from .base import FeedError, haversine_km
 
 URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson"
 
 BBOX = {"lat_min": 33.0, "lat_max": 35.5, "lon_min": 70.5, "lon_max": 72.5}
 MIN_MAGNITUDE = 4.0
 CENTER = (34.008, 71.578)
-
-
-def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    r = 6371.0
-    p1, p2 = math.radians(lat1), math.radians(lat2)
-    dp = p2 - p1
-    dl = math.radians(lon2 - lon1)
-    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
-    return 2 * r * math.asin(math.sqrt(a))
 
 
 def _zone_for(lat: float, lon: float) -> Zone:
@@ -48,7 +38,7 @@ def _zone_for(lat: float, lon: float) -> Zone:
         Zone.WEST: (34.015, 71.495),
         Zone.CENTRAL: (34.007, 71.575),
     }
-    return min(pts, key=lambda z: _haversine_km(lat, lon, *pts[z]))
+    return min(pts, key=lambda z: haversine_km(lat, lon, *pts[z]))
 
 
 class SeismicFeed:
@@ -86,7 +76,7 @@ class SeismicFeed:
         self, props: dict, lat: float, lon: float, mag: float
     ) -> EventEnvelope:
         now = datetime.now(timezone.utc)
-        dist_km = _haversine_km(CENTER[0], CENTER[1], lat, lon)
+        dist_km = haversine_km(CENTER[0], CENTER[1], lat, lon)
         place = props.get("place") or "unknown"
         when_ms = props.get("time")
         when = (

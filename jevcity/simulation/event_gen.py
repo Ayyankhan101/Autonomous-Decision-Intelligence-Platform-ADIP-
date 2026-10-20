@@ -21,7 +21,7 @@ _TRAFFIC = ["free_flow", "moderate", "high", "gridlock"]
 
 _SEVERITY_RANK = [SeverityHint.MINOR, SeverityHint.MODERATE, SeverityHint.SEVERE]
 
-# Zone centroids (mirror frontend peshawarZones.ts / config/peshawar_zones.json).
+# Zone centroids (mirror frontend peshawarZones.ts / resource_pool fleet zones).
 # Mock incidents jitter around these; live-mode feeds pass real lat/lon override.
 _ZONE_CENTROIDS: dict[Zone, tuple[float, float]] = {
     Zone.CENTRAL: (34.007, 71.575),

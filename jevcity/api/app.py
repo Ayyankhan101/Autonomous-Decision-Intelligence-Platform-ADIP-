@@ -231,7 +231,7 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
         engine.adapter = LayaAdapter(mode=engine.adapter.mode)
         engine.decisions.clear()
         engine.decision_history.clear()
-        engine.validation_by_event.clear()
+        engine.clear_validations()
         engine._processed = 0
         if records is None:
             return SimulationActionResponse()
@@ -261,7 +261,7 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
         engine.trust = TrustRegistry()
         engine.decisions.clear()
         engine.decision_history.clear()
-        engine.validation_by_event.clear()
+        engine.clear_validations()
         engine.audit_write_failed = False
         engine._processed = 0
         return SimulationActionResponse()

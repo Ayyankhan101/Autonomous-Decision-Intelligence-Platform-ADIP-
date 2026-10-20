@@ -27,7 +27,7 @@ _DEFAULT_FLEET: list[tuple[str, ResourceType, Zone, float]] = [
 ]
 
 # Peshawar live-mode fleet (workstream B1): 17 units at real station coords.
-# Callsigns mirror the config/peshawar_zones.json station ids.
+# Single source of truth for station ids + coords (per-station coords below).
 PESHAWAR_FLEET: list[tuple[str, ResourceType, Zone, float]] = [
     ("amb-hbt-01", ResourceType.AMBULANCE, Zone.SOUTH, 0.6),
     ("amb-cnt-01", ResourceType.AMBULANCE, Zone.CENTRAL, 0.6),
@@ -48,7 +48,7 @@ PESHAWAR_FLEET: list[tuple[str, ResourceType, Zone, float]] = [
     ("tmu-nsh-01", ResourceType.TRAFFIC_MANAGEMENT_UNIT, Zone.NORTH, 0.4),
 ]
 
-# resource_id → (lat, lon) from config/peshawar_zones.json (workstream B2).
+# resource_id → (lat, lon), real Peshawar station coords (workstream B2).
 _PESHAWAR_STATION_COORDS: dict[str, tuple[float, float]] = {
     "amb-hbt-01": (33.9895, 71.5700),
     "amb-cnt-01": (34.0070, 71.5760),

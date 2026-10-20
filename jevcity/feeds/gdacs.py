@@ -5,7 +5,6 @@ mapping as the USGS feed). Distance filter keeps only alerts near Peshawar.
 """
 from __future__ import annotations
 
-import math
 from datetime import datetime, timezone
 
 from jevcity.schemas import (
@@ -18,7 +17,7 @@ from jevcity.schemas import (
     Zone,
 )
 
-from .base import FeedError
+from .base import FeedError, haversine_km
 
 URL = (
     "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH"
@@ -26,15 +25,6 @@ URL = (
 )
 CENTER = (34.008, 71.578)
 MAX_DISTANCE_KM = 300.0
-
-
-def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    r = 6371.0
-    p1, p2 = math.radians(lat1), math.radians(lat2)
-    dp = p2 - p1
-    dl = math.radians(lon2 - lon1)
-    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
-    return 2 * r * math.asin(math.sqrt(a))
 
 
 class GdacsFeed:
@@ -59,7 +49,7 @@ class GdacsFeed:
             if len(coords) < 2:
                 continue
             lon, lat = float(coords[0]), float(coords[1])
-            dist = _haversine_km(CENTER[0], CENTER[1], lat, lon)
+            dist = haversine_km(CENTER[0], CENTER[1], lat, lon)
             if dist > MAX_DISTANCE_KM:
                 continue
             events.append(self._to_event(props, lat, lon, dist))
