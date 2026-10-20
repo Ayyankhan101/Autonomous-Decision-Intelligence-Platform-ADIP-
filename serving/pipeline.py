@@ -49,7 +49,7 @@ _PATTERNS = [
 ]
 
 
-def privacy_scan(state: dict, _cfg=None) -> dict:
+def privacy_scan(state: dict) -> dict:
     text = state["text"]
     redactions = []
     for name, pat in _PATTERNS:
@@ -71,7 +71,7 @@ def privacy_scan(state: dict, _cfg=None) -> dict:
 # Stage 2: fairness screen (Phase 0: non-ASCII route-evidence + null screen)
 # --------------------------------------------------------------------------
 
-def fairness_screen(state: dict, _cfg=None) -> dict:
+def fairness_screen(state: dict) -> dict:
     # Phase 0 screen: log language evidence (Router hook point, section 8.10);
     # counterfactual probes and group fairness land in Phase 1 (section 4.5).
     pr = state["privacy"]
@@ -100,7 +100,7 @@ def _get_agent():
     return _AGENT
 
 
-def typed_decision(state: dict, cfg: dict) -> dict:
+def typed_decision(state: dict) -> dict:
     agent = _get_agent()
     result = agent.predict(state["text_redacted"], QUESTIONS)
     a = result["answers"]
@@ -144,7 +144,7 @@ def typed_decision(state: dict, cfg: dict) -> dict:
 # --------------------------------------------------------------------------
 
 
-def policy_router(state: dict, cfg: dict) -> dict:
+def policy_router(state: dict) -> dict:
     d = state["decision"]
     reasons = []
     route = "AUTO"
@@ -169,7 +169,7 @@ def policy_router(state: dict, cfg: dict) -> dict:
 # Stage 5: explanation assembler (templates over distributions; no generation)
 # --------------------------------------------------------------------------
 
-def explanation(state: dict, cfg: dict) -> dict:
+def explanation(state: dict) -> dict:
     d = state["decision"]
     pol = state["policy"]
     parts = [
@@ -285,7 +285,7 @@ class DecisionService:
         t0 = time.perf_counter()
         for name, fn in STAGES:
             ts = time.perf_counter()
-            state = fn(state, {})
+            state = fn(state)
             stage_ms[name] = round((time.perf_counter() - ts) * 1000, 3)
         pipeline_ms = round((time.perf_counter() - t0) * 1000, 3)
 
@@ -363,10 +363,10 @@ def replay(decision_id: str, audit_path: str | Path = "serving/audit.db") -> dic
     state: dict = {"text": rec["text_redacted"], "decision_id": rec["decision_id"]}
     for name, fn in STAGES:
         if name in ("privacy",):  # redaction already applied on stored text
-            state = fn(state, {})
+            state = fn(state)
             state["text_redacted"] = state["text"]  # idempotent on clean text
             continue
-        state = fn(state, {})
+        state = fn(state)
     return {
         "matches": state["decision"] == json.loads(rec["decision_json"]),
         "route": rec["route"],

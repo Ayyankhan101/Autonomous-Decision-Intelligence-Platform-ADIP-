@@ -68,7 +68,7 @@ class AnomalyWrapper:
     def predict(self, *args: Any, **kwargs: Any) -> AnomalyOutput:
         try:
             return _timed_call(self.inner.predict, args, kwargs, self.timeout_s)
-        except (FuturesTimeout, Exception):
+        except Exception:  # includes FuturesTimeout (a TimeoutError subclass)
             return AnomalyOutput(
                 data_quality_anomaly=True,
                 data_quality_score=1.0,

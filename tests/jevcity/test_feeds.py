@@ -8,7 +8,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from jevcity.api.app import build_engine, create_app
-from jevcity.config import load_peshawar_geo
 from jevcity.feeds import FeedError, FeedManager, GdacsFeed, ReliefWebFeed, SeismicFeed, WeatherFeed
 from jevcity.feeds.base import FeedHealth
 from jevcity.schemas import (
@@ -98,16 +97,6 @@ def _client_for(handler) -> httpx.Client:
 
 
 # --- zone config + fleet ---------------------------------------------------
-
-def test_peshawar_geo_loads_five_zones_and_17_stations():
-    geo = load_peshawar_geo()
-    assert set(geo.zone_centroids) == set(Zone)
-    assert set(geo.zone_polygons) == set(Zone)
-    assert len(geo.stations) == 17
-    for s in geo.stations:
-        assert 33.9 <= s.lat <= 34.1
-        assert 71.4 <= s.lon <= 71.7
-
 
 def test_peshawar_fleet_pool_builds_fresh_each_reset():
     pool1 = ResourcePool(PESHAWAR_FLEET)

@@ -8,6 +8,7 @@ held open for a probe period so a dead upstream cannot spin the daemon.
 """
 from __future__ import annotations
 
+import math
 import random
 import threading
 import time
@@ -21,6 +22,16 @@ from jevcity.schemas import EventEnvelope, FeedStatus
 
 CIRCUIT_BREAKER_THRESHOLD = 3
 PROBE_INTERVAL_S = 300.0
+
+
+def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Great-circle distance in km, shared by the geo-filtering feeds."""
+    r = 6371.0
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp = p2 - p1
+    dl = math.radians(lon2 - lon1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * r * math.asin(math.sqrt(a))
 
 
 class FeedError(RuntimeError):

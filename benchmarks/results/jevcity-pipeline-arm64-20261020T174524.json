@@ -1,0 +1,47 @@
+{
+  "benchmark": "jevcity-event-pipeline",
+  "host": "macbook.local",
+  "timestamp": "2026-10-20T17:45:24.310760+00:00",
+  "python": "3.13.13",
+  "platform": "macOS-27.2-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "processor": "arm",
+  "laya_mode": "mock",
+  "events": 20,
+  "warmup": 3,
+  "budget": {
+    "name": "demo",
+    "p95_ms": 250.0,
+    "passed": true
+  },
+  "stats": {
+    "n": 20,
+    "min_ms": 5.811,
+    "p50_ms": 6.706,
+    "p95_ms": 7.521,
+    "mean_ms": 6.73,
+    "max_ms": 7.665
+  },
+  "samples_ms": [
+    7.369,
+    7.129,
+    6.773,
+    6.117,
+    5.892,
+    7.415,
+    6.636,
+    6.608,
+    6.151,
+    5.811,
+    6.031,
+    6.699,
+    7.665,
+    6.736,
+    6.713,
+    7.292,
+    7.151,
+    6.221,
+    6.688,
+    7.513
+  ]
+}

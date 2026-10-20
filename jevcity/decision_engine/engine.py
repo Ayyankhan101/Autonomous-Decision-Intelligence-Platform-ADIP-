@@ -74,6 +74,10 @@ class JevCityEngine:
         self._latest_by_incident: dict[str, DecisionRecord] = {}
         self._latest_cached_len = 0
         self.validation_by_event: dict[str, ValidationResult] = {}
+        # incident_id → validations, maintained alongside validation_by_event so
+        # _validation_for is O(1)-per-incident instead of scanning every event
+        # ever validated.
+        self._validation_by_incident: dict[str, list[ValidationResult]] = {}
         self.policy_position: PolicyPosition = PolicyPosition.RESPONSE_TIME
         self.audit_write_failed: bool = False
         self._processed = 0
@@ -123,16 +127,25 @@ class JevCityEngine:
         correlated reports re-evaluate the same incident once (latest state wins)."""
         pending = self.simulation.raw_events[self._processed:]
         self._processed = len(self.simulation.raw_events)
+        by_incident: dict[str, tuple[dict, ValidationResult]] = {}
         for raw in pending:
             validation = validate_raw(raw)
+            prev = self.validation_by_event.get(validation.event_id)
             self.validation_by_event[validation.event_id] = validation
-        by_incident: dict[str, dict] = {}
-        for raw in pending:
-            by_incident[str(raw.get("incident_id", "unknown"))] = raw
-        return [self._process_one(raw) for raw in by_incident.values()]
+            if prev is None:
+                self._validation_by_incident.setdefault(
+                    validation.incident_id, []
+                ).append(validation)
+            key = str(raw.get("incident_id", "unknown"))
+            by_incident[key] = (raw, validation)
+        return [
+            self._process_one(raw, validation)
+            for raw, validation in by_incident.values()
+        ]
 
-    def _process_one(self, raw: dict) -> DecisionRecord:
-        validation = validate_raw(raw)
+    def _process_one(
+        self, raw: dict, validation: ValidationResult
+    ) -> DecisionRecord:
         incident_id = str(raw.get("incident_id", "unknown"))
         incident = self.simulation.incidents.get(incident_id)
         if incident is None:
@@ -275,16 +288,21 @@ class JevCityEngine:
 
     # --- persistence ----------------------------------------------------
 
+    def _index(self, record: DecisionRecord) -> None:
+        """Register a record (live, override, replay-persisted) in the decision
+        registries and refresh the by-incident latest-decision cache."""
+        self.decisions[record.decision_id] = record
+        self.decision_history.append(record)
+        self._latest_by_incident[record.incident_id] = record
+        self._latest_cached_len = len(self.decision_history)
+
     def _persist(
         self,
         record: DecisionRecord,
         incident: IncidentRecord,
         validation: ValidationResult,
     ) -> DecisionRecord:
-        self.decisions[record.decision_id] = record
-        self.decision_history.append(record)
-        self._latest_by_incident[record.incident_id] = record
-        self._latest_cached_len = len(self.decision_history)
+        self._index(record)
         self._advance_lifecycle(incident, record)
         self._append_audit(record, incident, validation)
         return record
@@ -416,10 +434,7 @@ class JevCityEngine:
                 ),
             }
         )
-        self.decisions[override_record.decision_id] = override_record
-        self.decision_history.append(override_record)
-        self._latest_by_incident[override_record.incident_id] = override_record
-        self._latest_cached_len = len(self.decision_history)
+        self._index(override_record)
         incident = self.simulation.incidents[original.incident_id]
         self.audit.append(
             actor=req.operator_id,
@@ -657,12 +672,17 @@ class JevCityEngine:
 
     # --- helpers ---------------------------------------------------------
 
+    def clear_validations(self) -> None:
+        """Forget every stored validation (simulation reset/pause). Both views —
+        the public by-event map and the internal by-incident index — are cleared
+        together so they can never drift apart."""
+        self.validation_by_event.clear()
+        self._validation_by_incident.clear()
+
     def _validation_for(
         self, incident_id: str, reports: list[EventEnvelope]
     ) -> ValidationResult:
-        found = [
-            v for v in self.validation_by_event.values() if v.incident_id == incident_id
-        ]
+        found = self._validation_by_incident.get(incident_id)
         if found:
             for status in (
                 ValidationStatus.HARD_REJECTED,
