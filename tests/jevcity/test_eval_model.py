@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import math
 
 import pytest
 
@@ -25,4 +26,4 @@ def test_jevcity_eval_exit_mirrors_gates():
     )
     assert report["gates"] == {"accuracy": 0.70, "ece": 0.15}
     assert report["n"] >= 50
-    assert report["accuracy"] == report["accuracy"]
+    assert not math.isnan(report["accuracy"])  # a NaN metric must fail the eval
