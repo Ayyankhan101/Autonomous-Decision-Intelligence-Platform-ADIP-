@@ -12,6 +12,13 @@ from fastapi.testclient import TestClient
 
 from jevcity.api.app import build_engine, create_app
 
+@pytest.fixture(autouse=True)
+def _memory_audit(monkeypatch):
+    """Pin the audit store to :memory: so tests never share or write the
+    durable audit.db (build_engine now resolves JEVCITY_AUDIT_PATH env)."""
+    monkeypatch.setenv("JEVCITY_AUDIT_PATH", ":memory:")
+
+
 @pytest.fixture
 def engine():
     eng = build_engine()

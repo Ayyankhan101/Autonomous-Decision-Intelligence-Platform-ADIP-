@@ -73,13 +73,19 @@ from vision.store import ImageStore, decode_b64, sniff_mime
 def build_engine(
     *,
     mode: LayaMode = LayaMode.MOCK,
-    audit_path: str = ":memory:",
+    audit_path: str | Path | None = None,
     session_seed: int = 42,
     scenario_seed: int = 7,
     feed_mode: FeedMode | None = None,
 ) -> JevCityEngine:
     if feed_mode is None:
         feed_mode = FeedMode(os.environ.get("JEVCITY_FEED_MODE", "mock"))
+    if audit_path is None:
+        # Durable by default: the SHA-256 hash chain survives restarts, matching
+        # JevCityEngine's own default (engine.py: audit or AuditLog()). Env opt-in
+        # for a custom location; tests pin ":memory:" via the conftest autouse
+        # fixture so runs stay isolated and repo-clean.
+        audit_path = os.environ.get("JEVCITY_AUDIT_PATH", "jevcity/audit/audit.db")
     if feed_mode is FeedMode.LIVE:
         simulation = SimulationState(
             SeedConfig(session_seed, scenario_seed),

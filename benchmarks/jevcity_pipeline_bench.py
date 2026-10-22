@@ -68,7 +68,7 @@ def summarize(samples_ms: list[float]) -> dict:
 
 
 def run(events: int, warmup: int, laya: str) -> list[float]:
-    engine = build_engine(mode=LayaMode(laya))
+    engine = build_engine(mode=LayaMode(laya), audit_path=":memory:")
     samples: list[float] = []
 
     def one(i: int) -> None:
