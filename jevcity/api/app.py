@@ -5,12 +5,14 @@ Run: uvicorn jevcity.api.app:app --port 8200
 from __future__ import annotations
 
 import os
+import secrets
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from jevcity.audit.log import AuditLog
@@ -93,16 +95,44 @@ def build_engine(
     )
 
 
+def _authorized(request: Request) -> bool:
+    """Bearer check, same contract as serving/app.py: ADIP_API_TOKEN env var,
+    unset = open dev mode, set = constant-time compare. One secret for both
+    ADIP surfaces (serving :8100, JevCity :8200)."""
+    token = os.environ.get("ADIP_API_TOKEN", "")
+    if not token:
+        return True
+    scheme, _, value = request.headers.get("authorization", "").partition(" ")
+    if scheme.lower() != "bearer":
+        return False
+    return secrets.compare_digest(value, token)
+
+
 def create_app(engine: JevCityEngine | None = None) -> FastAPI:
     engine = engine or build_engine()
     app = FastAPI(title="JevCity Command Center API", version="0.1.0")
     app.add_middleware(
         CORSMiddleware,
+        # allow_credentials=False: auth is a bearer header, not cookies; "*"
+        # with credentials=True is invalid per fetch spec (browsers reject it)
         allow_origins=["*"],
-        allow_credentials=True,
+        allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.middleware("http")
+    async def auth_middleware(request: Request, call_next):
+        # only /api/* is guarded; the static dashboard mount at "/" and /docs
+        # stay loadable because a browser navigation cannot send a bearer header
+        if not request.url.path.startswith("/api") or _authorized(request):
+            return await call_next(request)
+        return JSONResponse(
+            {"detail": "missing or invalid bearer token"},
+            status_code=401,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     SANDBOX_STORE_MAX = 50
     sandbox_store: dict[str, WhatIfResult] = {}
     vision_analyzer = VisionAnalyzer(mode=VisionMode.MOCK)
