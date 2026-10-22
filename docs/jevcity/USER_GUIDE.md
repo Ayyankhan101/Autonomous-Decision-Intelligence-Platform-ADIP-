@@ -50,7 +50,7 @@ Mock mode (`JEVCITY_FEED_MODE=mock`, default) keeps the full deterministic seede
 
 ### Audit persistence
 
-The audit store is durable by default: `build_engine` writes a SQLite hash chain to `jevcity/audit/audit.db` (env override: `JEVCITY_AUDIT_PATH=/path/audit.db`; `:memory:` for throwaway runs). The SHA-256 chain survives restarts — reopen `AuditLog` on the same path and `/api/audit/verify` still reports ok, with entry numbering continuing where it left off. The DB file is gitignored (`.gitignore:15`); tests pin `:memory:` via an autouse conftest fixture so runs stay isolated.
+The audit store is durable by default: `build_engine` writes a SQLite hash chain to `jevcity/audit/audit.db` (repo-relative; env override: `JEVCITY_AUDIT_PATH=/path/audit.db`; `:memory:` for throwaway runs; gitignored via `jevcity/audit/*.db*`). The SHA-256 chain survives restarts — reopen `AuditLog` on the same path and `/api/audit/verify` still reports ok, with entry numbering continuing where it left off. The DB file is gitignored (`.gitignore:15`); tests pin `:memory:` via an autouse conftest fixture so runs stay isolated.
 
 ---
 

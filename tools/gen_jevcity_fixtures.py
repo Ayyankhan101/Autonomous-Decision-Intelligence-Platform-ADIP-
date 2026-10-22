@@ -76,7 +76,7 @@ def generate() -> list[dict]:
     rows: list[dict] = []
     try:
         for session_seed, scenario_seed in SESSIONS:
-            engine = build_engine()
+            engine = build_engine(audit_path=":memory:")
             engine.simulation.start(session_seed, scenario_seed)
             if session_seed >= SESSIONS[5][0]:
                 for resource in engine.simulation.pool.all():
