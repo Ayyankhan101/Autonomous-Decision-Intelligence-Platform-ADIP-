@@ -4,8 +4,11 @@ Run: uvicorn jevcity.api.app:app --port 8200
 """
 from __future__ import annotations
 
+import math
 import os
 import secrets
+import threading
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
@@ -114,6 +117,34 @@ def _authorized(request: Request) -> bool:
     return secrets.compare_digest(value, token)
 
 
+class _RateLimiter:
+    """In-process token bucket keyed by client host ('anonymous' when the
+    ASGI scope has no client). Runtime control state only: time.monotonic()
+    never touches stored metadata, so the image-metadata no-wall-clock rule
+    (vision/store.py) stays intact. Single-process — no shared state between
+    apps or workers."""
+
+    def __init__(self, per_minute: int) -> None:
+        self.rate = per_minute / 60.0
+        self.capacity = float(per_minute)
+        self._buckets: dict[str, tuple[float, float]] = {}
+        self._lock = threading.Lock()
+
+    def take(self, host: str) -> float:
+        """Consume one token for host. Returns 0.0 when allowed, else the
+        seconds until a token is available (for Retry-After)."""
+        with self._lock:
+            now = time.monotonic()
+            tokens, last = self._buckets.get(host, (self.capacity, now))
+            tokens = min(self.capacity, tokens + (now - last) * self.rate)
+            if tokens >= 1.0:
+                tokens -= 1.0
+                self._buckets[host] = (tokens, now)
+                return 0.0
+            self._buckets[host] = (tokens, now)
+            return (1.0 - tokens) / self.rate if self.rate else 1.0
+
+
 def create_app(engine: JevCityEngine | None = None) -> FastAPI:
     engine = engine or build_engine()
     app = FastAPI(title="JevCity Command Center API", version="0.1.0")
@@ -127,11 +158,33 @@ def create_app(engine: JevCityEngine | None = None) -> FastAPI:
         allow_headers=["*"],
     )
 
+    rate_per_min = int(os.environ.get("JEVCITY_RATE_LIMIT", "60"))
+    limiter = _RateLimiter(rate_per_min) if rate_per_min > 0 else None
+    # Declared-body cap: every standard JSON client sends Content-Length, so
+    # the guard can 413 before buffering anything. Chunked (no-length) bodies
+    # bypass this gate — documented residual risk; the /api/images payload
+    # itself is still capped inside decode_b64 (vision/store.py).
+    body_cap = int(os.environ.get("JEVCITY_MAX_BODY_BYTES", str(10 * 1024 * 1024)))
+
     @app.middleware("http")
-    async def auth_middleware(request: Request, call_next):
+    async def api_guard_middleware(request: Request, call_next):
         # only /api/* is guarded; the static dashboard mount at "/" and /docs
         # stay loadable because a browser navigation cannot send a bearer header
-        if not request.url.path.startswith("/api") or _authorized(request):
+        if not request.url.path.startswith("/api"):
+            return await call_next(request)
+        cl = request.headers.get("content-length", "")
+        if cl.isdigit() and int(cl) > body_cap:
+            return JSONResponse({"detail": "request body too large"}, status_code=413)
+        if limiter is not None:
+            host = request.client.host if request.client else "anonymous"
+            wait = limiter.take(host)
+            if wait > 0:
+                return JSONResponse(
+                    {"detail": "rate limit exceeded"},
+                    status_code=429,
+                    headers={"Retry-After": str(max(1, math.ceil(wait)))},
+                )
+        if _authorized(request):
             return await call_next(request)
         return JSONResponse(
             {"detail": "missing or invalid bearer token"},
