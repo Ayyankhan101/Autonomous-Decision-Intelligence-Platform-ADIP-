@@ -19,6 +19,13 @@ def _memory_audit(monkeypatch):
     monkeypatch.setenv("JEVCITY_AUDIT_PATH", ":memory:")
 
 
+@pytest.fixture(autouse=True)
+def _rate_limit_off(monkeypatch):
+    """Tests make unbounded sequential calls per client; limit tests opt in
+    by setting JEVCITY_RATE_LIMIT themselves before building the app."""
+    monkeypatch.setenv("JEVCITY_RATE_LIMIT", "0")
+
+
 @pytest.fixture
 def engine():
     eng = build_engine()
